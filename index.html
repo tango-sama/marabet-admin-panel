@@ -104,7 +104,7 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .cell-input::placeholder{color:var(--gray2)}
 .cell-select option{background:var(--card2)}
 .cell-input.price{color:var(--gold);font-weight:600}
-.cell-select.cat-unset{color:var(--gray);font-style:italic}
+.cell-select.cat-unset{color:rgba(245,240,232,.55);font-style:italic}
 .cell-select:not(.cat-unset){color:var(--white);font-style:normal}
 td.col-num{width:36px;text-align:center;color:var(--gray);font-size:.72rem}
 td.col-photo{width:64px}
@@ -919,26 +919,37 @@ function publishProduct(id) {
 }
 
 function addBlankRows(n) {
-  for (let i = 0; i < n; i++) {
+  const firstNewId = uid();
+  products.push({
+    id: firstNewId, name: '', brand: '', category: '', price: 0, sizes: '',
+    active: false, variants: [], _draft: true
+  });
+  for (let i = 1; i < n; i++) {
     products.push({
       id: uid(), name: '', brand: '', category: '', price: 0, sizes: '',
       active: false, variants: [], _draft: true
     });
   }
   saveProducts();
-  // Go to last page so the new rows are visible
-  const total = getFiltered().length;
-  currentPage = Math.ceil(total / PAGE_SIZE);
+
+  // Reset filters so new rows are visible
+  const cf = getEl('catFilter'); if (cf) cf.value = 'all';
+  const sf = getEl('statusFilter'); if (sf) sf.value = 'all';
+  const si = getEl('searchInput'); if (si) si.value = '';
+
+  // Jump to the page containing the first new row
+  const idx = products.findIndex(p => p.id === firstNewId);
+  currentPage = Math.floor(idx / PAGE_SIZE) + 1;
   renderSheet();
-  // Focus first input of last new row
+
+  // Focus the first input on the first new row
   setTimeout(() => {
-    const rows = $$('#sheetBody tr');
-    const last = rows[rows.length - 1];
-    if (last) {
-      const inp = last.querySelector('.cell-input');
-      if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    const row = document.querySelector(`tr[data-id="${firstNewId}"]`);
+    if (row) {
+      const inp = row.querySelector('.cell-input');
+      if (inp) { inp.focus(); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     }
-  }, 50);
+  }, 100);
 }
 
 function duplicateProduct(id) {
