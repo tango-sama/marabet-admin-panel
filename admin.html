@@ -404,12 +404,14 @@ $_('sheetBody').addEventListener('click',function(e){
     if(p) saveOneProduct(p);
   }
   if(delBtn) {
-    if(!confirm('Delete this product?')) return;
     var pid=delBtn.dataset.del;
+    var p=products.find(function(x){return x.id===pid;});
+    // Skip confirmation for empty rows (no name)
+    if(p&&p.name&&p.name.trim()&&!confirm('Delete this product?')) return;
     fbDeleteProduct(pid).catch(function(){});
     products=products.filter(function(x){return x.id!==pid;});
     renderSheet();
-    toast('Product deleted','error');
+    if(p&&p.name&&p.name.trim()) toast('Product deleted','error');
   }
   if(photoBtn) openDrawer(photoBtn.dataset.editPhoto);
 });
