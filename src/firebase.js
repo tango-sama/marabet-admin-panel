@@ -30,12 +30,12 @@ import {
 } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAiL0J8poOLyQW9PUDUacPuKah0L2JMLeY",
-  authDomain: "mrabet-fb38c.firebaseapp.com",
-  projectId: "mrabet-fb38c",
-  storageBucket: "mrabet-fb38c.firebasestorage.app",
-  messagingSenderId: "195655893976",
-  appId: "1:195655893976:web:2c42fa40c7f27769c5a8ad"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAiL0J8poOLyQW9PUDUacPuKah0L2JMLeY",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mrabet-fb38c.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mrabet-fb38c",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mrabet-fb38c.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "195655893976",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:195655893976:web:2c42fa40c7f27769c5a8ad"
 };
 
 const app = initializeApp(firebaseConfig);
