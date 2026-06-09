@@ -1,24 +1,2 @@
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Python installers
-*.exe
-*.msi
-*.msix
-
-# Images (unless used in project)
-*.jpg
-*.jpeg
-*.png
-*.gif
-
-# Shortcuts
-*.lnk
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+node_modules/
+dist/

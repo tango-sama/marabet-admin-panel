@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اطلب الآن — بازار مرابط</title>
+</head>
+<body>
+
+<nav>
+  <div class="brand">
+    <span class="brand-ar">بازار مرابط</span>
+    <span class="brand-fr">Bazar Merabet</span>
+  </div>
+  <a class="nav-back" href="index.html">← العودة للموقع</a>
+</nav>
+
+<div class="page">
+  <section>
+    <h2 class="sec-title">اختاري <em>منتجاتك</em></h2>
+    <div class="search-row"><input class="search-input" id="search" placeholder="ابحثي عن منتج..."></div>
+    <div class="cat-pills" id="catPills">
+      <button class="cpill active" data-cat="all">الكل</button>
+      <button class="cpill" data-cat="mens_shoes">رجالي</button>
+      <button class="cpill" data-cat="womens_shoes">نسائي</button>
+      <button class="cpill" data-cat="kids">أطفال</button>
+      <button class="cpill" data-cat="bags">حقائب</button>
+      <button class="cpill" data-cat="sports">رياضي</button>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+  </section>
+
+  <aside class="cart" id="cartPanel">
+    <div class="cart-title">🛒 سلّة الطلب <span class="cart-count" id="cartCount">0</span></div>
+    <div class="cart-items" id="cartItems"><div class="cart-empty">لم تضيفي أي منتج بعد.<br>اختاري منتجاً من القائمة.</div></div>
+    <div class="cart-totals-wrap" id="cartTotalsWrap" style="display:none">
+      <div class="cart-subtotal"><span class="cart-sub-label">ثمن المنتجات</span><span class="cart-sub-price"><span class="num" id="cartSubtotal">0</span> دج</span></div>
+      <div class="cart-delivery"><span class="cart-del-label">التوصيل</span><span class="cart-del-price"><span class="num" id="cartDelivery">800</span> دج</span></div>
+      <div class="cart-total grand"><span class="cart-total-label">المجموع الكلي</span><span class="cart-total-price"><span class="num" id="cartGrandTotal">0</span> دج</span></div>
+    </div>
+
+    <div class="delivery-toggle" id="deliveryToggle">
+      <div class="del-option active" data-del="desk"><span class="del-icon">🏢</span><span><span class="del-label">توصيل للمكتب</span><span class="del-hint">Stop Desk</span></span></div>
+      <div class="del-option" data-del="home"><span class="del-icon">🏠</span><span><span class="del-label">توصيل للمنزل</span><span class="del-hint">À domicile</span></span></div>
+    </div>
+
+    <div class="form-section" id="formSection">
+      <div class="form-title">📋 معلومات التوصيل</div>
+      <div class="fgroup"><label>الاسم الكامل</label><input class="finput" id="cName" placeholder="الاسم واللقب"></div>
+      <div class="fgroup"><label>رقم الهاتف</label><input class="finput" id="cPhone" type="tel" placeholder="07XX XX XX XX" style="direction:ltr;text-align:right"></div>
+      <div class="frow">
+        <div class="fgroup"><label>الولاية</label><select class="fselect" id="cWilaya"><option value="">اختر الولاية</option></select></div>
+        <div class="fgroup"><label>البلدية</label><input class="finput" id="cCommune" placeholder="البلدية"></div>
+      </div>
+      <div class="fgroup"><label>العنوان</label><input class="finput" id="cAddress" placeholder="العنوان التفصيلي"></div>
+      <div class="fgroup"><label>ملاحظات (اختياري)</label><input class="finput" id="cNote" placeholder="أي ملاحظة إضافية"></div>
+      <button class="btn-submit" id="saveBtn">📦 حفظ الطلب لدى البائع</button>
+      <button class="btn-save" id="waBtn">💬 محادثة عبر الواتساب</button>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="/src/pages/order.js"></script>
+</body>
+</html>

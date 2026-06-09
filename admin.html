@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bazar Merabet — Admin Panel</title>
+</head>
+<body>
+
+<button class="collapse-btn" id="collapseBtn" title="Toggle sidebar (Ctrl+B)">&#9776;</button>
+
+<aside class="sidebar" id="sidebar">
+  <a href="index.html" style="text-decoration:none;color:inherit">
+    <div class="sidebar-logo"><div class="name">بازار مرابط</div><div class="sub">ADMIN PANEL</div></div>
+  </a>
+  <nav class="nav-section">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" data-page="products"><span class="icon">👟</span> Products <span class="nav-badge" id="prodCount">0</span></div>
+    <div class="nav-item" data-page="categories"><span class="icon">📁</span> Categories</div>
+    <div class="nav-item" data-page="dashboard"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" data-page="orders"><span class="icon">📦</span> Orders <span class="nav-badge" id="orderCount" style="background:var(--danger)">0</span></div>
+    <div class="nav-label">Settings</div>
+    <div class="nav-item" data-page="settings"><span class="icon">⚙️</span> Settings</div>
+  </nav>
+</aside>
+
+<div class="main" id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Products</div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content">
+
+    <!-- Products Page -->
+    <div class="page active" id="page-products">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="filter-select" id="catFilter"></select>
+          <select class="filter-select" id="statusFilter"><option value="all">All Status</option><option value="active">Active</option><option value="hidden">Hidden</option></select>
+          <span class="count-badge" id="countBadge"></span>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-outline btn-sm" id="exportBtn">📤 Export</button>
+          <button class="btn btn-outline btn-sm" id="importBtn">📥 Import</button>
+          <button class="btn btn-outline btn-sm" id="addRowBtn">+ Row</button>
+          <button class="btn btn-outline btn-sm" id="add5Btn">+ Add 5</button>
+          <button class="btn btn-green btn-sm" id="saveAllBtn">💾 Save All</button>
+        </div>
+      </div>
+      <div class="sheet-wrap"><table class="sheet"><thead><tr>
+        <th class="col-num">#</th><th class="col-photo">Photo</th><th>Product</th><th>Brand</th><th>Category</th><th>Price</th><th>Sizes</th><th>Colors</th><th>Live</th><th class="col-actions"></th>
+      </tr></thead><tbody id="sheetBody"></tbody></table></div>
+      <div id="paginationContainer"></div>
+    </div>
+
+    <!-- Categories Page -->
+    <div class="page" id="page-categories">
+      <div class="toolbar"><div class="toolbar-right"><button class="btn btn-outline btn-sm" id="addCatBtn">+ Category</button><button class="btn btn-green btn-sm" id="saveCatsBtn">💾 Save</button></div></div>
+      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Name</th><th>Key</th><th>Visible</th><th class="col-actions"></th></tr></thead><tbody id="catsBody"></tbody></table></div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="page" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Products</div><div class="stat-value" id="stat-products">0</div><div class="stat-icon">👟</div></div>
+        <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" id="stat-active">0</div><div class="stat-icon">✅</div></div>
+        <div class="stat-card"><div class="stat-label">Categories</div><div class="stat-value" id="stat-cats">0</div><div class="stat-icon">📁</div></div>
+        <div class="stat-card"><div class="stat-label">Pending Orders</div><div class="stat-value" id="stat-orders" style="color:var(--warning)">0</div><div class="stat-icon">📦</div></div>
+      </div>
+    </div>
+
+    <!-- Orders Page -->
+    <div class="page" id="page-orders">
+      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Customer</th><th>Product</th><th>Color</th><th>Size</th><th>Status</th><th>Fulfill</th><th>Reply</th><th class="col-actions"></th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+    </div>
+
+    <!-- Settings Page -->
+    <div class="page" id="page-settings">
+      <div class="settings-wrap">
+        <div class="settings-section">Store Info</div>
+        <div><label class="settings-label">Store Name</label><input class="settings-input" id="settingStoreName"></div>
+        <div><label class="settings-label">WhatsApp Number</label><input class="settings-input" id="waNumber" placeholder="213772423191"></div>
+        <div class="settings-section">Yalidine API</div>
+        <div><label class="settings-label">API ID</label><input class="settings-input" id="yalidineApiId"></div>
+        <div><label class="settings-label">API Token</label><input class="settings-input" id="yalidineApiToken"></div>
+        <div><label class="settings-label">From Wilaya</label><input class="settings-input" id="fromWilaya" placeholder="Ouargla"></div>
+        <button class="btn btn-gold" id="saveSettingsBtn">Save Settings</button>
+        <div class="danger-zone">
+          <div class="danger-zone-title">Danger Zone</div>
+          <div class="danger-zone-desc">Permanently delete all data. Cannot be undone.</div>
+          <button class="btn btn-danger" id="clearAllBtn">Clear All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Drawer -->
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer">
+    <div class="drawer-head"><div><div class="drawer-head-title">Product Photos</div><div class="drawer-head-sub">Assign photos to color variants</div></div><button class="btn-icon" id="drawerClose">✕</button></div>
+    <div class="drawer-body">
+      <div class="drawer-dropzone" id="drawerDrop"><span class="drawer-dropzone-icon">📸</span><div class="drawer-dropzone-text">Drop images here or click</div><div class="drawer-dropzone-hint">PNG, JPG, WebP — auto-converts to WebP</div><input type="file" id="drawerFileInput" multiple accept="image/*"></div>
+      <div class="photo-slots" id="photoSlots"></div>
+    </div>
+    <div class="drawer-foot"><button class="btn btn-gold" id="drawerSave">Save Photos</button><button class="btn btn-outline" id="drawerCancel">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+<div class="modal-overlay" id="customerModal"><div class="modal"><div class="modal-title">Customer Details</div><div id="customerModalBody"></div><button class="modal-close" data-close="customerModal">✕</button></div></div>
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal"><div class="modal"><div class="modal-title">Import JSON</div><div class="upload-zone" id="jsonDrop"><div>Drop JSON file or click</div><input type="file" id="jsonFile" accept=".json"></div><textarea class="json-input" id="jsonPaste" placeholder="Or paste JSON here..."></textarea><div style="margin-top:1rem;display:flex;gap:.5rem"><button class="btn btn-gold" id="doImport">Import</button><button class="btn btn-outline" data-close="importModal">Cancel</button></div></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="/src/pages/admin.js"></script>
+</body>
+</html>
