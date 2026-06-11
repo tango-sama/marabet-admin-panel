@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Open until this date, then auto-locks. (Same window as before.)
+    function open() { return request.time < timestamp.date(2026, 7, 11); }
+
+    // Delivery API credentials (Yalidine): the admin UI can WRITE them, but no client can
+    // READ them back — only the Cloud Function, via the Admin SDK, reads this doc.
+    // NOTE: there is intentionally NO recursive `/{document=**}` rule below; a recursive
+    // read-allow would override this deny and expose the token.
+    match /settings/delivery {
+      allow write: if open();
+      allow read: if false;
+    }
+
+    // Everything the storefront + admin actually use
+    match /products/{doc}   { allow read, write: if open(); }
+    match /categories/{doc} { allow read, write: if open(); }
+    match /orders/{doc}     { allow read, write: if open(); }
+    match /appearance/{doc} { allow read, write: if open(); }
+    match /settings/general { allow read, write: if open(); }
+  }
+}

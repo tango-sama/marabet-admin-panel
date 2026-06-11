@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تفاصيل المنتج — بازار مرابط</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F5F1;--bg-2:#FFFFFF;--bg-3:#EFEBE4;
+  --ink:#1A1A18;--ink-2:#4A4843;--ink-3:#8A867E;
+  --gold:#B8924A;--gold-light:#D4B670;--gold-soft:#F0E6D2;
+  --sage:#6B7A6E;--sage-soft:#E8EDE8;
+  --line:#E2DDD3;--line-2:rgba(26,26,24,.08);
+  --shadow:0 1px 3px rgba(26,26,24,.04),0 8px 24px rgba(26,26,24,.05);
+  --shadow-lg:0 20px 50px rgba(26,26,24,.1);
+  --sans:'Cairo',sans-serif;--serif:'Amiri',serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:400}
+::selection{background:var(--gold);color:#fff}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.num{direction:ltr;unicode-bidi:isolate;font-feature-settings:"tnum"}
+a{text-decoration:none;color:inherit}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:1rem 3rem;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;flex-direction:column;line-height:1.05}
+.brand-ar{font-family:var(--serif);font-size:1.3rem;color:var(--gold);font-weight:700}
+.brand-fr{font-size:.55rem;letter-spacing:4px;color:var(--ink-3);text-transform:uppercase;margin-top:2px}
+.nav-back{display:inline-flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--ink-2);transition:color .2s}
+.nav-back:hover{color:var(--gold)}
+
+/* BREADCRUMB */
+.crumb{max-width:1300px;margin:0 auto;padding:1.5rem 3rem .5rem;font-size:.8rem;color:var(--ink-3);display:flex;gap:.5rem;align-items:center}
+.crumb a:hover{color:var(--gold)}
+.crumb .sep{opacity:.5}
+
+/* PRODUCT LAYOUT */
+.product{max-width:1300px;margin:0 auto;padding:1.5rem 3rem 4rem;display:grid;grid-template-columns:1.1fr 1fr;gap:3.5rem;align-items:start}
+
+/* GALLERY */
+.gallery{position:sticky;top:90px}
+.gallery-main{position:relative;aspect-ratio:1/1;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,var(--bg-2),var(--bg-3));border:1px solid var(--line);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center}
+.gallery-main .big-emoji{font-size:11rem;transition:transform .4s var(--ease)}
+.gallery-main img{width:100%;height:100%;object-fit:cover}
+.gallery-badge{position:absolute;top:1.2rem;right:1.2rem;background:var(--gold);color:#fff;font-size:.68rem;font-weight:700;letter-spacing:.5px;padding:.35rem .9rem;border-radius:100px;text-transform:uppercase}
+.gallery-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.9);backdrop-filter:blur(6px);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:all .2s;color:var(--ink)}
+.gallery-nav:hover{background:var(--gold);color:#fff}
+.gnav-prev{right:1rem}.gnav-next{left:1rem}
+.thumbs{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap}
+.thumb{width:78px;height:78px;border-radius:12px;overflow:hidden;border:2px solid var(--line);background:linear-gradient(160deg,var(--bg-2),var(--bg-3));display:flex;align-items:center;justify-content:center;font-size:2.2rem;cursor:pointer;transition:all .2s}
+.thumb:hover{border-color:var(--gold-light)}
+.thumb.active{border-color:var(--gold)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+
+/* INFO */
+.p-brand{font-size:.72rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:.6rem}
+.p-name{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,2.6rem);color:var(--ink);font-weight:700;line-height:1.15;margin-bottom:1rem}
+.p-rating{display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem}
+.p-stars{color:var(--gold);font-size:.95rem;letter-spacing:1px}
+.p-rating-tx{font-size:.78rem;color:var(--ink-3)}
+.p-price{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1.75rem;padding-bottom:1.75rem;border-bottom:1px solid var(--line)}
+.p-price .now{font-family:var(--serif);font-size:2.2rem;color:var(--ink);font-weight:700}
+.p-price .now span{font-size:.9rem;color:var(--ink-3);font-family:var(--sans)}
+.p-price .was{font-size:1.1rem;color:var(--ink-3);text-decoration:line-through}
+.p-price .off{background:var(--sage-soft);color:var(--sage);font-size:.72rem;font-weight:700;padding:.2rem .7rem;border-radius:100px}
+
+.opt-block{margin-bottom:1.75rem}
+.opt-label{font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:.75rem;display:flex;justify-content:space-between}
+.opt-label .chosen{color:var(--gold);font-weight:600}
+.color-opts{display:flex;gap:.6rem;flex-wrap:wrap}
+.color-opt{width:42px;height:42px;border-radius:12px;border:2px solid var(--line);cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;justify-content:center}
+.color-opt:hover{transform:scale(1.06)}
+.color-opt.on{border-color:var(--ink)}
+.color-opt.on::after{content:'✓';position:absolute;font-size:.9rem;font-weight:700;mix-blend-mode:difference;color:#fff}
+.size-opts{display:flex;gap:.6rem;flex-wrap:wrap}
+.size-opt{min-width:48px;height:48px;padding:0 .85rem;border-radius:12px;border:1.5px solid var(--line);background:var(--bg-2);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s}
+.size-opt:hover{border-color:var(--gold)}
+.size-opt.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.size-opt.out{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.size-guide{font-size:.74rem;color:var(--gold);cursor:pointer;margin-top:.6rem;display:inline-block}
+
+.qty-row{display:flex;align-items:center;gap:1rem;margin-bottom:1.75rem}
+.qty-ctrl{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
+.qty-ctrl button{width:42px;height:46px;background:var(--bg-2);border:none;font-size:1.2rem;cursor:pointer;color:var(--ink);transition:background .2s}
+.qty-ctrl button:hover{background:var(--bg-3)}
+.qty-ctrl .qv{width:48px;text-align:center;font-size:1rem;font-weight:600}
+.stock-tag{font-size:.8rem;color:var(--sage);font-weight:600}
+.stock-tag.low{color:#C0392B}
+
+.actions{display:flex;gap:.85rem;margin-bottom:1.75rem}
+.btn-order{flex:1;background:var(--ink);color:var(--bg);border:none;padding:1.1rem;font-family:var(--sans);font-size:1rem;font-weight:600;border-radius:100px;cursor:pointer;transition:all .3s var(--ease);text-align:center}
+.btn-order:hover{background:var(--gold);transform:translateY(-2px);box-shadow:0 12px 28px rgba(184,146,74,.3)}
+.btn-wa{background:#25D366;color:#fff;border:none;width:56px;border-radius:100px;cursor:pointer;font-size:1.4rem;transition:transform .2s;flex-shrink:0}
+.btn-wa:hover{transform:translateY(-2px)}
+.btn-fav{background:var(--bg-2);border:1.5px solid var(--line);width:56px;border-radius:100px;cursor:pointer;font-size:1.2rem;color:var(--ink-2);transition:all .2s;flex-shrink:0}
+.btn-fav:hover{border-color:var(--gold);color:var(--gold)}
+
+.p-meta{background:var(--bg-2);border:1px solid var(--line);border-radius:16px;padding:1.25rem;margin-bottom:1.5rem}
+.p-meta-row{display:flex;align-items:center;gap:.75rem;padding:.6rem 0;font-size:.85rem;color:var(--ink-2)}
+.p-meta-row .ic{width:34px;height:34px;border-radius:9px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.p-meta-row b{color:var(--ink)}
+
+.p-desc{font-size:.92rem;line-height:1.9;color:var(--ink-2)}
+.p-desc h3{font-family:var(--serif);font-size:1.2rem;color:var(--ink);margin-bottom:.75rem;font-weight:700}
+
+/* RELATED */
+.related{max-width:1300px;margin:0 auto;padding:3rem 3rem 5rem;border-top:1px solid var(--line)}
+.related-head{font-family:var(--serif);font-size:1.8rem;color:var(--ink);font-weight:700;margin-bottom:2rem}
+.related-head em{color:var(--gold);font-style:italic}
+.rel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+.rel-card{cursor:pointer}
+.rel-img{aspect-ratio:1/1.1;border-radius:14px;overflow:hidden;background:linear-gradient(165deg,var(--bg-2),var(--bg-3));border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:4rem;margin-bottom:.85rem;transition:all .3s;box-shadow:var(--shadow)}
+.rel-card:hover .rel-img{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--gold-light)}
+.rel-brand{font-size:.62rem;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:.25rem}
+.rel-name{font-family:var(--serif);font-size:.98rem;color:var(--ink);font-weight:700;margin-bottom:.4rem}
+.rel-price{font-family:var(--serif);font-size:1.05rem;color:var(--ink);font-weight:700}
+.rel-price span{font-size:.66rem;color:var(--ink-3);font-family:var(--sans)}
+
+/* WHATSAPP FLOAT */
+.wa{position:fixed;bottom:2rem;left:2rem;z-index:90;width:54px;height:54px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 6px 24px rgba(37,211,102,.4);transition:transform .3s}
+.wa:hover{transform:scale(1.1)}
+
+@media(max-width:900px){
+  nav{padding:1rem 1.5rem}
+  .crumb{padding:1rem 1.5rem .5rem}
+  .product{grid-template-columns:1fr;gap:2rem;padding:1rem 1.5rem 3rem}
+  .gallery{position:static}
+  .gallery-main .big-emoji{font-size:8rem}
+  .rel-grid{grid-template-columns:repeat(2,1fr)}
+  .related{padding:2.5rem 1.5rem 4rem}
+}
+@media(max-width:480px){
+  .actions{flex-wrap:wrap}
+  .btn-order{flex-basis:100%}
+  .rel-grid{grid-template-columns:1fr 1fr;gap:1rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-back" href="index.html">← العودة للمتجر</a>
+  <div class="brand" style="text-align:left">
+    <span class="brand-ar">بازار مرابط</span>
+    <span class="brand-fr">Bazar Merabet</span>
+  </div>
+</nav>
+
+<div class="crumb">
+  <a href="index.html">الرئيسية</a><span class="sep">/</span>
+  <a href="index.html#collection" id="crumbCat">المنتجات</a><span class="sep">/</span>
+  <span id="crumbName">المنتج</span>
+</div>
+
+<div class="product">
+  <!-- GALLERY -->
+  <div class="gallery">
+    <div class="gallery-main">
+      <span class="gallery-badge" id="galBadge" style="display:none"></span>
+      <div class="gallery-nav gnav-prev" onclick="galPrev()">›</div>
+      <div class="gallery-nav gnav-next" onclick="galNext()">‹</div>
+      <div class="big-emoji" id="galMain">👟</div>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <!-- INFO -->
+  <div class="info">
+    <div class="p-brand" id="pBrand">Nike</div>
+    <h1 class="p-name" id="pName">Air Max Classic</h1>
+    <div class="p-rating">
+      <span class="p-stars">★★★★★</span>
+      <span class="p-rating-tx"><span class="num">4.8</span> · <span id="pReviews"><span class="num">126</span> تقييم</span></span>
+    </div>
+    <div class="p-price">
+      <div class="now"><span class="num" id="pPrice">4500</span> <span>دج</span></div>
+      <div class="was" id="pWas" style="display:none"></div>
+      <div class="off" id="pOff" style="display:none"></div>
+    </div>
+
+    <div class="opt-block">
+      <div class="opt-label">اللون <span class="chosen" id="colorChosen">أبيض</span></div>
+      <div class="color-opts" id="colorOpts"></div>
+    </div>
+
+    <div class="opt-block">
+      <div class="opt-label">المقاس <span class="chosen" id="sizeChosen">اختر المقاس</span></div>
+      <div class="size-opts" id="sizeOpts"></div>
+      <span class="size-guide" onclick="alert('دليل المقاسات قريباً')">📏 دليل المقاسات</span>
+    </div>
+
+    <div class="qty-row">
+      <div class="qty-ctrl">
+        <button onclick="changeQty(-1)">−</button>
+        <span class="qv" id="qtyVal">1</span>
+        <button onclick="changeQty(1)">+</button>
+      </div>
+      <span class="stock-tag" id="stockTag">✓ متوفر في المخزون</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn-order" onclick="goToOrder()">اطلب الآن</button>
+      <button class="btn-wa" onclick="orderWhatsApp()" title="اطلب عبر واتساب">💬</button>
+      <button class="btn-fav" onclick="toggleFav(this)" title="أضف للمفضلة">♡</button>
+    </div>
+
+    <div class="p-meta">
+      <div class="p-meta-row"><div class="ic">🚚</div><div>توصيل لكل الولايات · <b>عبر Yalidine</b></div></div>
+      <div class="p-meta-row"><div class="ic">↩️</div><div>إمكانية الاستبدال خلال <b>48 ساعة</b></div></div>
+      <div class="p-meta-row"><div class="ic">✅</div><div>منتج <b>أصلي 100%</b> مضمون</div></div>
+      <div class="p-meta-row"><div class="ic">💵</div><div>الدفع <b>عند الاستلام</b></div></div>
+    </div>
+
+    <div class="p-desc" id="pDesc">
+      <h3>الوصف</h3>
+      <p>حذاء رياضي كلاسيكي يجمع بين الأناقة والراحة. مصنوع من مواد عالية الجودة تضمن المتانة والثبات. مثالي للاستخدام اليومي والمناسبات الرياضية.</p>
+    </div>
+  </div>
+</div>
+
+<!-- RELATED -->
+<div class="related">
+  <div class="related-head">منتجات <em>ذات صلة</em></div>
+  <div class="rel-grid" id="relGrid"></div>
+</div>
+
+<a class="wa" href="https://wa.me/213772423191" target="_blank" aria-label="WhatsApp">💬</a>
+
+<script>
+// ── CATALOG (في الإنتاج سيأتي من Firebase) ──
+let CATALOG=[
+  {id:1,name:'Air Max Classic',brand:'Nike',cat:'sports',catName:'رياضي',price:4500,was:5500,sizes:[{s:39,ok:1},{s:40,ok:1},{s:41,ok:1},{s:42,ok:1},{s:43,ok:0},{s:44,ok:1},{s:45,ok:1}],badge:'جديد',
+   colors:[{n:'أبيض',h:'#FFFFFF',emoji:'👟'},{n:'أسود',h:'#111111',emoji:'👟'},{n:'أحمر',h:'#E53935',emoji:'👟'}],
+   desc:'حذاء رياضي كلاسيكي يجمع بين الأناقة والراحة. مصنوع من مواد عالية الجودة تضمن المتانة والثبات. مثالي للاستخدام اليومي والمناسبات الرياضية.'},
+  {id:2,name:'Elegant Heel',brand:'Bata',cat:'womens_shoes',catName:'نسائي',price:3200,sizes:[{s:36,ok:1},{s:37,ok:1},{s:38,ok:1},{s:39,ok:1},{s:40,ok:0},{s:41,ok:1}],badge:'الأكثر طلباً',
+   colors:[{n:'أسود',h:'#111111',emoji:'👠'},{n:'بيج',h:'#D4B896',emoji:'👠'}],
+   desc:'حذاء نسائي أنيق بكعب مريح، مثالي للمناسبات والإطلالات الرسمية. تصميم عصري يبرز أناقتك.'},
+  {id:3,name:'Oxford Formal',brand:'Adidas',cat:'mens_shoes',catName:'رجالي',price:5800,sizes:[{s:40,ok:1},{s:41,ok:1},{s:42,ok:1},{s:43,ok:1},{s:44,ok:1},{s:45,ok:1},{s:46,ok:1}],
+   colors:[{n:'بني',h:'#795548',emoji:'👞'},{n:'أسود',h:'#111111',emoji:'👞'}],
+   desc:'حذاء كلاسيكي رسمي من الجلد الفاخر. يمنحك إطلالة أنيقة في العمل والمناسبات الرسمية.'},
+  {id:4,name:'Summer Sandal',brand:'Local',cat:'womens_shoes',catName:'نسائي',price:1800,sizes:[{s:36,ok:1},{s:37,ok:1},{s:38,ok:1},{s:39,ok:1},{s:40,ok:1}],badge:'عرض',
+   colors:[{n:'ذهبي',h:'#C9A84C',emoji:'🩴'},{n:'أبيض',h:'#FFFFFF',emoji:'🩴'}],
+   desc:'صندل صيفي خفيف ومريح بتصميم عصري. مثالي للأجواء الحارة والإطلالات اليومية.'},
+  {id:5,name:'Kids Runner',brand:'Puma',cat:'kids',catName:'أطفال',price:2400,sizes:[{s:28,ok:1},{s:29,ok:1},{s:30,ok:1},{s:31,ok:1},{s:32,ok:1},{s:33,ok:0},{s:34,ok:1},{s:35,ok:1}],
+   colors:[{n:'أزرق',h:'#1565C0',emoji:'👟'},{n:'وردي',h:'#E91E63',emoji:'👟'}],
+   desc:'حذاء رياضي للأطفال خفيف ومتين. يوفر الراحة والدعم لأقدام صغيرة نشيطة.'},
+  {id:6,name:'Leather Tote',brand:'Local',cat:'bags',catName:'حقائب',price:3500,sizes:[{s:'موحد',ok:1}],
+   colors:[{n:'بني',h:'#795548',emoji:'👜'},{n:'أسود',h:'#111111',emoji:'👜'}],
+   desc:'حقيبة يد فاخرة من الجلد، واسعة وعملية بتصميم أنيق يناسب كل المناسبات.'},
+  {id:7,name:'Sport Max',brand:'Reebok',cat:'sports',catName:'رياضي',price:5200,sizes:[{s:38,ok:1},{s:39,ok:1},{s:40,ok:1},{s:41,ok:1},{s:42,ok:1},{s:43,ok:1},{s:44,ok:1},{s:45,ok:0},{s:46,ok:1}],badge:'جديد',
+   colors:[{n:'رمادي',h:'#9E9E9E',emoji:'👟'},{n:'أسود',h:'#111111',emoji:'👟'},{n:'أبيض',h:'#FFFFFF',emoji:'👟'}],
+   desc:'حذاء رياضي احترافي للجري والتمارين. خفيف ومرن مع امتصاص ممتاز للصدمات.'},
+  {id:8,name:'Classic 574',brand:'New Balance',cat:'mens_shoes',catName:'رجالي',price:6800,sizes:[{s:39,ok:1},{s:40,ok:1},{s:41,ok:1},{s:42,ok:1},{s:43,ok:1},{s:44,ok:1},{s:45,ok:1},{s:46,ok:1}],
+   colors:[{n:'أبيض',h:'#FFFFFF',emoji:'👟'},{n:'بحري',h:'#1A237E',emoji:'👟'}],
+   desc:'حذاء كلاسيكي بتصميم خالد. يجمع بين الراحة والأناقة لإطلالة يومية مميزة.'},
+];
+
+// ── STATE ──
+let product=null, curColor=0, curSize=null, qty=1, galIndex=0;
+
+function getParam(k){return new URLSearchParams(location.search).get(k);}
+
+// Expand a sizes string ("39-45", "36,37,38", "موحد") into the [{s,ok}] shape this page expects.
+function parseSizes(str){
+  str=String(str||'').trim();
+  const m=str.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+  if(m){let a=+m[1],b=+m[2];if(a>b){const t=a;a=b;b=t;}const out=[];for(let s=a;s<=b;s++)out.push({s:s,ok:1});return out;}
+  if(str) return str.split(/[,،\s]+/).filter(Boolean).map(s=>({s:s,ok:1}));
+  return [{s:'موحد',ok:1}];
+}
+// Map a Firestore product doc into the detail-page shape.
+function mapProduct(id,p,catMap){
+  let colors=(p.variants||[]).map(v=>({n:v.color||'',h:v.hex||'#888888',img:v.photo||null,emoji:'👟'}));
+  if(!colors.length) colors=[{n:'',h:'#888888',img:null,emoji:'👟'}];
+  return {id:id,name:p.name||'',brand:p.brand||'',cat:p.category||'',
+    catName:(catMap&&catMap[p.category])||p.category||'',price:+p.price||0,
+    sizes:parseSizes(p.sizes),badge:null,colors:colors,desc:p.desc||''};
+}
+function showProduct(idParam){
+  product=CATALOG.find(p=>String(p.id)===String(idParam))||CATALOG[0];
+  curColor=0; curSize=null; qty=1; galIndex=0;
+  render();
+}
+function loadProduct(){
+  const idParam=getParam('id');
+  if(typeof firebase==='undefined'){ showProduct(idParam); return; }
+  try{ firebase.initializeApp({
+    apiKey:"AIzaSyAiL0J8poOLyQW9PUDUacPuKah0L2JMLeY",authDomain:"mrabet-fb38c.firebaseapp.com",
+    projectId:"mrabet-fb38c",storageBucket:"mrabet-fb38c.firebasestorage.app",
+    messagingSenderId:"195655893976",appId:"1:195655893976:web:2c42fa40c7f27769c5a8ad"
+  }); }catch(e){/* already initialized */}
+  const fs=firebase.firestore();
+  Promise.all([fs.collection('products').get(),fs.collection('categories').get()])
+    .then(res=>{
+      const catMap={}; res[1].forEach(d=>{const c=d.data();catMap[c.key]=c.name;});
+      const list=[]; res[0].forEach(d=>{ if(d.data().active!==false) list.push(mapProduct(d.id,d.data(),catMap)); });
+      if(list.length) CATALOG=list;
+      showProduct(idParam);
+    })
+    .catch(err=>{ console.error('Could not load product from Firestore:',err); showProduct(idParam); });
+}
+
+function render(){
+  document.title=product.name+' — بازار مرابط';
+  document.getElementById('pBrand').textContent=product.brand;
+  document.getElementById('pName').textContent=product.name;
+  document.getElementById('crumbName').textContent=product.name;
+  document.getElementById('crumbCat').textContent=product.catName;
+  document.getElementById('crumbCat').href='index.html#collection';
+  document.getElementById('pPrice').textContent=product.price.toLocaleString();
+  document.getElementById('pDesc').querySelector('p').textContent=product.desc;
+
+  // price was/off
+  const was=document.getElementById('pWas'), off=document.getElementById('pOff');
+  if(product.was){
+    was.style.display='inline';was.innerHTML='<span class="num">'+product.was.toLocaleString()+'</span> دج';
+    const pct=Math.round((1-product.price/product.was)*100);
+    off.style.display='inline-block';off.textContent='-'+pct+'%';
+  }else{was.style.display='none';off.style.display='none';}
+
+  // badge
+  const gb=document.getElementById('galBadge');
+  if(product.badge){gb.style.display='inline-block';gb.textContent=product.badge;}else{gb.style.display='none';}
+
+  renderColors(); renderSizes(); renderGallery(); renderThumbs(); renderRelated();
+  updateStock(); document.getElementById('qtyVal').textContent=qty;
+}
+
+function renderColors(){
+  document.getElementById('colorOpts').innerHTML=product.colors.map((c,i)=>
+    `<div class="color-opt${i===curColor?' on':''}" style="background:${c.h}" onclick="pickColor(${i})" title="${c.n}"></div>`).join('');
+  document.getElementById('colorChosen').textContent=product.colors[curColor].n;
+}
+function pickColor(i){curColor=i;galIndex=i;renderColors();renderGallery();renderThumbs();}
+
+function renderSizes(){
+  document.getElementById('sizeOpts').innerHTML=product.sizes.map((s,i)=>
+    `<div class="size-opt${curSize===i?' on':''}${s.ok?'':' out'}" onclick="${s.ok?`pickSize(${i})`:''}"><span class="num">${s.s}</span></div>`).join('');
+  document.getElementById('sizeChosen').textContent=curSize!==null?('المقاس '+product.sizes[curSize].s):'اختر المقاس';
+}
+function pickSize(i){curSize=i;renderSizes();}
+
+function renderGallery(){
+  // each color = one image; gallery cycles colors as "images"
+  const c=product.colors[galIndex] || product.colors[curColor];
+  const main=document.getElementById('galMain');
+  if(c.img){main.innerHTML='<img src="'+c.img+'" alt="'+product.name+'">';}
+  else{main.textContent=c.emoji||'👟';}
+}
+function renderThumbs(){
+  document.getElementById('thumbs').innerHTML=product.colors.map((c,i)=>
+    `<div class="thumb${i===galIndex?' active':''}" onclick="galTo(${i})">${c.img?`<img src="${c.img}">`:(c.emoji||'👟')}</div>`).join('');
+}
+function galTo(i){galIndex=i;curColor=i;renderGallery();renderThumbs();renderColors();}
+function galPrev(){galIndex=(galIndex-1+product.colors.length)%product.colors.length;galTo(galIndex);}
+function galNext(){galIndex=(galIndex+1)%product.colors.length;galTo(galIndex);}
+
+function changeQty(d){qty=Math.max(1,qty+d);document.getElementById('qtyVal').textContent=qty;}
+
+function updateStock(){
+  const avail=product.sizes.filter(s=>s.ok).length;
+  const tag=document.getElementById('stockTag');
+  if(avail<=2){tag.className='stock-tag low';tag.textContent='⚠ كمية محدودة — '+avail+' مقاسات فقط';}
+  else{tag.className='stock-tag';tag.textContent='✓ متوفر في المخزون';}
+}
+
+function toggleFav(b){b.textContent=b.textContent==='♡'?'♥':'♡';b.style.color=b.textContent==='♥'?'var(--gold)':'';}
+
+// go to order page with selections
+function goToOrder(){
+  if(curSize===null){alert('الرجاء اختيار المقاس أولاً');document.getElementById('sizeOpts').scrollIntoView({behavior:'smooth',block:'center'});return;}
+  const params=new URLSearchParams({id:product.id,color:curColor,size:product.sizes[curSize].s,qty:qty});
+  location.href='order.html?'+params.toString();
+}
+function orderWhatsApp(){
+  if(curSize===null){alert('الرجاء اختيار المقاس أولاً');return;}
+  const c=product.colors[curColor];
+  const msg=encodeURIComponent(`مرحبا، أريد طلب:\nالمنتج: ${product.name} — ${product.brand}\nاللون: ${c.n}\nالمقاس: ${product.sizes[curSize].s}\nالكمية: ${qty}\nالسعر: ${product.price} دج\n\nشكراً!`);
+  window.open('https://wa.me/213772423191?text='+msg,'_blank');
+}
+
+function renderRelated(){
+  const rel=CATALOG.filter(p=>p.cat===product.cat && p.id!==product.id).slice(0,4);
+  const fill=CATALOG.filter(p=>p.id!==product.id && !rel.includes(p)).slice(0,4-rel.length);
+  const list=[...rel,...fill].slice(0,4);
+  document.getElementById('relGrid').innerHTML=list.map(p=>`
+    <a class="rel-card" href="product.html?id=${p.id}">
+      <div class="rel-img">${p.colors[0].emoji||'👟'}</div>
+      <div class="rel-brand">${p.brand}</div>
+      <div class="rel-name">${p.name}</div>
+      <div class="rel-price"><span class="num">${p.price.toLocaleString()}</span> <span>دج</span></div>
+    </a>`).join('');
+}
+
+loadProduct();
+</script>
+</body>
+</html>

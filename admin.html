@@ -53,6 +53,9 @@ body{background:var(--black);color:var(--white);font-family:var(--font);display:
 .btn-icon:hover{background:var(--card3);color:var(--white)}
 .btn-icon.save-row{color:var(--gold);border:1px solid rgba(201,168,76,.4);border-radius:4px;font-weight:700;animation:pulse-gold 1.2s ease-in-out infinite}
 .btn-icon.save-row:hover{background:var(--gold-dim)}
+/* Product sheet: the gold ✓ only appears while a row has unsaved edits */
+#sheetBody .btn-icon.save-row{display:none}
+#sheetBody .btn-icon.save-row.dirty{display:inline-block}
 @keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0)}50%{box-shadow:0 0 0 3px rgba(201,168,76,.25)}}
 .btn-icon.danger:hover{color:var(--danger)}
 
@@ -74,7 +77,7 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .sheet th{background:var(--card2);font-size:.68rem;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;padding:.6rem .7rem;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
 .sheet td{padding:.35rem .5rem;border-bottom:1px solid rgba(201,168,76,.07);vertical-align:middle}
 .sheet tr:hover td{background:rgba(255,255,255,.02)}
-.cell-input,.cell-select{background:transparent;border:1px solid transparent;color:var(--white);font-family:var(--font);font-size:.82rem;padding:.4rem .5rem;border-radius:4px;width:100%;outline:none;transition:all .12s}
+.cell-input,.cell-select{background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.82rem;padding:.4rem .5rem;border-radius:4px;width:100%;outline:none;transition:all .12s}
 .cell-input:hover,.cell-select:hover{border-color:var(--border);background:var(--card2)}
 .cell-input:focus,.cell-select:focus{border-color:var(--gold);background:var(--card2)}
 .col-num{width:36px;text-align:center;color:var(--gray);font-size:.72rem}
@@ -93,7 +96,8 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .toggle input:checked+.toggle-slider::before{transform:translateX(16px);background:var(--gold)}
 
 .drawer-overlay,.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:150}
-.drawer-overlay.open,.modal-overlay.open{display:block}
+.drawer-overlay.open{display:block}
+.modal-overlay.open{display:flex;align-items:center;justify-content:center;padding:1rem}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:92vw;background:var(--card);border-left:1px solid var(--border);z-index:151;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s}
 .drawer-overlay.open .drawer{transform:translateX(0)}
 .drawer-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -193,7 +197,7 @@ a{color:var(--gold)}
     <!-- CATEGORIES PAGE -->
     <div class="page" id="page-categories">
       <div class="toolbar"><div class="toolbar-right"><button class="btn btn-outline btn-sm" id="addCatBtn">+ Category</button><button class="btn btn-green btn-sm" id="saveCatsBtn">💾 Save</button></div></div>
-      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Name</th><th>Key</th><th>Visible</th><th class="col-actions">Actions</th></tr></thead><tbody id="catsBody"></tbody></table></div>
+      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Name</th><th>Key</th><th>Products</th><th>Visible</th><th class="col-actions">Actions</th></tr></thead><tbody id="catsBody"></tbody></table></div>
     </div>
 
     <!-- DASHBOARD -->
@@ -223,6 +227,12 @@ a{color:var(--gold)}
         <div><label class="settings-label">Hero Image URL</label><input class="settings-input" id="heroImage" placeholder="https://..."></div>
         <div><label class="settings-label">Featured Image URL</label><input class="settings-input" id="featuredImage" placeholder="https://..."></div>
         <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:.5rem">💾 Save Settings</button>
+        <div class="settings-section">Delivery — Yalidine</div>
+        <div><label class="settings-label">Yalidine API ID</label><input class="settings-input" id="yalidineId" placeholder="API ID"></div>
+        <div><label class="settings-label">Yalidine API Token</label><input class="settings-input" id="yalidineToken" type="password" placeholder="API Token"></div>
+        <div><label class="settings-label">Pickup Wilaya</label><input class="settings-input" id="yalidineWilaya" placeholder="Touggourt"></div>
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">🔒 Stored securely and <b>write-only</b> — the key can't be read back here or by the public site. Leave a field blank to keep its current value; re-enter to change it.</div>
+        <button class="btn btn-gold" id="saveDeliveryBtn" style="margin-top:.5rem">🔑 Save Delivery Keys</button>
         <div class="danger-zone">
           <div class="danger-zone-title">⚠️ Danger Zone</div>
           <div class="danger-zone-desc">Delete all products, categories, and orders from Firestore.</div>
@@ -284,18 +294,24 @@ try { db.enablePersistence({synchronizeTabs:true}); } catch(e) {}
 function $_(id) { return document.getElementById(id); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function uid() { return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10); }
+function fmtMoney(n) { return (+n||0).toLocaleString('en-US'); }
 // Firestore docs come back with _docId but no id; the sheet keys every edit/save/delete off p.id,
 // so mirror the doc id onto id or existing products become uneditable (and saving creates duplicates).
 function normIds(arr) { (arr||[]).forEach(function(x){ x.id = x._docId || x.id || uid(); }); return arr || []; }
 function toast(msg,type) { var t=$_('toast'); t.textContent=msg; t.className='toast '+(type||'')+' show'; clearTimeout(t._tid); t._tid=setTimeout(function(){t.classList.remove('show');},3500); }
 
-// WebP converter
+// WebP converter — downscales to MAX_DIM so photos stay small enough to store inline in Firestore (1MB/doc limit)
+var MAX_DIM=900;
 function convertToWebP(file) {
   return new Promise(function(resolve) {
-    if (file.type==='image/webp') { resolve(file); return; }
     if (!file.type.startsWith('image/')) { resolve(file); return; }
     var img=new Image(), c=document.createElement('canvas'), ctx=c.getContext('2d'), url=URL.createObjectURL(file);
-    img.onload=function(){c.width=img.width;c.height=img.height;ctx.drawImage(img,0,0);c.toBlob(function(blob){URL.revokeObjectURL(url);resolve(blob?new File([blob],file.name.replace(/\.[^.]+$/,'.webp'),{type:'image/webp'}):file);},'image/webp',0.85);};
+    img.onload=function(){
+      var w=img.width, h=img.height, scale=Math.min(1, MAX_DIM/Math.max(w,h));
+      c.width=Math.round(w*scale); c.height=Math.round(h*scale);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(blob){URL.revokeObjectURL(url);resolve(blob?new File([blob],file.name.replace(/\.[^.]+$/,'.webp'),{type:'image/webp'}):file);},'image/webp',0.8);
+    };
     img.onerror=function(){URL.revokeObjectURL(url);resolve(file);};
     img.src=url;
   });
@@ -336,12 +352,16 @@ function fbSaveAppearance(d) { return db.collection('appearance').doc('site').se
 function fbGetAppearance() { return db.collection('appearance').doc('site').get().then(function(d){return d.exists?d.data():{};}); }
 
 // ═══════════════════════════════════════════════════════════
-// UPLOAD PHOTO — WebP → Storage → URL
+// UPLOAD PHOTO — WebP → inline data URL (stored in Firestore; no Storage bucket/rules needed)
 // ═══════════════════════════════════════════════════════════
 function uploadPhoto(file, pid, idx) {
   return convertToWebP(file).then(function(webp) {
-    var ref = storage.ref('product-photos/'+pid+'/'+idx);
-    return ref.put(webp).then(function() { return ref.getDownloadURL(); });
+    return new Promise(function(resolve, reject) {
+      var r = new FileReader();
+      r.onload = function() { resolve(r.result); };  // data:image/webp;base64,...
+      r.onerror = function() { reject(r.error || new Error('read failed')); };
+      r.readAsDataURL(webp);
+    });
   });
 }
 
@@ -369,7 +389,7 @@ function showPage(name) {
   $_('pageTitle').textContent=name.charAt(0).toUpperCase()+name.slice(1);
   if(name==='products') renderSheet();
   if(name==='categories') renderCats();
-  if(name==='orders') renderOrders();
+  if(name==='orders') refreshOrders();
   if(name==='settings') renderSettings();
   if(name==='dashboard') updateStats();
 }
@@ -409,11 +429,11 @@ function renderSheet() {
       +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="name" value="'+esc(p.name||'')+'"></td>'
       +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="brand" value="'+esc(p.brand||'')+'"></td>'
       +'<td><select class="cell-select" data-pid="'+esc(p.id)+'" data-field="category">'+categories.map(function(c){return '<option value="'+esc(c.key)+'"'+(p.category===c.key?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></td>'
-      +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="price" type="number" value="'+(p.price||0)+'"></td>'
+      +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="price" type="text" inputmode="numeric" value="'+fmtMoney(p.price||0)+'"></td>'
       +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="sizes" value="'+esc(p.sizes||'')+'" placeholder="39-45"></td>'
       +'<td class="variants-cell">'+varsHtml+' <button class="btn-icon" data-edit-photo="'+esc(p.id)+'" title="Manage photos" style="font-size:.7rem;border:1px dashed var(--border);border-radius:4px;padding:2px 6px">✎</button></td>'
       +'<td style="text-align:center"><label class="toggle"><input type="checkbox" data-pid="'+esc(p.id)+'" data-field="active" '+(p.active!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
-      +'<td class="col-actions"><button class="btn-icon save-row" data-save="'+esc(p.id)+'" title="Confirm / Save row">💾</button><button class="btn-icon danger" data-del="'+esc(p.id)+'" title="Delete product">🗑</button></td>'
+      +'<td class="col-actions"><button class="btn-icon save-row'+(p._dirty?' dirty':'')+'" data-save="'+esc(p.id)+'" title="Confirm / Save row">✓</button><button class="btn-icon danger" data-del="'+esc(p.id)+'" title="Delete product">🗑</button></td>'
     +'</tr>';
   }).join('');
   updateStats();
@@ -424,9 +444,25 @@ $_('sheetBody').addEventListener('input',function(e){
   var pid=e.target.dataset.pid; if(!pid) return;
   var p=products.find(function(x){return x.id===pid;}); if(!p) return;
   var f=e.target.dataset.field;
-  if(f==='price') p[f]=+e.target.value||0;
+  if(f==='price') p[f]=+e.target.value.replace(/[^\d.]/g,'')||0;
   else if(f==='active') p[f]=e.target.checked;
   else p[f]=e.target.value;
+  p._dirty=true;
+  var row=e.target.closest('tr'), btn=row&&row.querySelector('.save-row');
+  if(btn) btn.classList.add('dirty');
+});
+
+// Clear a zero price when the field is focused so the user can type without deleting the 0 first
+$_('sheetBody').addEventListener('focusin',function(e){
+  if(e.target.dataset.field!=='price') return;
+  if(!(+e.target.value.replace(/[^\d.]/g,''))) e.target.value='';
+});
+
+// Reformat the price cell with thousand separators once the user leaves the field
+$_('sheetBody').addEventListener('focusout',function(e){
+  if(e.target.dataset.field!=='price') return;
+  var p=products.find(function(x){return x.id===e.target.dataset.pid;}); if(!p) return;
+  e.target.value=fmtMoney(p.price);
 });
 
 // Sheet clicks: save row, delete, edit photo
@@ -439,33 +475,63 @@ $_('sheetBody').addEventListener('click',function(e){
   if(delBtn) {
     var pid=delBtn.dataset.del;
     var p=products.find(function(x){return x.id===pid;});
-    // Skip confirmation for empty rows (no name)
-    if(p&&p.name&&p.name.trim()&&!confirm('Delete this product?')) return;
-    fbDeleteProduct(pid).catch(function(){});
-    products=products.filter(function(x){return x.id!==pid;});
-    renderSheet();
-    if(p&&p.name&&p.name.trim()) toast('Product deleted','error');
+    var hasInfo=!!(p&&p.name&&p.name.trim());
+    // Empty rows delete silently; rows with info require a cautionary confirm
+    if(hasInfo&&!confirm('⚠️ Delete "'+p.name.trim()+'"?\n\nThis permanently removes the product, its photos and color variants from the store. This action cannot be undone.')) return;
+    // Remove from Firestore FIRST — only drop the row once the delete actually succeeds,
+    // otherwise a rules-blocked delete would vanish locally but reappear on reload.
+    delBtn.disabled=true;
+    fbDeleteProduct(pid).then(function(){
+      products=products.filter(function(x){return x.id!==pid;});
+      renderSheet();
+      if(hasInfo) toast('Product deleted','error');
+    }).catch(function(err){
+      delBtn.disabled=false;
+      console.error('Delete failed:',err);
+      toast('Delete failed: '+((err&&err.code)||(err&&err.message)||'check Firestore rules'),'error');
+    });
   }
   if(photoBtn) openDrawer(photoBtn.dataset.editPhoto);
 });
 
 function addBlankRows(n) {
+  // Start clean: the ✓ save button stays hidden until the user types something into the row
   for(var i=0;i<n;i++) products.push({id:uid(),name:'',brand:'',category:'sports',price:0,sizes:'',active:true,variants:[]});
   renderSheet();
 }
 
+// Required fields for a complete product — saving is blocked until they're all filled in
+function missingFields(p) {
+  var m=[];
+  if(!(p.name&&p.name.trim())) m.push('name');
+  if(!(p.brand&&p.brand.trim())) m.push('brand');
+  if(!(p.category&&p.category.trim())) m.push('category');
+  if(!(+p.price>0)) m.push('price');
+  if(!(p.sizes&&String(p.sizes).trim())) m.push('sizes');
+  return m;
+}
+
 function saveOneProduct(p) {
-  fbSaveProduct({
+  var miss=missingFields(p);
+  if(miss.length){ toast('Cannot save — missing: '+miss.join(', '),'error'); return Promise.resolve(false); }
+  return fbSaveProduct({
     _docId:p.id, name:p.name||'', brand:p.brand||'', category:p.category||'',
     price:+p.price||0, sizes:p.sizes||'', active:p.active!==false,
     variants:(p.variants||[]).map(function(v){return{color:v.color,hex:v.hex,photo:v.photo||null};})
-  }).then(function(){ toast('✅ Saved: '+p.name,'success'); }).catch(function(){ toast('Save failed','error'); });
+  }).then(function(){
+    p._dirty=false;
+    var btn=$_('sheetBody').querySelector('[data-save="'+p.id+'"]');
+    if(btn) btn.classList.remove('dirty');
+    toast('✅ Saved: '+p.name,'success'); return true;
+  }).catch(function(){ toast('Save failed','error'); return false; });
 }
 
 function saveAll() {
-  var done=0, total=products.length;
-  products.forEach(function(p){ saveOneProduct(p); done++; if(done===total) renderSheet(); });
-  toast('All '+total+' products saved','success');
+  // Only save complete products; quietly skip incomplete rows and report the count
+  var valid=products.filter(function(p){return !missingFields(p).length;});
+  var skipped=products.length-valid.length;
+  Promise.all(valid.map(function(p){return saveOneProduct(p);})).then(function(){ renderSheet(); });
+  toast('Saved '+valid.length+' product'+(valid.length!==1?'s':'')+(skipped?' · '+skipped+' skipped (incomplete)':''), skipped?'error':'success');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -473,11 +539,12 @@ function saveAll() {
 // ═══════════════════════════════════════════════════════════
 function renderCats() {
   var body=$_('catsBody'); if(!body) return;
-  if(!categories.length){body.innerHTML='<tr><td colspan="5"><div class="empty"><div class="empty-icon">📁</div><div>No categories</div></div></td></tr>';return;}
+  if(!categories.length){body.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">📁</div><div>No categories</div></div></td></tr>';return;}
   body.innerHTML=categories.map(function(c,i){return '<tr>'
     +'<td>'+(i+1)+'</td>'
     +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="name" value="'+esc(c.name||'')+'"></td>'
     +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="key" value="'+esc(c.key||'')+'"></td>'
+    +'<td style="text-align:center">'+products.filter(function(p){return p.category===c.key;}).length+'</td>'
     +'<td><label class="toggle"><input type="checkbox" data-cid="'+esc(c.id)+'" data-cfield="visible" '+(c.visible!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
     +'<td class="col-actions"><button class="btn-icon save-row" data-savecat="'+esc(c.id)+'">💾</button><button class="btn-icon danger" data-delcat="'+esc(c.id)+'">🗑</button></td>'
   +'</tr>';}).join('');
@@ -499,31 +566,92 @@ function saveCats(){categories.forEach(function(c){fbSaveCategory(c);});syncCatF
 // ═══════════════════════════════════════════════════════════
 // ORDERS
 // ═══════════════════════════════════════════════════════════
+// Re-pull orders from Firestore so newly placed storefront orders show up without a full reload.
+// Renders the cached list instantly, then refreshes with the latest from the server.
+function refreshOrders() {
+  renderOrders();
+  fbGetOrders().then(function(r){ orders=r; renderOrders(); })
+    .catch(function(err){ console.error('Could not load orders:',err); });
+}
+
 function renderOrders() {
   var body=$_('ordersBody'); if(!body) return;
   if(!orders.length){body.innerHTML='<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No orders</div></div></td></tr>';updateStats();return;}
   var s=[].concat(orders.filter(function(o){return !o.fulfilled;}),orders.filter(function(o){return o.fulfilled;}));
   body.innerHTML=s.map(function(o){return '<tr style="'+(o.fulfilled?'opacity:.55':'')+'">'
     +'<td>'+esc(o.num||'')+'</td>'
-    +'<td>'+esc(o.customer||'')+'<br><small style="color:var(--gray)">'+esc(o.phone||'')+'</small></td>'
+    +'<td>'+esc(o.customer||'')+' <button class="btn-icon" data-cust="'+esc(o._docId||'')+'" title="View full submission" style="border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.75rem">ℹ️</button><br><small style="color:var(--gray)">'+esc(o.phone||'')+'</small></td>'
     +'<td>'+esc(o.product||'')+'</td>'
     +'<td><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:'+(o.colorHex||'#888')+';display:inline-block"></span>'+esc(o.color||'')+'</span></td>'
     +'<td>'+esc(o.size||'')+'</td><td>'+(o.price||0).toLocaleString()+' DZD</td>'
-    +'<td>'+(o.fulfilled?'<span style="color:var(--gold)">✅ Done</span>':'<span style="color:var(--success)">📝 '+esc(o.status||'New')+'</span>')+'</td>'
+    +'<td>'+(o.fulfilled
+        ? '<span style="color:var(--gold)">✅ Done</span>'+(o.deliveryTracking
+            ? '<br><small style="color:var(--gray)">🚚 '+esc(o.deliveryTracking)+'</small>'
+            : (o.deliveryStatus==='Failed'
+                ? '<br><small style="color:var(--danger)">⚠ delivery failed</small>'
+                : '<br><small style="color:var(--gray)">⏳ sending to Yalidine…</small>'))
+        : '<span style="color:var(--success)">📝 '+esc(o.status||'New')+'</span>')+'</td>'
     +'<td style="white-space:nowrap">'
       +(!o.fulfilled?'<button class="btn btn-sm" style="background:var(--gold);color:var(--black);margin-right:4px" data-fulfill="'+esc(o._docId||'')+'">🚚</button>':'')
-      +'<button class="btn btn-outline btn-sm" style="margin-right:4px" data-wa="'+esc(o._docId||'')+'">💬</button>'
+      +'<button class="btn btn-outline btn-sm" style="margin-right:4px" data-wa="'+esc(o._docId||'')+'" title="Reply to customer on WhatsApp">💬</button>'
       +'<button class="btn-icon danger" data-delord="'+esc(o._docId||'')+'">🗑</button>'
     +'</td></tr>';
   }).join('');
   updateStats();
 }
 $_('ordersBody').addEventListener('click',function(e){
-  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]');
-  if(f){var oid=f.dataset.fulfill;var o=orders.find(function(x){return x._docId===oid;});if(o){o.fulfilled=true;o.status='Fulfilled';fbUpdateOrder(oid,{fulfilled:true,status:'Fulfilled'}).then(function(){renderOrders();toast('Order fulfilled','success');});}}
-  if(w){var oid=w.dataset.wa;var o=orders.find(function(x){return x._docId===oid;});if(o){window.open('https://wa.me/'+(SETTINGS.waNumber||'213772423191')+'?text='+encodeURIComponent('مرحبا '+o.customer+'، بخصوص طلبك: '+o.product));}}
+  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]');
+  if(info){ openCustomer(info.dataset.cust); return; }
+  if(f){var oid=f.dataset.fulfill;var o=orders.find(function(x){return x._docId===oid;});if(o){o.fulfilled=true;o.status='Fulfilled';fbUpdateOrder(oid,{fulfilled:true,status:'Fulfilled'}).then(function(){renderOrders();toast('Order fulfilled — sending to Yalidine…','success');setTimeout(refreshOrders,6000);});}}
+  // Reply to the CUSTOMER (their phone), not the store's own number
+  if(w){var oid=w.dataset.wa;var o=orders.find(function(x){return x._docId===oid;});if(o){var msg='مرحبا '+(o.customer||'')+'، بخصوص طلبك '+(o.num||'')+' ('+(o.product||'')+'):';window.open('https://wa.me/'+waPhone(o.phone)+'?text='+encodeURIComponent(msg),'_blank');}}
   if(d){var oid=d.dataset.delord;if(confirm('Delete order?')){fbDeleteOrder(oid).catch(function(){});orders=orders.filter(function(x){return x._docId!==oid;});renderOrders();toast('Order deleted','error');}}
 });
+
+// Normalize an Algerian phone to wa.me international format (0xxxxxxxxx → 213xxxxxxxxx)
+function waPhone(p){
+  var dg=String(p||'').replace(/\D/g,'');
+  if(dg.indexOf('213')===0) return dg;
+  if(dg.charAt(0)==='0') return '213'+dg.slice(1);
+  return '213'+dg;
+}
+
+// Show the full order/customer submission in a modal
+function openCustomer(oid){
+  var o=orders.find(function(x){return x._docId===oid;}); if(!o) return;
+  function row(label,val){ return (val===undefined||val===null||val==='')?'':'<div style="display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--gray)">'+esc(label)+'</span><span style="text-align:right;color:var(--white)">'+esc(String(val))+'</span></div>'; }
+  function money(n){ return (typeof n==='number')?n.toLocaleString()+' DZD':''; }
+  var when=(o.placedAt&&o.placedAt.toDate)?o.placedAt.toDate().toLocaleString():'';
+  var html=row('Order #',o.num)
+    +row('Status',o.fulfilled?'Fulfilled':(o.status||'New'))
+    +row('Date',when)
+    +'<div style="height:.6rem"></div>'
+    +row('Customer',o.customer)
+    +row('Phone',o.phone)
+    +row('Wilaya',o.wilaya)
+    +row('Commune',o.commune)
+    +row('Address',o.address)
+    +row('Delivery',o.delivery)
+    +'<div style="height:.6rem"></div>'
+    +row('Product',(o.product||'')+(o.brand?' — '+o.brand:''))
+    +row('Color',o.color)
+    +row('Size',o.size)
+    +row('Quantity',o.qty)
+    +'<div style="height:.6rem"></div>'
+    +row('Subtotal',money(o.subtotal))
+    +row('Delivery fee',money(o.deliveryFee))
+    +row('Total',money(o.total!=null?o.total:o.price))
+    +(o.note?'<div style="margin:.85rem 0"><div style="color:var(--gray);margin-bottom:.25rem">Note</div><div style="color:var(--white)">'+esc(o.note)+'</div></div>':'')
+    +((o.deliveryProvider||o.deliveryTracking||o.deliveryStatus)?'<div style="height:.6rem"></div>'
+        +row('Carrier',o.deliveryProvider)
+        +row('Tracking',o.deliveryTracking)
+        +row('Delivery status',o.deliveryStatus)
+        +(o.deliveryError?row('Delivery error',o.deliveryError):'')
+        +(o.deliveryLabel?'<div style="margin-top:.6rem"><a href="'+esc(o.deliveryLabel)+'" target="_blank" style="color:var(--gold)">🏷️ Open shipping label</a></div>':'')
+      :'');
+  $_('customerModalBody').innerHTML=html;
+  $_('customerModal').classList.add('open');
+}
 
 // ═══════════════════════════════════════════════════════════
 // SETTINGS
@@ -648,7 +776,7 @@ function loadFilesIntoSlots(files){
   });
 }
 
-// Save: require a color on every photo, upload new files (WebP → Storage), persist variants.
+// Save: require a color on every photo, convert new files (→ WebP data URL), persist variants.
 $_('drawerSave').addEventListener('click',function(){
   if(!drawerProduct) return;
   if(!drawerSlots.length){ toast('Upload at least one photo first','error'); return; }
@@ -662,22 +790,28 @@ $_('drawerSave').addEventListener('click',function(){
     if(!s.file) return;
     uploadPhoto(s.file, drawerProduct.id, i)
       .then(function(url){ s.dataUrl=url; s.file=null; })
-      .catch(function(){ /* leave preview; finalize drops any un-uploaded preview */ })
+      .catch(function(err){ console.error('Photo upload failed:',err); toast('Upload failed: '+(err&&err.code||err&&err.message||'unknown error'),'error'); })
       .then(function(){ if(++done===toUpload.length) finalizeDrawerSave(); });
   });
 });
 
 function finalizeDrawerSave() {
-  drawerProduct.variants=drawerSlots.map(function(s){
-    // Only persist real uploaded URLs — never a data:/blob: preview (keeps Firestore docs small).
-    var photo=(s.dataUrl && /^https?:/i.test(s.dataUrl))?s.dataUrl:null;
+  var p=drawerProduct;  // capture before closeDrawer() clears it
+  p.variants=drawerSlots.map(function(s){
+    // Persist the WebP data URL (or an http URL from older uploads); skip transient blob: previews.
+    var photo=(s.dataUrl && /^(data:|https?:)/i.test(s.dataUrl))?s.dataUrl:null;
     return {color:s.color||'', hex:s.hex||'#888888', photo:photo};
   });
-  // Route through saveOneProduct so the doc id stays p.id (same as row-save) — avoids duplicate docs.
-  saveOneProduct(drawerProduct);
-  renderSheet();
-  toast('Saved '+drawerProduct.variants.length+' color variant'+(drawerProduct.variants.length!==1?'s':''),'success');
+  p._dirty=true;
+  var n=p.variants.length;
   closeDrawer();
+  // Route through saveOneProduct so the doc id stays p.id (same as row-save) — avoids duplicate docs.
+  // If the product is still missing required info, saveOneProduct reports it; the photos stay
+  // attached to the row (dirty) so they persist once the rest is filled in and ✓ is clicked.
+  saveOneProduct(p).then(function(ok){
+    renderSheet();
+    if(ok) toast('Saved '+n+' color variant'+(n!==1?'s':''),'success');
+  });
 }
 $_('drawerCancel').addEventListener('click',closeDrawer);
 $_('drawerClose').addEventListener('click',closeDrawer);
@@ -718,6 +852,19 @@ $_('saveSettingsBtn').addEventListener('click',function(){
   fbSaveSettings(SETTINGS).then(function(){toast('Settings saved','success');});
   // Also save appearance for storefront
   fbSaveAppearance({hero:SETTINGS.heroImage||null,featured:SETTINGS.featuredImage||null});
+});
+
+// Delivery keys → settings/delivery doc. Write-only (rules block reading it back), so we only
+// send the fields that were actually filled in, leaving the rest untouched.
+$_('saveDeliveryBtn').addEventListener('click',function(){
+  var d={}, id=$_('yalidineId').value.trim(), tok=$_('yalidineToken').value.trim(), wil=$_('yalidineWilaya').value.trim();
+  if(id) d.apiId=id;
+  if(tok) d.apiToken=tok;
+  if(wil) d.fromWilaya=wil;
+  if(!Object.keys(d).length){ toast('Enter at least one field to save','error'); return; }
+  db.collection('settings').doc('delivery').set(d,{merge:true})
+    .then(function(){ $_('yalidineId').value=''; $_('yalidineToken').value=''; toast('Delivery keys saved','success'); })
+    .catch(function(e){ toast('Save failed: '+((e&&e.code)||(e&&e.message)||'error'),'error'); });
 });
 $_('clearAllBtn').addEventListener('click',function(){
   if(!confirm('PERMANENTLY DELETE ALL DATA from Firestore? This CANNOT be undone!')) return;

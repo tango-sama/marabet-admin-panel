@@ -7,6 +7,8 @@
 <meta name="description" content="بازار مرابط — وجهة الأحذية والحقائب الفاخرة في تقرت، الجزائر.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -511,7 +513,7 @@ const CATS=[
 /* To show a real photo per color, add an "img" field to each color:
    {n:'أبيض', h:'#FFFFFF', img:'images/airmax-white.jpg'}
    When a color has no img, the emoji is shown as a placeholder. */
-const PRODUCTS=[
+let PRODUCTS=[
   {id:1,name:'Air Max Classic',brand:'Nike',cat:'sports',price:4500,sizes:'39-45',badge:'جديد',emoji:'👟',colors:[{n:'أبيض',h:'#FFFFFF'},{n:'أسود',h:'#111'},{n:'أحمر',h:'#E53935'}]},
   {id:2,name:'Elegant Heel',brand:'Bata',cat:'womens_shoes',price:3200,sizes:'36-41',badge:'الأكثر طلباً',emoji:'👠',colors:[{n:'أسود',h:'#111'},{n:'بيج',h:'#D4B896'}]},
   {id:3,name:'Oxford Formal',brand:'Adidas',cat:'mens_shoes',price:5800,sizes:'40-46',badge:null,emoji:'👞',colors:[{n:'بني',h:'#795548'},{n:'أسود',h:'#111'}]},
@@ -538,11 +540,11 @@ function renderProducts(cat){
   if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--ink-2);padding:3rem;text-align:center">لا توجد منتجات في هذا الصنف حالياً.</div>';return;}
   grid.innerHTML=list.map(p=>{
     const ci=activeColors[p.id]||0;
-    const dots=p.colors.map((c,i)=>`<div class="cdot${i===ci?' on':''}" data-pid="${p.id}" data-ci="${i}" style="background:${c.h};border-color:${i===ci?'var(--ink)':'var(--line)'}" onclick="event.stopPropagation();setColor(${p.id},${i})" title="${c.n}"></div>`).join('');
+    const dots=p.colors.map((c,i)=>`<div class="cdot${i===ci?' on':''}" data-pid="${p.id}" data-ci="${i}" style="background:${c.h};border-color:${i===ci?'var(--ink)':'var(--line)'}" onclick="event.stopPropagation();setColor('${p.id}',${i})" title="${c.n}"></div>`).join('');
     const cur=p.colors[ci];
     // each color can carry its own image; fall back to base emoji
     const visual=cur.img?`<img src="${cur.img}" alt="${p.name} ${cur.n}" style="width:100%;height:100%;object-fit:cover">`:p.emoji;
-    return `<article class="pcard" data-card="${p.id}" onclick="order(${p.id})">
+    return `<article class="pcard" data-card="${p.id}" onclick="location.href='product.html?id=${p.id}'">
       <div class="pcard-img">
         ${p.badge?`<span class="pcard-badge">${p.badge}</span>`:''}
         <span class="pcard-fav" onclick="event.stopPropagation()">♡</span>
@@ -559,7 +561,7 @@ function renderProducts(cat){
 }
 function setColor(pid,i){
   activeColors[pid]=i;
-  const p=PRODUCTS.find(x=>x.id===pid); if(!p) return;
+  const p=PRODUCTS.find(x=>String(x.id)===String(pid)); if(!p) return;
   const col=p.colors[i];
   // update only this card's image
   const visualEl=document.querySelector('.pe[data-visual="'+pid+'"]');
@@ -580,7 +582,7 @@ function setColor(pid,i){
 }
 function filterTo(cat){currentFilter=cat;document.querySelectorAll('.fpill').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));renderProducts(cat);document.getElementById('collection').scrollIntoView({behavior:'smooth'});}
 document.getElementById('filterBar').addEventListener('click',e=>{const p=e.target.closest('.fpill');if(!p)return;currentFilter=p.dataset.cat;document.querySelectorAll('.fpill').forEach(x=>x.classList.toggle('active',x===p));renderProducts(p.dataset.cat);});
-function order(pid){const p=PRODUCTS.find(x=>x.id===pid);if(!p)return;const c=p.colors[activeColors[pid]||0];const msg=encodeURIComponent(`مرحبا، أريد طلب:\nالمنتج: ${p.name} — ${p.brand}\nاللون: ${c.n}\nالسعر: ${p.price} دج\n\nيرجى إخباري بالمقاسات المتاحة. شكراً!`);window.open('https://wa.me/213772423191?text='+msg,'_blank');}
+function order(pid){const p=PRODUCTS.find(x=>String(x.id)===String(pid));if(!p)return;const c=p.colors[activeColors[pid]||0];const msg=encodeURIComponent(`مرحبا، أريد طلب:\nالمنتج: ${p.name} — ${p.brand}\nاللون: ${c.n}\nالسعر: ${p.price} دج\n\nيرجى إخباري بالمقاسات المتاحة. شكراً!`);window.open('https://wa.me/213772423191?text='+msg,'_blank');}
 
 function submitForm(e){e.preventDefault();const n=document.getElementById('fname').value,ph=document.getElementById('fphone').value,pr=document.getElementById('fproduct').value,m=document.getElementById('fmsg').value;const t=`مرحبا، اسمي ${n}${ph?'\nهاتف: '+ph:''}${pr?'\nالمنتج: '+pr:''}\n\n${m}`;window.open('https://wa.me/213772423191?text='+encodeURIComponent(t),'_blank');}
 
@@ -591,6 +593,36 @@ document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 document.getElementById('burger').addEventListener('click',()=>{const m=document.getElementById('navMenu');const open=m.style.display==='flex';m.style.cssText=open?'':'display:flex;flex-direction:column;position:fixed;top:58px;right:0;left:0;background:rgba(247,245,241,.98);padding:2rem;gap:1.5rem;border-bottom:1px solid var(--line);z-index:199;box-shadow:var(--shadow)';});
 
 renderProducts('all');
+
+// ── load live products from Firestore (managed in the admin panel) ──
+(function loadFirestoreProducts(){
+  try{
+    firebase.initializeApp({
+      apiKey:"AIzaSyAiL0J8poOLyQW9PUDUacPuKah0L2JMLeY",
+      authDomain:"mrabet-fb38c.firebaseapp.com",
+      projectId:"mrabet-fb38c",
+      storageBucket:"mrabet-fb38c.firebasestorage.app",
+      messagingSenderId:"195655893976",
+      appId:"1:195655893976:web:2c42fa40c7f27769c5a8ad"
+    });
+  }catch(e){/* already initialized */}
+  firebase.firestore().collection('products').get().then(function(snap){
+    var list=[];
+    snap.forEach(function(d){
+      var p=d.data();
+      if(p.active===false) return;                 // hide deactivated products
+      var colors=(p.variants||[]).map(function(v){
+        return {n:v.color||'', h:v.hex||'#888888', img:v.photo||null};
+      });
+      if(!colors.length) colors=[{n:'',h:'#888888',img:null}];
+      list.push({
+        id:d.id, name:p.name||'', brand:p.brand||'', cat:p.category||'',
+        price:+p.price||0, sizes:p.sizes||'', badge:null, emoji:'👟', colors:colors
+      });
+    });
+    if(list.length){ PRODUCTS=list; renderProducts(currentFilter); }
+  }).catch(function(err){ console.error('Could not load products from Firestore:',err); });
+})();
 
 // ── load hero & featured images saved from the admin panel ──
 (function loadStorefrontImages(){
