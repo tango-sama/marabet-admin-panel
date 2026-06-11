@@ -30,7 +30,13 @@ const db = getFirestore();
 //   nam5/us  → "us-central1"   |   eur3/europe → "europe-west1"
 setGlobalOptions({region: "us-central1", maxInstances: 5});
 
-const YALIDINE_URL = "https://api.yalidine.com/v1/parcels/";
+const YALIDINE_URL = "https://api.yalidine.app/v1/parcels/";
+
+// price / declared_value must be integers between 0 and 150000 (Yalidine constraint)
+function clampAmount(n) {
+  const v = Math.round(Number(n) || 0);
+  return Math.max(0, Math.min(150000, v));
+}
 
 // "Mohamed Amine" -> {firstname:"Mohamed", familyname:"Amine"}; single word duplicates.
 function splitName(full) {
@@ -62,10 +68,15 @@ exports.createDeliveryOnFulfill = onDocumentUpdated(
       }
 
       const {firstname, familyname} = splitName(after.customer);
-      const phone = String(after.phone || "").replace(/[^\d]/g, "");
-      const amount = Number(after.subtotal || after.total || after.price || 0);
+      // contact_phone must start with 0 (e.g. 0550123456). Strip non-digits; re-add 0 if missing.
+      let phone = String(after.phone || "").replace(/[^\d]/g, "");
+      if (phone && phone[0] !== "0") phone = "0" + phone;
+      // COD = goods value to collect from the receiver. freeshipping:false means the receiver
+      // also pays Yalidine's delivery fee on top, so collect the product subtotal here.
+      const amount = clampAmount(after.subtotal || after.total || after.price || 0);
 
-      // Yalidine wants an ARRAY of parcels. order_id must be unique per parcel.
+      // Yalidine wants an ARRAY of parcels. order_id must be unique per request.
+      // All of these fields are REQUIRED by the create endpoint (strict types).
       const parcel = {
         order_id: String(after.num || event.params.orderId),
         from_wilaya_name: cred.fromWilaya || "Touggourt",
@@ -77,13 +88,13 @@ exports.createDeliveryOnFulfill = onDocumentUpdated(
         to_wilaya_name: after.wilaya || "",
         product_list: [after.product, after.brand, after.color, after.size]
             .filter(Boolean).join(" / ") + (after.qty ? ` x${after.qty}` : ""),
-        price: amount, // amount to collect from customer (COD). Adjust if you collect delivery too.
+        price: amount,
         do_insurance: false,
         declared_value: amount,
         length: 30, width: 20, height: 12, weight: 1, // shoebox defaults — tune as needed
         freeshipping: false,
-        is_stopdesk: false, // TODO: stopdesk needs a stopdesk_id lookup; defaulting to home delivery
-        has_exchange: 0,
+        is_stopdesk: false, // stopdesk needs a stopdesk_id lookup; defaulting to home delivery
+        has_exchange: false,
       };
 
       try {
