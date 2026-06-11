@@ -163,6 +163,40 @@ textarea.json-input{width:100%;min-height:140px;background:var(--card2);border:1
 .info-key{font-size:.68rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;width:84px;flex-shrink:0}
 .info-val{font-size:.85rem;color:var(--white)}
 a{color:var(--gold)}
+
+/* ═══════════════════════ Mobile / responsive ═══════════════════════ */
+.nav-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55}
+@media (max-width:900px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:768px){
+  /* Sidebar slides in over the content instead of pushing it */
+  .sidebar,.sidebar.collapsed{width:250px;min-width:250px;transform:translateX(-100%);border-right:1px solid var(--border);box-shadow:2px 0 24px rgba(0,0,0,.6);z-index:60}
+  .sidebar.open,.sidebar.collapsed.open{transform:translateX(0)}
+  .sidebar-logo{padding-left:3.4rem}
+  .nav-item{padding:.85rem 1.25rem;font-size:.92rem}
+  .main,.main.expanded{margin-left:0}
+  .nav-backdrop.show{display:block}
+  /* Hamburger stays on top and tappable */
+  .collapse-btn,.collapse-btn.at-edge{left:10px;top:11px;width:38px;height:38px;font-size:1.15rem;z-index:70}
+  .topbar{padding:.6rem 1rem .6rem 3.6rem}
+  .topbar-title{margin-left:0;font-size:.95rem}
+  .content{padding:.85rem}
+  .sheet-wrap{-webkit-overflow-scrolling:touch}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:.6rem}
+  .stat-value{font-size:1.45rem}
+  .toolbar-right{margin-left:0}
+  /* Modal + drawer go full width */
+  .modal{width:100%;max-width:100%;padding:1.25rem}
+  .drawer{width:100%;max-width:100%}
+  .slot-swatches{grid-template-columns:repeat(8,1fr)}
+  .slot-thumb{width:60px;height:60px}
+  .toast{left:1rem;right:1rem;bottom:1rem;max-width:none}
+  .settings-wrap{max-width:100%}
+}
+@media (max-width:430px){
+  .slot-swatches{grid-template-columns:repeat(7,1fr)}
+}
 </style>
 </head>
 <body>
@@ -181,6 +215,7 @@ a{color:var(--gold)}
     <div class="nav-item" data-page="settings"><span class="icon">⚙️</span> Settings</div>
   </nav>
 </aside>
+<div class="nav-backdrop" id="navBackdrop"></div>
 
 <div class="main" id="main">
   <div class="topbar"><div class="topbar-title" id="pageTitle">Products</div></div>
@@ -397,12 +432,23 @@ function showPage(name) {
   if(name==='settings') renderSettings();
   if(name==='dashboard') updateStats();
 }
-document.querySelectorAll('.nav-item').forEach(function(n){n.addEventListener('click',function(){showPage(n.dataset.page);});});
+document.querySelectorAll('.nav-item').forEach(function(n){n.addEventListener('click',function(){showPage(n.dataset.page);if(isMobile())closeMobileNav();});});
+
+function isMobile(){ return window.matchMedia('(max-width:768px)').matches; }
+function closeMobileNav(){ $_('sidebar').classList.remove('open'); $_('navBackdrop').classList.remove('show'); }
 
 $_('collapseBtn').addEventListener('click',function(){
   var s=$_('sidebar'),m=$_('main'),b=$_('collapseBtn');
-  s.classList.toggle('collapsed');m.classList.toggle('expanded');b.classList.toggle('at-edge');
+  if(isMobile()){
+    // Phone: slide the sidebar in/out over the content with a dimmed backdrop
+    var open=s.classList.toggle('open');
+    $_('navBackdrop').classList.toggle('show',open);
+  } else {
+    // Desktop: collapse/expand and push the content
+    s.classList.toggle('collapsed');m.classList.toggle('expanded');b.classList.toggle('at-edge');
+  }
 });
+$_('navBackdrop').addEventListener('click',closeMobileNav);
 
 // ═══════════════════════════════════════════════════════════
 // PRODUCTS SHEET
