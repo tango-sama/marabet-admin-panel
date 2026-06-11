@@ -7,6 +7,8 @@
 <meta name="description" content="بازار مرابط — وجهة الأحذية والحقائب الفاخرة في تقرت، الجزائر.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -467,7 +469,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
     </div>
     <div class="cform">
       <div class="cform-t">أرسل لنا رسالة</div>
-      <form onsubmit="submitForm(event)">
+      <form id="contactForm">
         <div class="ffield"><label>الاسم الكامل</label><input class="finput" id="fname" required></div>
         <div class="ffield"><label>رقم الهاتف</label><input class="finput" id="fphone" type="tel" style="direction:ltr;text-align:right"></div>
         <div class="ffield"><label>المنتج المطلوب (اختياري)</label><input class="finput" id="fproduct"></div>
@@ -501,6 +503,14 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 <a class="wa" href="https://wa.me/213772423191" target="_blank" aria-label="WhatsApp">💬</a>
 
 <script>
+// ═══════════ FIREBASE ═══════════
+firebase.initializeApp({
+  apiKey:"AIzaSyAiL0J8poOLyQW9PUDUacPuKah0L2JMLeY",authDomain:"mrabet-fb38c.firebaseapp.com",
+  projectId:"mrabet-fb38c",storageBucket:"mrabet-fb38c.firebasestorage.app",
+  messagingSenderId:"195655893976",appId:"1:195655893976:web:2c42fa40c7f27769c5a8ad"
+});
+var db=firebase.firestore();
+
 const CATS=[
   {key:'mens_shoes',name:'رجالي',count:'120 منتج',icon:'👞'},
   {key:'womens_shoes',name:'نسائي',count:'150 منتج',icon:'👠'},
@@ -508,18 +518,18 @@ const CATS=[
   {key:'bags',name:'حقائب',count:'60 منتج',icon:'👜'},
   {key:'sports',name:'رياضي',count:'90 منتج',icon:'⚽'},
 ];
-/* To show a real photo per color, add an "img" field to each color:
-   {n:'أبيض', h:'#FFFFFF', img:'images/airmax-white.jpg'}
-   When a color has no img, the emoji is shown as a placeholder. */
-const PRODUCTS=[
-  {id:1,name:'Air Max Classic',brand:'Nike',cat:'sports',price:4500,sizes:'39-45',badge:'جديد',emoji:'👟',colors:[{n:'أبيض',h:'#FFFFFF'},{n:'أسود',h:'#111'},{n:'أحمر',h:'#E53935'}]},
-  {id:2,name:'Elegant Heel',brand:'Bata',cat:'womens_shoes',price:3200,sizes:'36-41',badge:'الأكثر طلباً',emoji:'👠',colors:[{n:'أسود',h:'#111'},{n:'بيج',h:'#D4B896'}]},
-  {id:3,name:'Oxford Formal',brand:'Adidas',cat:'mens_shoes',price:5800,sizes:'40-46',badge:null,emoji:'👞',colors:[{n:'بني',h:'#795548'},{n:'أسود',h:'#111'}]},
-  {id:4,name:'Summer Sandal',brand:'Local',cat:'womens_shoes',price:1800,sizes:'36-40',badge:'عرض',emoji:'🩴',colors:[{n:'ذهبي',h:'#C9A84C'},{n:'أبيض',h:'#FFFFFF'}]},
-  {id:5,name:'Kids Runner',brand:'Puma',cat:'kids',price:2400,sizes:'28-35',badge:null,emoji:'👟',colors:[{n:'أزرق',h:'#1565C0'},{n:'وردي',h:'#E91E63'}]},
-  {id:6,name:'Leather Tote',brand:'Local',cat:'bags',price:3500,sizes:'مقاس واحد',badge:null,emoji:'👜',colors:[{n:'بني',h:'#795548'},{n:'أسود',h:'#111'}]},
-  {id:7,name:'Sport Max',brand:'Reebok',cat:'sports',price:5200,sizes:'38-46',badge:'جديد',emoji:'👟',colors:[{n:'رمادي',h:'#9E9E9E'},{n:'أسود',h:'#111'},{n:'أبيض',h:'#FFFFFF'}]},
-  {id:8,name:'Classic 574',brand:'New Balance',cat:'mens_shoes',price:6800,sizes:'39-46',badge:null,emoji:'👟',colors:[{n:'أبيض',h:'#FFFFFF'},{n:'بحري',h:'#1A237E'}]},
+// Live catalog — populated from Firestore on load. DEFAULT_PRODUCTS shows only
+// as a fallback when Firestore has no active products yet (or while offline).
+let PRODUCTS=[];
+const DEFAULT_PRODUCTS=[
+  {id:'1',name:'Air Max Classic',brand:'Nike',cat:'sports',price:4500,sizes:'39-45',badge:'جديد',emoji:'👟',colors:[{n:'أبيض',h:'#FFFFFF'},{n:'أسود',h:'#111'},{n:'أحمر',h:'#E53935'}]},
+  {id:'2',name:'Elegant Heel',brand:'Bata',cat:'womens_shoes',price:3200,sizes:'36-41',badge:'الأكثر طلباً',emoji:'👠',colors:[{n:'أسود',h:'#111'},{n:'بيج',h:'#D4B896'}]},
+  {id:'3',name:'Oxford Formal',brand:'Adidas',cat:'mens_shoes',price:5800,sizes:'40-46',badge:null,emoji:'👞',colors:[{n:'بني',h:'#795548'},{n:'أسود',h:'#111'}]},
+  {id:'4',name:'Summer Sandal',brand:'Local',cat:'womens_shoes',price:1800,sizes:'36-40',badge:'عرض',emoji:'🩴',colors:[{n:'ذهبي',h:'#C9A84C'},{n:'أبيض',h:'#FFFFFF'}]},
+  {id:'5',name:'Kids Runner',brand:'Puma',cat:'kids',price:2400,sizes:'28-35',badge:null,emoji:'👟',colors:[{n:'أزرق',h:'#1565C0'},{n:'وردي',h:'#E91E63'}]},
+  {id:'6',name:'Leather Tote',brand:'Local',cat:'bags',price:3500,sizes:'مقاس واحد',badge:null,emoji:'👜',colors:[{n:'بني',h:'#795548'},{n:'أسود',h:'#111'}]},
+  {id:'7',name:'Sport Max',brand:'Reebok',cat:'sports',price:5200,sizes:'38-46',badge:'جديد',emoji:'👟',colors:[{n:'رمادي',h:'#9E9E9E'},{n:'أسود',h:'#111'},{n:'أبيض',h:'#FFFFFF'}]},
+  {id:'8',name:'Classic 574',brand:'New Balance',cat:'mens_shoes',price:6800,sizes:'39-46',badge:null,emoji:'👟',colors:[{n:'أبيض',h:'#FFFFFF'},{n:'بحري',h:'#1A237E'}]},
 ];
 
 const brands=['NIKE','ADIDAS','PUMA','BATA','REEBOK','NEW BALANCE','SKECHERS','LACOSTE'];
@@ -538,11 +548,11 @@ function renderProducts(cat){
   if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--ink-2);padding:3rem;text-align:center">لا توجد منتجات في هذا الصنف حالياً.</div>';return;}
   grid.innerHTML=list.map(p=>{
     const ci=activeColors[p.id]||0;
-    const dots=p.colors.map((c,i)=>`<div class="cdot${i===ci?' on':''}" data-pid="${p.id}" data-ci="${i}" style="background:${c.h};border-color:${i===ci?'var(--ink)':'var(--line)'}" onclick="event.stopPropagation();setColor(${p.id},${i})" title="${c.n}"></div>`).join('');
+    const dots=p.colors.map((c,i)=>`<div class="cdot${i===ci?' on':''}" data-pid="${p.id}" data-ci="${i}" style="background:${c.h};border-color:${i===ci?'var(--ink)':'var(--line)'}" onclick="event.stopPropagation();setColor('${p.id}',${i})" title="${c.n}"></div>`).join('');
     const cur=p.colors[ci];
     // each color can carry its own image; fall back to base emoji
     const visual=cur.img?`<img src="${cur.img}" alt="${p.name} ${cur.n}" style="width:100%;height:100%;object-fit:cover">`:p.emoji;
-    return `<article class="pcard" data-card="${p.id}" onclick="order(${p.id})">
+    return `<article class="pcard" data-card="${p.id}" onclick="order('${p.id}')">
       <div class="pcard-img">
         ${p.badge?`<span class="pcard-badge">${p.badge}</span>`:''}
         <span class="pcard-fav" onclick="event.stopPropagation()">♡</span>
@@ -559,7 +569,7 @@ function renderProducts(cat){
 }
 function setColor(pid,i){
   activeColors[pid]=i;
-  const p=PRODUCTS.find(x=>x.id===pid); if(!p) return;
+  const p=PRODUCTS.find(x=>String(x.id)===String(pid)); if(!p) return;
   const col=p.colors[i];
   // update only this card's image
   const visualEl=document.querySelector('.pe[data-visual="'+pid+'"]');
@@ -580,9 +590,10 @@ function setColor(pid,i){
 }
 function filterTo(cat){currentFilter=cat;document.querySelectorAll('.fpill').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));renderProducts(cat);document.getElementById('collection').scrollIntoView({behavior:'smooth'});}
 document.getElementById('filterBar').addEventListener('click',e=>{const p=e.target.closest('.fpill');if(!p)return;currentFilter=p.dataset.cat;document.querySelectorAll('.fpill').forEach(x=>x.classList.toggle('active',x===p));renderProducts(p.dataset.cat);});
-function order(pid){const p=PRODUCTS.find(x=>x.id===pid);if(!p)return;const c=p.colors[activeColors[pid]||0];const msg=encodeURIComponent(`مرحبا، أريد طلب:\nالمنتج: ${p.name} — ${p.brand}\nاللون: ${c.n}\nالسعر: ${p.price} دج\n\nيرجى إخباري بالمقاسات المتاحة. شكراً!`);window.open('https://wa.me/213772423191?text='+msg,'_blank');}
+// Open the order page for this product; checkout there writes the order to Firestore.
+function order(pid){window.location.href='order.html?pid='+encodeURIComponent(pid);}
 
-function submitForm(e){e.preventDefault();const n=document.getElementById('fname').value,ph=document.getElementById('fphone').value,pr=document.getElementById('fproduct').value,m=document.getElementById('fmsg').value;const t=`مرحبا، اسمي ${n}${ph?'\nهاتف: '+ph:''}${pr?'\nالمنتج: '+pr:''}\n\n${m}`;window.open('https://wa.me/213772423191?text='+encodeURIComponent(t),'_blank');}
+document.getElementById('contactForm').addEventListener('submit',function(e){e.preventDefault();const n=document.getElementById('fname').value,ph=document.getElementById('fphone').value,pr=document.getElementById('fproduct').value,m=document.getElementById('fmsg').value;const t=`مرحبا، اسمي ${n}${ph?'\nهاتف: '+ph:''}${pr?'\nالمنتج: '+pr:''}\n\n${m}`;window.open('https://wa.me/213772423191?text='+encodeURIComponent(t),'_blank');});
 
 const nav=document.getElementById('nav');
 addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>40));
@@ -590,22 +601,28 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.targe
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 document.getElementById('burger').addEventListener('click',()=>{const m=document.getElementById('navMenu');const open=m.style.display==='flex';m.style.cssText=open?'':'display:flex;flex-direction:column;position:fixed;top:58px;right:0;left:0;background:rgba(247,245,241,.98);padding:2rem;gap:1.5rem;border-bottom:1px solid var(--line);z-index:199;box-shadow:var(--shadow)';});
 
-renderProducts('all');
+// ── INIT: load everything from Firestore (managed by the admin panel) ──
+(function init(){
+  // Hero + featured images (appearance/site doc)
+  db.collection('appearance').doc('site').get().then(function(doc){
+    var appear=doc.exists?doc.data():{};
+    if(appear.hero){const hp=document.querySelector('.hero-photo .ph-illus');if(hp) hp.outerHTML='<img src="'+appear.hero+'" alt="بازار مرابط">';}
+    if(appear.featured){const fv=document.querySelector('.featured-visual .big');if(fv) fv.outerHTML='<img src="'+appear.featured+'" alt="مجموعة جديدة" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">';}
+  }).catch(function(){});
 
-// ── load hero & featured images saved from the admin panel ──
-(function loadStorefrontImages(){
-  let appear={};
-  try{ appear=JSON.parse(localStorage.getItem('bm_appearance'))||{}; }catch(e){}
-  // hero
-  if(appear.hero){
-    const hp=document.querySelector('.hero-photo .ph-illus');
-    if(hp) hp.outerHTML='<img src="'+appear.hero+'" alt="بازار مرابط">';
-  }
-  // featured
-  if(appear.featured){
-    const fv=document.querySelector('.featured-visual .big');
-    if(fv) fv.outerHTML='<img src="'+appear.featured+'" alt="مجموعة جديدة" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">';
-  }
+  // Active products
+  db.collection('products').where('active','==',true).get().then(function(snap){
+    if(!snap.empty){
+      PRODUCTS=snap.docs.map(function(d){
+        var p=d.data();
+        var variants=(p.variants||[]).map(function(v){return {n:v.color||'',h:v.hex||'#888',img:v.photo||null};});
+        return {id:d.id,name:p.name||'',brand:p.brand||'',cat:p.category||'sports',price:p.price||0,sizes:p.sizes||'',emoji:'👟',colors:variants.length?variants:[{n:'',h:'#888'}],badge:null};
+      });
+    } else {
+      PRODUCTS=DEFAULT_PRODUCTS;
+    }
+    renderProducts(currentFilter);
+  }).catch(function(){ PRODUCTS=DEFAULT_PRODUCTS; renderProducts(currentFilter); });
 })();
 
 // safety: ensure hero headline is always visible even if animation is interrupted

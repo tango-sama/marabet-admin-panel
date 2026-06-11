@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Allow public read/write — this is an open admin panel.
+      // Tighten these rules if you later add authentication.
+      allow read, write: if true;
+    }
+  }
+}

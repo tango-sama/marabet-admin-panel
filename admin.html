@@ -101,13 +101,13 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .drawer-body{flex:1;overflow-y:auto;padding:1.25rem 1.5rem}
 .drawer-foot{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.6rem}
 .drawer-dropzone{border:2px dashed var(--border);border-radius:6px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;margin-bottom:1.25rem}
-.drawer-dropzone:hover{border-color:var(--gold);background:var(--gold-dim)}
-.drawer-dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drawer-dropzone:hover,.drawer-dropzone.drag{border-color:var(--gold);background:var(--gold-dim)}
+.drawer-dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drawer-dropzone-icon{font-size:1.8rem;margin-bottom:.4rem}
 .drawer-dropzone-text{font-size:.82rem;color:var(--white)}
-.drawer-dropzone-hint{font-size:.7rem;color:var(--gray)}
-.photo-slots{display:flex;flex-direction:column;gap:.75rem}
-.photo-slot{background:var(--card2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.drawer-dropzone-hint{font-size:.7rem;color:var(--gray);margin-top:.2rem}
+.photo-slots{display:flex;flex-direction:column;gap:1rem}
+.photo-slot{background:var(--card2);border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .2s}
 .photo-slot.unassigned{border-left:3px solid var(--warning)}
 .photo-slot.assigned{border-left:3px solid var(--success)}
 .photo-slot-top{display:flex;gap:.75rem;align-items:center;padding:.75rem}
@@ -116,16 +116,25 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .slot-info{flex:1;min-width:0}
 .slot-filename{font-size:.72rem;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.4rem}
 .slot-color-row{display:flex;align-items:center;gap:6px}
-.slot-color-preview{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);flex-shrink:0}
+.slot-color-preview{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);flex-shrink:0;transition:background .15s}
 .slot-color-name{font-size:.8rem;color:var(--white);font-weight:600;flex:1}
+.slot-color-none{font-size:.78rem;color:var(--warning);flex:1}
 .slot-rm{background:transparent;border:none;color:var(--gray);cursor:pointer;font-size:1rem;padding:0 4px}
 .slot-rm:hover{color:var(--danger)}
+.slot-pick-note{font-size:.72rem;color:var(--warning);background:rgba(255,152,0,.08);border-top:1px solid rgba(255,152,0,.2);padding:.35rem .75rem}
 .slot-swatches{border-top:1px solid var(--border);padding:.65rem .75rem;display:grid;grid-template-columns:repeat(11,1fr);gap:6px}
-.slot-swatch{width:22px;height:22px;border-radius:4px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slot-swatch{width:22px;height:22px;border-radius:4px;border:2px solid transparent;cursor:pointer;position:relative;box-sizing:border-box;transition:box-shadow .12s}
 .slot-swatch:hover:not(.taken){box-shadow:0 0 0 2px var(--gold)}
 .slot-swatch.picked{border-color:var(--white)}
-.slot-swatch.picked::after{content:'✓';font-size:.65rem;font-weight:700}
+.slot-swatch.picked::after{content:'\2713';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:rgba(255,255,255,.95)}
+.slot-swatch[data-dark="1"].picked{border-color:#333}
+.slot-swatch[data-dark="1"].picked::after{color:rgba(0,0,0,.8)}
 .slot-swatch.taken{opacity:.22;cursor:not-allowed;pointer-events:none;filter:grayscale(.5)}
+.slot-custom-wrap{grid-column:1/-1;display:flex;align-items:center;gap:6px;margin-top:4px;padding-top:6px;border-top:1px dashed var(--border)}
+.slot-custom-wrap label{font-size:.66rem;color:var(--gray);white-space:nowrap}
+.slot-custom-wrap input[type=color]{width:24px;height:24px;border-radius:4px;border:1px solid var(--border);background:var(--card2);cursor:pointer;padding:1px}
+.slot-custom-name{background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.72rem;padding:4px 8px;border-radius:20px;outline:none;flex:1}
+.slot-custom-name:focus{border-color:var(--gold)}
 
 .modal{background:var(--card);border:1px solid var(--border);border-radius:8px;width:520px;max-width:92vw;max-height:90vh;overflow-y:auto;padding:1.75rem;position:relative}
 .modal-title{font-size:1.05rem;font-weight:600;color:var(--gold);margin-bottom:1.25rem;font-family:'Amiri',serif}
@@ -226,12 +235,23 @@ a{color:var(--gold)}
 
 <!-- PHOTO DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay"><div class="drawer">
-  <div class="drawer-head"><div><div class="drawer-head-title">Product Photos</div><div style="font-size:.72rem;color:var(--gray)">Upload & assign photos to colors</div></div><button class="btn-icon" id="drawerClose">✕</button></div>
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-head-title" id="drawerTitle">Photos &amp; Colors</div>
+      <div style="font-size:.72rem;color:var(--gray)" id="drawerSub">Upload photos, then assign a color to each</div>
+    </div>
+    <button class="btn-icon" id="drawerClose">✕</button>
+  </div>
   <div class="drawer-body">
-    <div class="drawer-dropzone" id="drawerDrop"><div class="drawer-dropzone-icon">📸</div><div class="drawer-dropzone-text">Drop images here or click</div><div class="drawer-dropzone-hint">Converts to WebP automatically</div><input type="file" id="drawerFile" multiple accept="image/*"></div>
+    <div class="drawer-dropzone" id="drawerDrop">
+      <input type="file" id="drawerFile" accept="image/*" multiple>
+      <div class="drawer-dropzone-icon">📁</div>
+      <div class="drawer-dropzone-text">Drop photos or click to browse</div>
+      <div class="drawer-dropzone-hint">Each photo = one color variant · converts to WebP</div>
+    </div>
     <div class="photo-slots" id="photoSlots"></div>
   </div>
-  <div class="drawer-foot"><button class="btn btn-gold" id="drawerSave">✅ Save Photos</button><button class="btn btn-outline" id="drawerCancel">Cancel</button></div>
+  <div class="drawer-foot"><button class="btn btn-outline" id="drawerCancel" style="flex:1">Cancel</button><button class="btn btn-gold" id="drawerSave" style="flex:2">✓ Save Colors</button></div>
 </div></div>
 
 <!-- CUSTOMER MODAL -->
@@ -264,6 +284,9 @@ try { db.enablePersistence({synchronizeTabs:true}); } catch(e) {}
 function $_(id) { return document.getElementById(id); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function uid() { return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10); }
+// Firestore docs come back with _docId but no id; the sheet keys every edit/save/delete off p.id,
+// so mirror the doc id onto id or existing products become uneditable (and saving creates duplicates).
+function normIds(arr) { (arr||[]).forEach(function(x){ x.id = x._docId || x.id || uid(); }); return arr || []; }
 function toast(msg,type) { var t=$_('toast'); t.textContent=msg; t.className='toast '+(type||'')+' show'; clearTimeout(t._tid); t._tid=setTimeout(function(){t.classList.remove('show');},3500); }
 
 // WebP converter
@@ -283,7 +306,17 @@ function convertToWebP(file) {
 // ═══════════════════════════════════════════════════════════
 var products=[], categories=[], orders=[], SETTINGS={}, currentPageName='products';
 var drawerProduct=null, drawerSlots=[];
-var swatches=['#FFFFFF','#000000','#F5F5DC','#808080','#FF0000','#0000FF','#008000','#FFFF00','#FFA500','#800080','#A52A2A','#FFC0CB','#00FFFF','#8B4513','#E6E6FA','#40E0D0','#FFD700','#C0C0C0','#4B0082','#006400','#FF6347','#4682B4'];
+// Preset colors — the picked swatch's name becomes the variant name (editable below).
+var PRESETS=[
+  {n:'White',h:'#FFFFFF',dark:1},{n:'Cream',h:'#FFF8E7',dark:1},{n:'Beige',h:'#D4B896',dark:1},
+  {n:'Yellow',h:'#FDD835',dark:1},{n:'Gold',h:'#C9A84C',dark:1},{n:'Orange',h:'#FB8C00'},
+  {n:'Red',h:'#E53935'},{n:'Pink',h:'#EC407A'},{n:'Purple',h:'#8E24AA'},
+  {n:'Navy',h:'#1A237E'},{n:'Blue',h:'#1565C0'},{n:'Sky',h:'#29B6F6',dark:1},
+  {n:'Teal',h:'#00897B'},{n:'Green',h:'#43A047'},{n:'Olive',h:'#827717'},
+  {n:'Khaki',h:'#A1887F'},{n:'Brown',h:'#795548'},{n:'Tan',h:'#BCAAA4',dark:1},
+  {n:'Silver',h:'#C0C0C0',dark:1},{n:'Gray',h:'#9E9E9E'},{n:'Charcoal',h:'#424242'},
+  {n:'Black',h:'#111111'}
+];
 
 // ═══════════════════════════════════════════════════════════
 // FIREBASE HELPERS
@@ -511,85 +544,139 @@ function openDrawer(pid) {
   drawerProduct=products.find(function(p){return p.id===pid;});
   if(!drawerProduct) return;
   if(!drawerProduct.variants) drawerProduct.variants=[];
-  drawerSlots=drawerProduct.variants.map(function(v,i){return{colorIndex:i,color:v.color,hex:v.hex,url:v.photo||null,file:null};});
+  // slot: {dataUrl(preview or stored URL), filename, color(name), hex, file(File to upload | null)}
+  drawerSlots=drawerProduct.variants.map(function(v){
+    return {dataUrl:v.photo||null, filename:v.color||'', color:v.color||'', hex:v.hex||'#888888', file:null};
+  });
+  $_('drawerTitle').textContent=drawerProduct.name||'Photos & Colors';
   renderDrawerSlots();
   $_('drawerOverlay').classList.add('open');
 }
 function closeDrawer(){ $_('drawerOverlay').classList.remove('open'); drawerProduct=null; drawerSlots=[]; }
 
+// Hexes already used by OTHER assigned slots — blocks picking the same color twice.
+function takenHexes(exclude){
+  return new Set(drawerSlots.filter(function(s,i){return i!==exclude && s.color;}).map(function(s){return s.hex;}));
+}
+function updateDrawerSub(){
+  var sub=$_('drawerSub'); if(!sub) return;
+  var n=drawerSlots.length, done=drawerSlots.filter(function(s){return s.color;}).length;
+  sub.textContent = n===0 ? 'Upload photos, then assign a color to each' : done+' of '+n+' photos assigned a color';
+}
+
 function renderDrawerSlots() {
-  var c=$_('photoSlots');
-  c.innerHTML=drawerSlots.map(function(s,i){
-    var cls=s.url?'assigned':'unassigned';
-    var thumb=s.url?'<img src="'+s.url+'" alt="">':(s.file?'<img src="'+URL.createObjectURL(s.file)+'" alt="">':'🖼');
-    var takenColors=drawerSlots.filter(function(x){return x.url||x.file;}).map(function(x){return x.hex;});
-    var swHtml=swatches.map(function(h){
-      var taken=takenColors.indexOf(h)!==-1&&h!==s.hex;
-      var picked=h===s.hex;
-      return '<div class="slot-swatch'+(picked?' picked':'')+(taken?' taken':'')+'" style="background:'+h+'" data-si="'+i+'" data-hex="'+h+'"></div>';
+  var c=$_('photoSlots'); if(!c) return;
+  if(!drawerSlots.length){ c.innerHTML=''; updateDrawerSub(); return; }
+  c.innerHTML=drawerSlots.map(function(slot,si){
+    var taken=takenHexes(si);
+    var assigned=!!slot.color;
+    var sw=PRESETS.map(function(col,ci){
+      var picked=slot.hex===col.h && slot.color===col.n;
+      var isTaken=taken.has(col.h) && !picked;
+      var cls='slot-swatch'+(picked?' picked':'')+(isTaken?' taken':'');
+      var click=isTaken?'':'onclick="pickColor('+si+','+ci+')"';
+      return '<div class="'+cls+'" style="background:'+col.h+'" data-dark="'+(col.dark||0)+'" title="'+(isTaken?col.n+' (used)':col.n)+'" '+click+'></div>';
     }).join('');
-    return '<div class="photo-slot '+cls+'">'
+    return '<div class="photo-slot '+(assigned?'assigned':'unassigned')+'">'
       +'<div class="photo-slot-top">'
-        +'<div class="slot-thumb">'+thumb+'</div>'
+        +'<div class="slot-thumb">'+(slot.dataUrl?'<img src="'+slot.dataUrl+'">':'📷')+'</div>'
         +'<div class="slot-info">'
-          +'<div class="slot-filename">'+(s.url||(s.file?s.file.name:'No photo'))+'</div>'
-          +'<div class="slot-color-row"><span class="slot-color-preview" style="background:'+(s.hex||'#888')+'"></span><span class="slot-color-name">'+esc(s.color||'Variant #'+(i+1))+'</span></div>'
+          +'<div class="slot-filename">'+(esc(slot.filename)||'Photo '+(si+1))+'</div>'
+          +'<div class="slot-color-row">'
+            +'<div class="slot-color-preview" style="background:'+(assigned?slot.hex:'transparent')+';border-style:'+(assigned?'solid':'dashed')+'"></div>'
+            +(assigned?'<span class="slot-color-name">'+esc(slot.color)+'</span>':'<span class="slot-color-none">⚠ Choose a color</span>')
+          +'</div>'
         +'</div>'
-        +'<button class="slot-rm" data-rmslot="'+i+'">🗑</button>'
+        +'<button class="slot-rm" onclick="removeSlot('+si+')">✕</button>'
       +'</div>'
-      +'<div class="slot-swatches">'+swHtml+'</div>'
+      +(!assigned?'<div class="slot-pick-note">Pick a color below for this photo</div>':'')
+      +'<div class="slot-swatches">'
+        +sw
+        +'<div class="slot-custom-wrap">'
+          +'<label>Custom:</label>'
+          +'<input type="color" value="'+(slot.hex||'#888888')+'" oninput="pickCustomColor('+si+',this.value)">'
+          +'<input class="slot-custom-name" placeholder="color name..." value="'+esc(slot.color)+'" oninput="pickCustomName('+si+',this.value)">'
+        +'</div>'
+      +'</div>'
     +'</div>';
   }).join('');
-
-  // Swatch clicks
-  c.querySelectorAll('.slot-swatch:not(.taken)').forEach(function(sw){
-    sw.addEventListener('click',function(){
-      var si=+sw.dataset.si, hex=sw.dataset.hex;
-      drawerSlots[si].hex=hex;
-      if(drawerProduct.variants&&drawerProduct.variants[si]) drawerProduct.variants[si].hex=hex;
-      renderDrawerSlots();
-    });
-  });
-  // Remove slot
-  c.querySelectorAll('[data-rmslot]').forEach(function(b){
-    b.addEventListener('click',function(){var si=+b.dataset.rmslot;drawerSlots[si].url=null;drawerSlots[si].file=null;renderDrawerSlots();});
-  });
+  updateDrawerSub();
 }
 
-// File drop in drawer
+// Pick a preset → its name becomes the variant name (full re-render).
+function pickColor(si,ci){ var col=PRESETS[ci]; drawerSlots[si].hex=col.h; drawerSlots[si].color=col.n; renderDrawerSlots(); }
+// Custom color picker — update hex + preview without re-render (keeps the native picker open).
+function pickCustomColor(si,hex){
+  drawerSlots[si].hex=hex;
+  var slots=document.querySelectorAll('.photo-slot');
+  if(slots[si]){ var pr=slots[si].querySelector('.slot-color-preview'); if(pr&&drawerSlots[si].color) pr.style.background=hex; }
+}
+// Editable variant name — patch the DOM in place so the text input keeps focus while typing.
+function pickCustomName(si,name){
+  drawerSlots[si].color=name;
+  var slots=document.querySelectorAll('.photo-slot'); if(!slots[si]) return;
+  var el=slots[si];
+  el.classList.toggle('assigned',!!name); el.classList.toggle('unassigned',!name);
+  var nameEl=el.querySelector('.slot-color-name,.slot-color-none');
+  if(nameEl){ nameEl.className=name?'slot-color-name':'slot-color-none'; nameEl.innerHTML=name?esc(name):'⚠ Choose a color'; }
+  var pr=el.querySelector('.slot-color-preview');
+  if(pr){ pr.style.background=name?drawerSlots[si].hex:'transparent'; pr.style.borderStyle=name?'solid':'dashed'; }
+  var note=el.querySelector('.slot-pick-note');
+  if(!name && !note){ note=document.createElement('div'); note.className='slot-pick-note'; note.textContent='Pick a color below for this photo'; el.querySelector('.photo-slot-top').after(note); }
+  else if(name && note){ note.remove(); }
+  updateDrawerSub();
+}
+function removeSlot(si){ drawerSlots.splice(si,1); renderDrawerSlots(); }
+
+// File drop / select — multiple files, each becomes its own slot.
 $_('drawerDrop').addEventListener('dragover',function(e){e.preventDefault();$_('drawerDrop').classList.add('drag');});
 $_('drawerDrop').addEventListener('dragleave',function(){$_('drawerDrop').classList.remove('drag');});
-$_('drawerDrop').addEventListener('drop',function(e){e.preventDefault();$_('drawerDrop').classList.remove('drag');handleDrawerFiles(e.dataTransfer.files);});
-$_('drawerDrop').addEventListener('click',function(){$_('drawerFile').click();});
-$_('drawerFile').addEventListener('change',function(){handleDrawerFiles($_('drawerFile').files);$_('drawerFile').value='';});
+$_('drawerDrop').addEventListener('drop',function(e){e.preventDefault();$_('drawerDrop').classList.remove('drag');loadFilesIntoSlots(e.dataTransfer.files);});
+$_('drawerFile').addEventListener('change',function(){loadFilesIntoSlots(this.files);this.value='';});
 
-function handleDrawerFiles(files) {
-  Array.from(files).forEach(function(file){
-    var empty=drawerSlots.find(function(s){return !s.url&&!s.file;});
-    if(empty) { empty.file=file; empty.url=URL.createObjectURL(file); }
+function loadFilesIntoSlots(files){
+  var imgs=Array.from(files).filter(function(f){return f.type && f.type.indexOf('image/')===0;});
+  if(!imgs.length) return;
+  var names=new Set(drawerSlots.map(function(s){return s.filename;}));
+  var fresh=imgs.filter(function(f){ if(names.has(f.name)){ toast('"'+f.name+'" already added','error'); return false; } names.add(f.name); return true; });
+  if(!fresh.length) return;
+  var loaded=0;
+  fresh.forEach(function(file){
+    var r=new FileReader();
+    r.onload=function(e){ drawerSlots.push({dataUrl:e.target.result,filename:file.name,color:'',hex:'#888888',file:file}); if(++loaded===fresh.length) renderDrawerSlots(); };
+    r.readAsDataURL(file);
   });
-  renderDrawerSlots();
 }
 
-// Save drawer
+// Save: require a color on every photo, upload new files (WebP → Storage), persist variants.
 $_('drawerSave').addEventListener('click',function(){
   if(!drawerProduct) return;
-  var pending=drawerSlots.filter(function(s){return s.file;}).length;
+  if(!drawerSlots.length){ toast('Upload at least one photo first','error'); return; }
+  var unassigned=drawerSlots.filter(function(s){return !s.color;});
+  if(unassigned.length){ toast(unassigned.length+' photo'+(unassigned.length>1?'s':'')+' still need a color','error'); return; }
+  var toUpload=drawerSlots.filter(function(s){return s.file;});
+  if(!toUpload.length){ finalizeDrawerSave(); return; }
+  toast('Uploading '+toUpload.length+' photo'+(toUpload.length>1?'s':'')+'…','');
   var done=0;
-  drawerSlots.forEach(function(s){
-    if(s.file) {
-      uploadPhoto(s.file, drawerProduct.id, s.colorIndex).then(function(url){
-        s.url=url; s.file=null; done++;
-        if(done>=pending) finishDrawerSave();
-      }).catch(function(){done++;if(done>=pending)finishDrawerSave();});
-    }
+  drawerSlots.forEach(function(s,i){
+    if(!s.file) return;
+    uploadPhoto(s.file, drawerProduct.id, i)
+      .then(function(url){ s.dataUrl=url; s.file=null; })
+      .catch(function(){ /* leave preview; finalize drops any un-uploaded preview */ })
+      .then(function(){ if(++done===toUpload.length) finalizeDrawerSave(); });
   });
-  if(!pending) finishDrawerSave();
 });
 
-function finishDrawerSave() {
-  drawerProduct.variants=drawerSlots.map(function(s){return{color:s.color,hex:s.hex,photo:s.url||null};});
-  fbSaveProduct(drawerProduct).then(function(){renderSheet();toast('Photos saved','success');});
+function finalizeDrawerSave() {
+  drawerProduct.variants=drawerSlots.map(function(s){
+    // Only persist real uploaded URLs — never a data:/blob: preview (keeps Firestore docs small).
+    var photo=(s.dataUrl && /^https?:/i.test(s.dataUrl))?s.dataUrl:null;
+    return {color:s.color||'', hex:s.hex||'#888888', photo:photo};
+  });
+  // Route through saveOneProduct so the doc id stays p.id (same as row-save) — avoids duplicate docs.
+  saveOneProduct(drawerProduct);
+  renderSheet();
+  toast('Saved '+drawerProduct.variants.length+' color variant'+(drawerProduct.variants.length!==1?'s':''),'success');
   closeDrawer();
 }
 $_('drawerCancel').addEventListener('click',closeDrawer);
@@ -665,7 +752,7 @@ $_('saveCatsBtn').addEventListener('click',saveCats);
 // INIT
 // ═══════════════════════════════════════════════════════════
 Promise.all([fbGetProducts(),fbGetCategories(),fbGetOrders(),fbGetSettings()]).then(function(r){
-  products=r[0];categories=r[1];orders=r[2];SETTINGS=r[3]||{};
+  products=normIds(r[0]);categories=normIds(r[1]);orders=r[2];SETTINGS=r[3]||{};
   // Seed defaults if empty
   if(!products.length&&!categories.length){
     var batch=db.batch();
@@ -673,7 +760,7 @@ Promise.all([fbGetProducts(),fbGetCategories(),fbGetOrders(),fbGetSettings()]).t
     defCats.forEach(function(c){batch.set(db.collection('categories').doc(),c);});
     batch.set(db.collection('settings').doc('general'),{storeName:'Bazar Merabet',waNumber:'213772423191'});
     batch.set(db.collection('appearance').doc('site'),{hero:null,featured:null});
-    batch.commit().then(function(){return Promise.all([fbGetProducts(),fbGetCategories()]);}).then(function(r2){products=r2[0];categories=r2[1];startup();});
+    batch.commit().then(function(){return Promise.all([fbGetProducts(),fbGetCategories()]);}).then(function(r2){products=normIds(r2[0]);categories=normIds(r2[1]);startup();});
   } else { startup(); }
 }).catch(function(e){console.error('Init error:',e);startup();});
 
