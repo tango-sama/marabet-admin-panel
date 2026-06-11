@@ -16,6 +16,8 @@
  */
 
 const {onDocumentUpdated} = require("firebase-functions/v2/firestore");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
+const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {setGlobalOptions} = require("firebase-functions/v2");
 const logger = require("firebase-functions/logger");
 const {initializeApp} = require("firebase-admin/app");
@@ -132,3 +134,162 @@ exports.createDeliveryOnFulfill = onDocumentUpdated(
       }
     },
 );
+
+// Yalidine statuses that mean the parcel's journey is over — stop polling these.
+const TERMINAL_STATUSES = [
+  "Livré", "Retourné au vendeur", "Annulé", "Echange échoué",
+];
+
+/**
+ * syncDeliveryStatuses:
+ *   Every few hours, fetch the live last_status of every shipped-but-not-finished
+ *   order from Yalidine (GET /v1/parcels/?tracking=...,...) and write it back so the
+ *   admin Orders tab always shows where each parcel is.
+ */
+exports.syncDeliveryStatuses = onSchedule("every 3 hours", async () => {
+  const cred = (await db.doc("settings/delivery").get()).data() || {};
+  if (!cred.apiId || !cred.apiToken) {
+    logger.warn("syncDeliveryStatuses: Yalidine keys not set; skipping");
+    return;
+  }
+
+  // Orders that have a tracking number and aren't in a terminal status yet.
+  const snap = await db.collection("orders").where("fulfilled", "==", true).get();
+  const active = snap.docs.filter((d) => {
+    const o = d.data();
+    return o.deliveryTracking && !TERMINAL_STATUSES.includes(o.deliveryLastStatus);
+  });
+  if (!active.length) return;
+
+  const headers = {"X-API-ID": cred.apiId, "X-API-TOKEN": cred.apiToken};
+
+  // Batch the lookups (Yalidine accepts comma-separated trackings); chunk to keep URLs sane.
+  for (let i = 0; i < active.length; i += 50) {
+    const chunk = active.slice(i, i + 50);
+    const trackings = chunk.map((d) => d.data().deliveryTracking).join(",");
+    try {
+      const url = `${YALIDINE_URL}?tracking=${encodeURIComponent(trackings)}&fields=tracking,last_status&page_size=50`;
+      const res = await fetch(url, {headers});
+      const body = await res.json();
+      const rows = (body && body.data) || [];
+      const statusByTracking = {};
+      rows.forEach((p) => {
+        statusByTracking[p.tracking] = p.last_status;
+      });
+
+      await Promise.all(chunk.map((d) => {
+        const o = d.data();
+        const st = statusByTracking[o.deliveryTracking];
+        if (st && st !== o.deliveryLastStatus) {
+          return d.ref.update({
+            deliveryLastStatus: st,
+            deliveryStatusAt: FieldValue.serverTimestamp(),
+          });
+        }
+        return null;
+      }));
+    } catch (e) {
+      logger.error("syncDeliveryStatuses chunk failed:", e);
+    }
+  }
+});
+
+/**
+ * trackParcel (callable):
+ *   On-demand status check for a single parcel from the admin's 🔄 button.
+ *   Looks up the tracking in Yalidine, writes last_status back to the order, and
+ *   returns it. The API token stays server-side.
+ */
+exports.trackParcel = onCall(async (req) => {
+  const tracking = String((req.data && req.data.tracking) || "").trim();
+  const orderId = String((req.data && req.data.orderId) || "").trim();
+  if (!tracking) throw new HttpsError("invalid-argument", "tracking is required");
+
+  const cred = (await db.doc("settings/delivery").get()).data() || {};
+  if (!cred.apiId || !cred.apiToken) {
+    throw new HttpsError("failed-precondition", "Yalidine API keys not set in Settings → Delivery");
+  }
+
+  let body;
+  try {
+    const url = `${YALIDINE_URL}?tracking=${encodeURIComponent(tracking)}&fields=tracking,last_status`;
+    const res = await fetch(url, {headers: {"X-API-ID": cred.apiId, "X-API-TOKEN": cred.apiToken}});
+    body = await res.json();
+  } catch (e) {
+    throw new HttpsError("unavailable", "Could not reach Yalidine: " + String(e));
+  }
+
+  const parcel = (body && body.data && body.data[0]) || {};
+  const lastStatus = parcel.last_status || null;
+  if (!lastStatus) throw new HttpsError("not-found", "Parcel not found at Yalidine");
+
+  if (orderId) {
+    await db.doc(`orders/${orderId}`).update({
+      deliveryLastStatus: lastStatus,
+      deliveryStatusAt: FieldValue.serverTimestamp(),
+    }).catch(() => {});
+  }
+  return {tracking, lastStatus};
+});
+
+// ───────────────────────── Yalidine geo (wilayas + communes) ─────────────────────────
+const YALIDINE_BASE = "https://api.yalidine.app/v1/";
+
+// Follow Yalidine's pagination (has_more + links.next) and collect every row.
+async function fetchAllPages(url, headers) {
+  const all = [];
+  let next = url;
+  for (let guard = 0; guard < 100 && next; guard++) {
+    const res = await fetch(next, {headers});
+    const body = await res.json();
+    (body && body.data ? body.data : []).forEach((x) => all.push(x));
+    next = body && body.has_more && body.links && body.links.next ? body.links.next : null;
+  }
+  return all;
+}
+
+// Pull wilayas + communes from Yalidine and cache them in Firestore (geo/wilayas, geo/communes)
+// using Yalidine's exact names, so order-form selections always match the parcel API.
+async function syncGeo() {
+  const cred = (await db.doc("settings/delivery").get()).data() || {};
+  if (!cred.apiId || !cred.apiToken) throw new Error("Yalidine API keys not set in Settings → Delivery");
+  const headers = {"X-API-ID": cred.apiId, "X-API-TOKEN": cred.apiToken};
+
+  const wilayas = await fetchAllPages(YALIDINE_BASE + "wilayas/?page_size=100", headers);
+  const communes = await fetchAllPages(YALIDINE_BASE + "communes/?page_size=1000", headers);
+
+  const wList = wilayas
+      .filter((w) => w.is_deliverable === undefined || w.is_deliverable)
+      .map((w) => ({id: w.id, name: w.name}));
+
+  // Group deliverable commune names by wilaya_id (compact — names only).
+  const byWilaya = {};
+  communes.forEach((c) => {
+    if (c.is_deliverable === 0 || c.is_deliverable === false) return;
+    const k = String(c.wilaya_id);
+    (byWilaya[k] = byWilaya[k] || []).push(c.name);
+  });
+
+  await db.doc("geo/wilayas").set({list: wList, updatedAt: FieldValue.serverTimestamp()});
+  await db.doc("geo/communes").set({byWilaya: byWilaya, updatedAt: FieldValue.serverTimestamp()});
+  logger.info(`Geo synced: ${wList.length} wilayas, ${communes.length} communes`);
+  return {wilayas: wList.length, communes: communes.length};
+}
+
+// Daily refresh so the lists stay current.
+exports.syncYalidineGeo = onSchedule("every 24 hours", async () => {
+  try {
+    await syncGeo();
+  } catch (e) {
+    logger.error("syncYalidineGeo failed:", e);
+  }
+});
+
+// Manual trigger from the admin Settings page (first-time population / on demand).
+exports.refreshYalidineGeo = onCall(async () => {
+  try {
+    return await syncGeo();
+  } catch (e) {
+    throw new HttpsError("internal", String((e && e.message) || e));
+  }
+});

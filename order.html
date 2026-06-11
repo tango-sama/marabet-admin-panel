@@ -256,6 +256,32 @@ const WILAYAS={
 let product=null, color=0, size='42', qty=1, delivery='home';
 const DELIVERY_PRICES={home:600, desk:350};
 
+// Wilaya/commune source. Defaults to the hardcoded Arabic list, replaced at runtime by
+// Yalidine's official names (cached in Firestore geo/*) so parcels match the delivery API.
+let GEO={ names:Object.keys(WILAYAS), communes:WILAYAS };
+
+function populateWilayas(){
+  const ws=document.getElementById('fwilaya');
+  const cur=ws.value;
+  ws.innerHTML='<option value="">اختر الولاية</option>'+GEO.names.map(w=>`<option>${w}</option>`).join('');
+  if(cur && GEO.names.indexOf(cur)>=0) ws.value=cur;
+}
+
+// Pull Yalidine's cached wilayas + communes from Firestore; fall back silently to the Arabic list.
+function loadGeo(){
+  if(typeof firebase==='undefined') return;
+  const fs=firebase.firestore();
+  Promise.all([fs.doc('geo/wilayas').get(), fs.doc('geo/communes').get()]).then(res=>{
+    const w=res[0].exists?res[0].data():null, c=res[1].exists?res[1].data():null;
+    if(!w||!Array.isArray(w.list)||!w.list.length) return;
+    const byWilaya=(c&&c.byWilaya)||{};
+    const communes={};
+    w.list.forEach(it=>{ communes[it.name]=byWilaya[String(it.id)]||[]; });
+    GEO={ names:w.list.map(it=>it.name), communes:communes };
+    populateWilayas();
+  }).catch(err=>console.error('Could not load wilayas from Firestore:',err));
+}
+
 function getParam(k){return new URLSearchParams(location.search).get(k);}
 
 function initFirebase(){
@@ -277,12 +303,12 @@ function init(){
   size=getParam('size')||'42';
   qty=Number(getParam('qty'))||1;
 
-  // wilaya select
-  const ws=document.getElementById('fwilaya');
-  ws.innerHTML='<option value="">اختر الولاية</option>'+Object.keys(WILAYAS).map(w=>`<option>${w}</option>`).join('');
+  // wilaya select (fallback list now; Yalidine's official list loads from Firestore below)
+  populateWilayas();
 
   selectProduct(idParam);  // render immediately from fallback, then refresh from Firestore
   if(initFirebase()){
+    loadGeo();
     firebase.firestore().collection('products').get().then(snap=>{
       const list=[];
       snap.forEach(d=>{
@@ -299,8 +325,9 @@ function init(){
 function onWilaya(){
   const w=document.getElementById('fwilaya').value;
   const cs=document.getElementById('fcommune');
-  if(w && WILAYAS[w]){
-    cs.innerHTML='<option value="">اختر البلدية</option>'+WILAYAS[w].map(c=>`<option>${c}</option>`).join('');
+  const list=GEO.communes[w];
+  if(w && list && list.length){
+    cs.innerHTML='<option value="">اختر البلدية</option>'+list.map(c=>`<option>${c}</option>`).join('');
   }else{
     cs.innerHTML='<option value="">اختر البلدية</option>';
   }

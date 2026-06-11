@@ -14,6 +14,10 @@ service cloud.firestore {
       allow read: if false;
     }
 
+    // Cached Yalidine wilayas/communes — public read so the order form can use them;
+    // only the Cloud Function (Admin SDK) writes them.
+    match /geo/{doc} { allow read: if true; allow write: if false; }
+
     // Everything the storefront + admin actually use
     match /products/{doc}   { allow read, write: if open(); }
     match /categories/{doc} { allow read, write: if open(); }

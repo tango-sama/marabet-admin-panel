@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -233,6 +234,8 @@ a{color:var(--gold)}
         <div><label class="settings-label">Pickup Wilaya</label><input class="settings-input" id="yalidineWilaya" placeholder="Touggourt"></div>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">🔒 Stored securely and <b>write-only</b> — the key can't be read back here or by the public site. Leave a field blank to keep its current value; re-enter to change it.</div>
         <button class="btn btn-gold" id="saveDeliveryBtn" style="margin-top:.5rem">🔑 Save Delivery Keys</button>
+        <button class="btn btn-outline" id="syncGeoBtn" style="margin-top:.5rem;margin-left:.5rem">🌍 Sync Yalidine wilayas/communes</button>
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Run once after saving your keys so the order form uses Yalidine's official wilaya/commune names (auto-refreshes daily after that).</div>
         <div class="danger-zone">
           <div class="danger-zone-title">⚠️ Danger Zone</div>
           <div class="danger-zone-desc">Delete all products, categories, and orders from Firestore.</div>
@@ -286,6 +289,7 @@ firebase.initializeApp({
 });
 var db = firebase.firestore();
 var storage = firebase.storage();
+var fbFunctions = firebase.functions(); // callable Cloud Functions (delivery tracking)
 try { db.enablePersistence({synchronizeTabs:true}); } catch(e) {}
 
 // ═══════════════════════════════════════════════════════════
@@ -586,13 +590,14 @@ function renderOrders() {
     +'<td>'+esc(o.size||'')+'</td><td>'+(o.price||0).toLocaleString()+' DZD</td>'
     +'<td>'+(o.fulfilled
         ? '<span style="color:var(--gold)">✅ Done</span>'+(o.deliveryTracking
-            ? '<br><small style="color:var(--gray)">🚚 '+esc(o.deliveryTracking)+'</small>'
+            ? '<br><small style="color:var(--gray)">🚚 '+esc(o.deliveryTracking)+(o.deliveryLastStatus?' · <span style="color:var(--gold-light)">'+esc(o.deliveryLastStatus)+'</span>':'')+'</small>'
             : (o.deliveryStatus==='Failed'
                 ? '<br><small style="color:var(--danger)">⚠ delivery failed</small>'
                 : '<br><small style="color:var(--gray)">⏳ sending to Yalidine…</small>'))
         : '<span style="color:var(--success)">📝 '+esc(o.status||'New')+'</span>')+'</td>'
     +'<td style="white-space:nowrap">'
       +(!o.fulfilled?'<button class="btn btn-sm" style="background:var(--gold);color:var(--black);margin-right:4px" data-fulfill="'+esc(o._docId||'')+'">🚚</button>':'')
+      +(o.fulfilled&&o.deliveryTracking?'<button class="btn btn-outline btn-sm" style="margin-right:4px" data-track="'+esc(o._docId||'')+'" title="Refresh delivery status now">🔄</button>':'')
       +'<button class="btn btn-outline btn-sm" style="margin-right:4px" data-wa="'+esc(o._docId||'')+'" title="Reply to customer on WhatsApp">💬</button>'
       +'<button class="btn-icon danger" data-delord="'+esc(o._docId||'')+'">🗑</button>'
     +'</td></tr>';
@@ -600,8 +605,18 @@ function renderOrders() {
   updateStats();
 }
 $_('ordersBody').addEventListener('click',function(e){
-  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]');
+  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]'), tr=e.target.closest('[data-track]');
   if(info){ openCustomer(info.dataset.cust); return; }
+  // On-demand: fetch this parcel's live status from Yalidine via the callable function
+  if(tr){
+    var o=orders.find(function(x){return x._docId===tr.dataset.track;});
+    if(!o||!o.deliveryTracking) return;
+    tr.disabled=true; tr.textContent='…';
+    fbFunctions.httpsCallable('trackParcel')({tracking:o.deliveryTracking, orderId:o._docId})
+      .then(function(res){ var st=res&&res.data&&res.data.lastStatus; if(st){ o.deliveryLastStatus=st; renderOrders(); toast('🚚 '+st,'success'); } else { toast('No status returned','error'); } })
+      .catch(function(err){ tr.disabled=false; tr.textContent='🔄'; toast('Track failed: '+((err&&err.message)||'error'),'error'); });
+    return;
+  }
   if(f){var oid=f.dataset.fulfill;var o=orders.find(function(x){return x._docId===oid;});if(o){o.fulfilled=true;o.status='Fulfilled';fbUpdateOrder(oid,{fulfilled:true,status:'Fulfilled'}).then(function(){renderOrders();toast('Order fulfilled — sending to Yalidine…','success');setTimeout(refreshOrders,6000);});}}
   // Reply to the CUSTOMER (their phone), not the store's own number
   if(w){var oid=w.dataset.wa;var o=orders.find(function(x){return x._docId===oid;});if(o){var msg='مرحبا '+(o.customer||'')+'، بخصوص طلبك '+(o.num||'')+' ('+(o.product||'')+'):';window.open('https://wa.me/'+waPhone(o.phone)+'?text='+encodeURIComponent(msg),'_blank');}}
@@ -645,6 +660,7 @@ function openCustomer(oid){
     +((o.deliveryProvider||o.deliveryTracking||o.deliveryStatus)?'<div style="height:.6rem"></div>'
         +row('Carrier',o.deliveryProvider)
         +row('Tracking',o.deliveryTracking)
+        +row('Live status',o.deliveryLastStatus)
         +row('Delivery status',o.deliveryStatus)
         +(o.deliveryError?row('Delivery error',o.deliveryError):'')
         +(o.deliveryLabel?'<div style="margin-top:.6rem"><a href="'+esc(o.deliveryLabel)+'" target="_blank" style="color:var(--gold)">🏷️ Open shipping label</a></div>':'')
@@ -865,6 +881,15 @@ $_('saveDeliveryBtn').addEventListener('click',function(){
   db.collection('settings').doc('delivery').set(d,{merge:true})
     .then(function(){ $_('yalidineId').value=''; $_('yalidineToken').value=''; toast('Delivery keys saved','success'); })
     .catch(function(e){ toast('Save failed: '+((e&&e.code)||(e&&e.message)||'error'),'error'); });
+});
+
+// Pull Yalidine's wilaya/commune lists into Firestore (so the order form uses matching names)
+$_('syncGeoBtn').addEventListener('click',function(){
+  var btn=this; btn.disabled=true; var label=btn.textContent; btn.textContent='Syncing…';
+  fbFunctions.httpsCallable('refreshYalidineGeo')()
+    .then(function(res){ var r=res&&res.data||{}; toast('Synced '+(r.wilayas||0)+' wilayas, '+(r.communes||0)+' communes','success'); })
+    .catch(function(err){ toast('Sync failed: '+((err&&err.message)||'error'),'error'); })
+    .then(function(){ btn.disabled=false; btn.textContent=label; });
 });
 $_('clearAllBtn').addEventListener('click',function(){
   if(!confirm('PERMANENTLY DELETE ALL DATA from Firestore? This CANNOT be undone!')) return;
