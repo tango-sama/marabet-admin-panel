@@ -741,7 +741,7 @@ function openDrawer(pid) {
   if(!drawerProduct.variants) drawerProduct.variants=[];
   // slot: {dataUrl(preview or stored URL), filename, color(name), hex, file(File to upload | null)}
   drawerSlots=drawerProduct.variants.map(function(v){
-    return {dataUrl:v.photo||null, filename:v.color||'', color:v.color||'', hex:v.hex||'#888888', file:null};
+    return {dataUrl:v.photo||null, filename:v.color||'', color:v.color||'', hex:v.hex||'#808080', file:null};
   });
   $_('drawerTitle').textContent=drawerProduct.name||'Photos & Colors';
   renderDrawerSlots();
@@ -789,7 +789,7 @@ function renderDrawerSlots() {
         +sw
         +'<div class="slot-custom-wrap">'
           +'<label>Custom:</label>'
-          +'<input type="color" value="'+(slot.hex||'#888888')+'" oninput="pickCustomColor('+si+',this.value)">'
+          +'<input type="color" value="'+(slot.hex||'#808080')+'" oninput="pickCustomColor('+si+',this.value)">'
           +'<input class="slot-custom-name" placeholder="color name..." value="'+esc(slot.color)+'" oninput="pickCustomName('+si+',this.value)">'
         +'</div>'
       +'</div>'
@@ -838,7 +838,7 @@ function loadFilesIntoSlots(files){
   var loaded=0;
   fresh.forEach(function(file){
     var r=new FileReader();
-    r.onload=function(e){ drawerSlots.push({dataUrl:e.target.result,filename:file.name,color:'',hex:'#888888',file:file}); if(++loaded===fresh.length) renderDrawerSlots(); };
+    r.onload=function(e){ drawerSlots.push({dataUrl:e.target.result,filename:file.name,color:'',hex:'#808080',file:file}); if(++loaded===fresh.length) renderDrawerSlots(); };
     r.readAsDataURL(file);
   });
 }
@@ -867,7 +867,7 @@ function finalizeDrawerSave() {
   p.variants=drawerSlots.map(function(s){
     // Persist the WebP data URL (or an http URL from older uploads); skip transient blob: previews.
     var photo=(s.dataUrl && /^(data:|https?:)/i.test(s.dataUrl))?s.dataUrl:null;
-    return {color:s.color||'', hex:s.hex||'#888888', photo:photo};
+    return {color:s.color||'', hex:s.hex||'#808080', photo:photo};
   });
   p._dirty=true;
   var n=p.variants.length;
