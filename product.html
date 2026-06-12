@@ -297,14 +297,27 @@ function loadProduct(){
     messagingSenderId:"195655893976",appId:"1:195655893976:web:2c42fa40c7f27769c5a8ad"
   }); }catch(e){/* already initialized */}
   const fs=firebase.firestore();
-  Promise.all([fs.collection('products').get(),fs.collection('categories').get()])
+  // Fetch ONLY this product first so the page is interactive immediately. Pulling the whole
+  // catalog (every base64 photo) was multiple MB and made mobile hang before the size options
+  // and order button were usable.
+  Promise.all([fs.collection('products').doc(idParam).get(), fs.collection('categories').get()])
     .then(res=>{
-      const catMap={}; res[1].forEach(d=>{const c=d.data();catMap[c.key]=c.name;});
-      const list=[]; res[0].forEach(d=>{ if(d.data().active!==false) list.push(mapProduct(d.id,d.data(),catMap)); });
-      if(list.length) CATALOG=list;
+      const doc=res[0], catMap={};
+      res[1].forEach(d=>{const c=d.data();catMap[c.key]=c.name;});
+      if(doc.exists) CATALOG=[mapProduct(doc.id,doc.data(),catMap)];
       showProduct(idParam);
+      loadRelated(fs,catMap);  // background: fill the related-products strip
     })
     .catch(err=>{ console.error('Could not load product from Firestore:',err); showProduct(idParam); });
+}
+
+// Deferred: pull the rest of the catalog only for the "related products" strip,
+// without disturbing the user's current color/size/qty.
+function loadRelated(fs,catMap){
+  fs.collection('products').get().then(snap=>{
+    const list=[]; snap.forEach(d=>{ if(d.data().active!==false) list.push(mapProduct(d.id,d.data(),catMap)); });
+    if(list.length){ CATALOG=list; if(product) renderRelated(); }
+  }).catch(()=>{});
 }
 
 function render(){

@@ -309,15 +309,15 @@ function init(){
   selectProduct(idParam);  // render immediately from fallback, then refresh from Firestore
   if(initFirebase()){
     loadGeo();
-    firebase.firestore().collection('products').get().then(snap=>{
-      const list=[];
-      snap.forEach(d=>{
-        const p=d.data();
-        let colors=(p.variants||[]).map(v=>({n:v.color||'',h:v.hex||'#888888',img:v.photo||null,emoji:'👟'}));
-        if(!colors.length) colors=[{n:'',h:'#888888',img:null,emoji:'👟'}];
-        list.push({id:d.id,name:p.name||'',brand:p.brand||'',price:+p.price||0,colors:colors});
-      });
-      if(list.length){ CATALOG=list; selectProduct(idParam); }
+    // Fetch ONLY this order's product (not the whole catalog of base64 photos) so the
+    // summary loads fast on mobile.
+    firebase.firestore().collection('products').doc(idParam).get().then(d=>{
+      if(!d.exists) return;
+      const p=d.data();
+      let colors=(p.variants||[]).map(v=>({n:v.color||'',h:v.hex||'#888888',img:v.photo||null,emoji:'👟'}));
+      if(!colors.length) colors=[{n:'',h:'#888888',img:null,emoji:'👟'}];
+      CATALOG=[{id:d.id,name:p.name||'',brand:p.brand||'',price:+p.price||0,colors:colors}];
+      selectProduct(idParam);
     }).catch(err=>console.error('Could not load product from Firestore:',err));
   }
 }
