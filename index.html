@@ -196,9 +196,12 @@ nav.scrolled{background:rgba(247,245,241,.85);backdrop-filter:blur(16px);padding
 .pcard:hover .pcard-quick{transform:translateY(0);opacity:1}
 .pcard-brand{font-size:.6rem;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:.35rem}
 .pcard-name{font-family:var(--serif);font-size:1.1rem;color:var(--ink);margin-bottom:.6rem;font-weight:700}
-.pcard-colors{display:flex;gap:6px;margin-bottom:.7rem}
-.cdot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:all .2s}
-.cdot:hover,.cdot.on{border-color:var(--ink);transform:scale(1.2)}
+.pcard-colors{display:flex;gap:12px;margin-bottom:.8rem;flex-wrap:wrap}
+.cdot{position:relative;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:transform .22s var(--ease),box-shadow .22s var(--ease);box-shadow:0 1px 3px rgba(26,26,24,.14)}
+/* invisible enlarged hit area — the swatch stays elegant but is easy to tap */
+.cdot::after{content:'';position:absolute;inset:-6px;border-radius:50%}
+.cdot:hover{transform:scale(1.18)}
+.cdot.on{transform:scale(1.18);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
 .pcard-foot{display:flex;align-items:baseline;justify-content:space-between}
 .pcard-price{font-family:var(--serif);font-size:1.25rem;color:var(--ink);font-weight:700}
 .pcard-price span{font-size:.68rem;color:var(--ink-3);font-family:var(--sans);font-weight:400}
@@ -293,6 +296,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
   .sec,.contact{padding:4.5rem 1.5rem}.featured-copy{padding:3rem 1.5rem}
   .featured{border-radius:0}
   .pgrid{grid-template-columns:repeat(2,1fr);gap:1rem}.cat-rail{grid-template-columns:1fr 1fr}
+  .cdot{width:26px;height:26px}.pcard-colors{gap:14px}
   .stats-inner{grid-template-columns:1fr 1fr}
   .stat-cell:nth-child(2){border-left:none}
   .stat-cell:nth-child(3),.stat-cell:nth-child(4){border-top:1px solid var(--line)}
