@@ -238,7 +238,8 @@ a{color:var(--gold)}
     <!-- CATEGORIES PAGE -->
     <div class="page" id="page-categories">
       <div class="toolbar"><div class="toolbar-right"><button class="btn btn-outline btn-sm" id="addCatBtn">+ Category</button><button class="btn btn-green btn-sm" id="saveCatsBtn">💾 Save</button></div></div>
-      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Name</th><th>Key</th><th>Products</th><th>Visible</th><th class="col-actions">Actions</th></tr></thead><tbody id="catsBody"></tbody></table></div>
+      <input type="file" id="catPhotoFile" accept="image/*" style="display:none">
+      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Picture</th><th>Name</th><th>Key</th><th>Products</th><th>Visible</th><th class="col-actions">Actions</th></tr></thead><tbody id="catsBody"></tbody></table></div>
     </div>
 
     <!-- DASHBOARD -->
@@ -265,8 +266,22 @@ a{color:var(--gold)}
         <div><label class="settings-label">Facebook URL</label><input class="settings-input" id="settingFb"></div>
         <div><label class="settings-label">Instagram URL</label><input class="settings-input" id="settingIg"></div>
         <div class="settings-section">Appearance</div>
-        <div><label class="settings-label">Hero Image URL</label><input class="settings-input" id="heroImage" placeholder="https://..."></div>
-        <div><label class="settings-label">Featured Image URL</label><input class="settings-input" id="featuredImage" placeholder="https://..."></div>
+        <div><label class="settings-label">Hero Image</label>
+          <input class="settings-input" id="heroImage" placeholder="https://… or upload below">
+          <input type="file" id="heroFile" accept="image/*" style="display:none">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-top:.4rem">
+            <button class="btn btn-outline btn-sm" id="heroUploadBtn" type="button">⬆️ Upload (→ WebP)</button>
+            <img id="heroPreview" style="display:none;height:46px;border-radius:8px;border:1px solid var(--line);object-fit:cover">
+          </div>
+        </div>
+        <div style="margin-top:.6rem"><label class="settings-label">Featured Image</label>
+          <input class="settings-input" id="featuredImage" placeholder="https://… or upload below">
+          <input type="file" id="featuredFile" accept="image/*" style="display:none">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-top:.4rem">
+            <button class="btn btn-outline btn-sm" id="featuredUploadBtn" type="button">⬆️ Upload (→ WebP)</button>
+            <img id="featuredPreview" style="display:none;height:46px;border-radius:8px;border:1px solid var(--line);object-fit:cover">
+          </div>
+        </div>
         <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:.5rem">💾 Save Settings</button>
         <div class="settings-section">Delivery — Yalidine</div>
         <div><label class="settings-label">Yalidine API ID</label><input class="settings-input" id="yalidineId" placeholder="API ID"></div>
@@ -405,6 +420,29 @@ function fbGetSettings() { return db.collection('settings').doc('general').get()
 function fbSaveSettings(d) { return db.collection('settings').doc('general').set(d); }
 function fbSaveAppearance(d) { return db.collection('appearance').doc('site').set(d,{merge:true}); }
 function fbGetAppearance() { return db.collection('appearance').doc('site').get().then(function(d){return d.exists?d.data():{};}); }
+
+// Resize an image file → WebP → upload to Firebase Storage → resolve(downloadURL).
+// Used for hero/featured/category pictures (too large to embed in a Firestore doc).
+function uploadImageToStorage(file, path, maxDim) {
+  maxDim = maxDim || 1600;
+  return new Promise(function(resolve, reject){
+    if (!file || !file.type.startsWith('image/')) { reject(new Error('Not an image')); return; }
+    var img=new Image(), url=URL.createObjectURL(file);
+    img.onload=function(){
+      var w=img.width, h=img.height, scale=Math.min(1, maxDim/Math.max(w,h));
+      var c=document.createElement('canvas'); c.width=Math.round(w*scale); c.height=Math.round(h*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(blob){
+        URL.revokeObjectURL(url);
+        if(!blob){ reject(new Error('Conversion failed')); return; }
+        var ref=firebase.storage().ref(path);
+        ref.put(blob,{contentType:'image/webp'}).then(function(){return ref.getDownloadURL();}).then(resolve).catch(reject);
+      }, 'image/webp', 0.82);
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+    img.src=url;
+  });
+}
 
 // ═══════════════════════════════════════════════════════════
 // UPLOAD PHOTO — WebP → inline data URL (stored in Firestore; no Storage bucket/rules needed)
@@ -605,9 +643,13 @@ function saveAll() {
 // ═══════════════════════════════════════════════════════════
 function renderCats() {
   var body=$_('catsBody'); if(!body) return;
-  if(!categories.length){body.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">📁</div><div>No categories</div></div></td></tr>';return;}
+  if(!categories.length){body.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📁</div><div>No categories</div></div></td></tr>';return;}
   body.innerHTML=categories.map(function(c,i){return '<tr>'
     +'<td>'+(i+1)+'</td>'
+    +'<td><div style="display:flex;align-items:center;gap:.4rem">'
+      +(c.photo?'<img src="'+esc(c.photo)+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">':'<span style="width:40px;height:40px;border-radius:8px;background:var(--card-2,#2a2a2a);display:inline-flex;align-items:center;justify-content:center;opacity:.5">🖼️</span>')
+      +'<button class="btn-icon" data-catphoto="'+esc(c.id)+'" title="Upload picture (→ WebP)">📷</button>'
+    +'</div></td>'
     +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="name" value="'+esc(c.name||'')+'"></td>'
     +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="key" value="'+esc(c.key||'')+'"></td>'
     +'<td style="text-align:center">'+products.filter(function(p){return p.category===c.key;}).length+'</td>'
@@ -974,6 +1016,42 @@ $_('syncCarriersBtn').addEventListener('click',function(){
       toast(parts.length?('Synced — '+parts.join(' · ')):'Nothing synced — save carrier keys first','success'); })
     .catch(function(err){ toast('Sync failed: '+((err&&err.message)||'error'),'error'); })
     .then(function(){ btn.disabled=false; btn.textContent=label; });
+});
+
+// Hero / Featured image upload → WebP → Storage → save URL to appearance/site (storefront reads it).
+function wireImageUpload(btnId, fileId, inputId, previewId, storagePath, onUrl){
+  $_(btnId).addEventListener('click', function(){ $_(fileId).click(); });
+  $_(fileId).addEventListener('change', function(){
+    var f=this.files[0]; this.value=''; if(!f) return;
+    var btn=$_(btnId), label=btn.textContent; btn.disabled=true; btn.textContent='Uploading…';
+    uploadImageToStorage(f, storagePath, 1600).then(function(url){
+      $_(inputId).value=url;
+      var pv=$_(previewId); if(pv){ pv.src=url; pv.style.display='inline-block'; }
+      if(onUrl) onUrl(url);
+      toast('Image uploaded ✓','success');
+    }).catch(function(e){ toast('Upload failed: '+((e&&e.message)||'error'),'error'); })
+    .then(function(){ btn.disabled=false; btn.textContent=label; });
+  });
+}
+wireImageUpload('heroUploadBtn','heroFile','heroImage','heroPreview','appearance/hero.webp',function(url){ SETTINGS.heroImage=url; fbSaveAppearance({hero:url}); });
+wireImageUpload('featuredUploadBtn','featuredFile','featuredImage','featuredPreview','appearance/featured.webp',function(url){ SETTINGS.featuredImage=url; fbSaveAppearance({featured:url}); });
+
+// Category picture upload → WebP → Storage → category.photo (storefront shows it on the tile).
+var _catPhotoTarget=null;
+$_('catsBody').addEventListener('click',function(e){
+  var b=e.target.closest('[data-catphoto]'); if(!b) return;
+  _catPhotoTarget=b.dataset.catphoto; $_('catPhotoFile').click();
+});
+$_('catPhotoFile').addEventListener('change',function(){
+  var f=this.files[0]; this.value=''; var cid=_catPhotoTarget; _catPhotoTarget=null;
+  if(!f||!cid) return;
+  var cat=categories.find(function(x){return x.id===cid;}); if(!cat) return;
+  toast('Uploading picture…','success');
+  uploadImageToStorage(f, 'categories/'+cid+'.webp', 800).then(function(url){
+    cat.photo=url; renderCats();
+    return fbSaveCategory(cat);
+  }).then(function(){ syncCatFilters(); toast('Category picture saved ✓','success'); })
+  .catch(function(e){ toast('Upload failed: '+((e&&e.message)||'error'),'error'); });
 });
 $_('clearAllBtn').addEventListener('click',function(){
   if(!confirm('PERMANENTLY DELETE ALL DATA from Firestore? This CANNOT be undone!')) return;

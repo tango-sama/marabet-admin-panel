@@ -531,11 +531,14 @@ let PRODUCTS=[
 const brands=['NIKE','ADIDAS','PUMA','BATA','REEBOK','NEW BALANCE','SKECHERS','LACOSTE'];
 document.getElementById('ticker').innerHTML=brands.concat(brands).concat(brands).map(b=>`<span class="ticker-item">${b}</span><span class="ticker-dot"></span>`).join('');
 
-document.getElementById('catRail').innerHTML=CATS.map((c,i)=>`
+function renderCatRail(cats){
+  document.getElementById('catRail').innerHTML=cats.map(c=>`
   <div class="cat-tile" onclick="filterTo('${c.key}')">
-    <div class="ci">${c.icon}</div>
-    <div class="cat-meta"><div class="nm">${c.name}</div><div class="ct"><bdi>${c.count}</bdi> ←</div></div>
+    ${c.photo?`<img src="${c.photo}" alt="${c.name}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div class="ci">${c.icon||'🛍️'}</div>`}
+    <div class="cat-meta"><div class="nm">${c.name}</div><div class="ct"><bdi>${c.count||''}</bdi> ←</div></div>
   </div>`).join('');
+}
+renderCatRail(CATS);
 
 let activeColors={},currentFilter='all';
 function renderProducts(cat){
@@ -628,20 +631,32 @@ renderProducts('all');
   }).catch(function(err){ console.error('Could not load products from Firestore:',err); });
 })();
 
-// ── load hero & featured images saved from the admin panel ──
+// ── hero & featured images (managed in admin → Settings, stored in appearance/site) ──
 (function loadStorefrontImages(){
-  let appear={};
-  try{ appear=JSON.parse(localStorage.getItem('bm_appearance'))||{}; }catch(e){}
-  // hero
-  if(appear.hero){
-    const hp=document.querySelector('.hero-photo .ph-illus');
-    if(hp) hp.outerHTML='<img src="'+appear.hero+'" alt="بازار مرابط">';
-  }
-  // featured
-  if(appear.featured){
-    const fv=document.querySelector('.featured-visual .big');
-    if(fv) fv.outerHTML='<img src="'+appear.featured+'" alt="مجموعة جديدة" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">';
-  }
+  function applyHero(src){ if(!src) return; const ph=document.querySelector('.hero-photo'); if(!ph) return;
+    const illus=ph.querySelector('.ph-illus'); if(illus) illus.remove();
+    let img=ph.querySelector('img.hero-set'); if(!img){ img=document.createElement('img'); img.className='hero-set'; ph.insertBefore(img, ph.firstChild); }
+    img.src=src; img.alt='بازار مرابط'; }
+  function applyFeatured(src){ if(!src) return; const fv=document.querySelector('.featured-visual'); if(!fv) return;
+    const big=fv.querySelector('.big'); if(big) big.remove();
+    let img=fv.querySelector('img.featured-set'); if(!img){ img=document.createElement('img'); img.className='featured-set'; img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; fv.appendChild(img); }
+    img.src=src; img.alt='مجموعة جديدة'; }
+  function apply(a){ a=a||{}; applyHero(a.hero); applyFeatured(a.featured); }
+  // instant from localStorage (admin's own device), then authoritative from Firestore (all visitors)
+  try{ apply(JSON.parse(localStorage.getItem('bm_appearance'))||{}); }catch(e){}
+  if(typeof firebase!=='undefined'){ firebase.firestore().doc('appearance/site').get().then(function(d){ if(d.exists) apply(d.data()); }).catch(function(){}); }
+})();
+
+// ── live categories (+ uploaded pictures) from Firestore; falls back to the built-in list ──
+(function loadCategories(){
+  if(typeof firebase==='undefined') return;
+  firebase.firestore().collection('categories').get().then(function(snap){
+    const cats=[]; snap.forEach(function(d){ const c=d.data(); if(c.visible===false) return;
+      const hard=CATS.find(function(x){return x.key===c.key;})||{};
+      cats.push({key:c.key||'', name:c.name||hard.name||c.key||'', photo:c.photo||null, icon:hard.icon||'🛍️', count:hard.count||''});
+    });
+    if(cats.length) renderCatRail(cats);
+  }).catch(function(){});
 })();
 
 // safety: ensure hero headline is always visible even if animation is interrupted
