@@ -276,6 +276,17 @@ a{color:var(--gold)}
         <button class="btn btn-gold" id="saveDeliveryBtn" style="margin-top:.5rem">🔑 Save Delivery Keys</button>
         <button class="btn btn-outline" id="syncGeoBtn" style="margin-top:.5rem;margin-left:.5rem">🌍 Sync Yalidine wilayas/communes</button>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Run once after saving your keys so the order form uses Yalidine's official wilaya/commune names (auto-refreshes daily after that).</div>
+
+        <div class="settings-section">Delivery — Noest</div>
+        <div><label class="settings-label">Noest API Token</label><input class="settings-input" id="noestToken" type="password" placeholder="API Token"></div>
+        <div><label class="settings-label">Noest user_guid</label><input class="settings-input" id="noestGuid" placeholder="user_guid"></div>
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">🔒 Write-only, same as Yalidine. Get both from your Noest account (app.noest-dz.com → API). Leave blank to keep the current value.</div>
+        <button class="btn btn-gold" id="saveNoestBtn" style="margin-top:.5rem">🔑 Save Noest Keys</button>
+
+        <div class="settings-section">Carrier lists (wilayas + fees)</div>
+        <button class="btn btn-outline" id="syncCarriersBtn">🚚 Sync carriers (Yalidine + Noest)</button>
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Run after saving keys. Pulls each carrier's own wilaya/commune list + delivery fees so that, at checkout, the customer picks the company and the wilaya list switches to match. (Only carriers with saved keys are synced.)</div>
+
         <div class="danger-zone">
           <div class="danger-zone-title">⚠️ Danger Zone</div>
           <div class="danger-zone-desc">Delete all products, categories, and orders from Firestore.</div>
@@ -939,6 +950,28 @@ $_('syncGeoBtn').addEventListener('click',function(){
   var btn=this; btn.disabled=true; var label=btn.textContent; btn.textContent='Syncing…';
   fbFunctions.httpsCallable('refreshYalidineGeo')()
     .then(function(res){ var r=res&&res.data||{}; toast('Synced '+(r.wilayas||0)+' wilayas, '+(r.communes||0)+' communes','success'); })
+    .catch(function(err){ toast('Sync failed: '+((err&&err.message)||'error'),'error'); })
+    .then(function(){ btn.disabled=false; btn.textContent=label; });
+});
+
+// Noest keys → settings/noest doc. Write-only, same pattern as Yalidine above.
+$_('saveNoestBtn').addEventListener('click',function(){
+  var d={}, tok=$_('noestToken').value.trim(), guid=$_('noestGuid').value.trim();
+  if(tok) d.apiToken=tok;
+  if(guid) d.userGuid=guid;
+  if(!Object.keys(d).length){ toast('Enter at least one field to save','error'); return; }
+  db.collection('settings').doc('noest').set(d,{merge:true})
+    .then(function(){ $_('noestToken').value=''; toast('Noest keys saved','success'); })
+    .catch(function(e){ toast('Save failed: '+((e&&e.code)||(e&&e.message)||'error'),'error'); });
+});
+
+// Pull both carriers' wilaya/commune/fee lists into delivery_data/* (order form reads these).
+$_('syncCarriersBtn').addEventListener('click',function(){
+  var btn=this; btn.disabled=true; var label=btn.textContent; btn.textContent='Syncing…';
+  fbFunctions.httpsCallable('syncCarriers')()
+    .then(function(res){ var r=(res&&res.data&&res.data.result)||{}; var parts=[];
+      if(r.yalidine) parts.push('Yalidine: '+r.yalidine.wilayas+' wilayas'); if(r.noest) parts.push('Noest: '+r.noest.wilayas+' wilayas');
+      toast(parts.length?('Synced — '+parts.join(' · ')):'Nothing synced — save carrier keys first','success'); })
     .catch(function(err){ toast('Sync failed: '+((err&&err.message)||'error'),'error'); })
     .then(function(){ btn.disabled=false; btn.textContent=label; });
 });

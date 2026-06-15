@@ -14,9 +14,20 @@ service cloud.firestore {
       allow read: if false;
     }
 
+    // Noest delivery credentials ({ apiToken, userGuid }): admin UI writes, no client
+    // reads — only the Cloud Function (Admin SDK) reads the token. Same pattern as above.
+    match /settings/noest {
+      allow write: if open();
+      allow read: if false;
+    }
+
     // Cached Yalidine wilayas/communes — public read so the order form can use them;
     // only the Cloud Function (Admin SDK) writes them.
     match /geo/{doc} { allow read: if true; allow write: if false; }
+
+    // Per-carrier wilaya/commune/fee lists (delivery_data/yalidine, /noest) — public read
+    // so the order form can swap lists per carrier; only the Cloud Function writes them.
+    match /delivery_data/{doc} { allow read: if true; allow write: if false; }
 
     // Everything the storefront + admin actually use
     match /products/{doc}   { allow read, write: if open(); }
