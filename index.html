@@ -593,7 +593,7 @@ const brands=['NIKE','ADIDAS','PUMA','BATA','REEBOK','NEW BALANCE','SKECHERS','L
 document.getElementById('ticker').innerHTML=brands.concat(brands).concat(brands).map(b=>`<span class="ticker-item">${b}</span><span class="ticker-dot"></span>`).join('');
 
 // Category stacked-card explorer (ported from React "AnimatedCardStack"; CSS-transition spring)
-var catCards=[], catOrder=[], catBusy=false;
+var catCards=[], catOrder=[], catBusy=false, catList=[];
 var CAT_POS=[{s:1,y:12},{s:.95,y:-16},{s:.9,y:-44}];
 function catChevron(){ return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M9.5 18L15.5 12L9.5 6"/></svg>'; }
 function catPlace(el,pos,instant){
@@ -603,14 +603,17 @@ function catPlace(el,pos,instant){
   if(instant){ void el.offsetWidth; el.style.transition=''; }
 }
 function catLayout(instant){ catOrder.forEach(function(idx,pos){ var el=catCards[idx]; if(el) catPlace(el,pos,instant); }); }
+function catCount(key){ return PRODUCTS.filter(function(p){return p.cat===key;}).length; }
 function renderCatRail(cats){
+  catList=cats||catList;
   var stack=document.getElementById('catStack'); if(!stack) return;
   stack.innerHTML=''; catCards=[];
-  (cats||[]).forEach(function(c){
+  catList.forEach(function(c){
+    var n=catCount(c.key);  // real product count for this category
     var el=document.createElement('div'); el.className='cat-card';
     var visual=c.photo?'<img src="'+c.photo+'" alt="'+(c.name||'')+'" loading="lazy" decoding="async">':'<div class="ci">'+(c.icon||'🛍️')+'</div>';
     el.innerHTML='<div class="cat-card-img">'+visual+'</div>'+
-      '<div class="cat-card-foot"><div class="cat-card-txt"><span class="t">'+(c.name||'')+'</span><span class="d"><bdi>'+(c.count||'')+'</bdi></span></div>'+
+      '<div class="cat-card-foot"><div class="cat-card-txt"><span class="t">'+(c.name||'')+'</span><span class="d"><bdi>'+n+'</bdi> منتج</span></div>'+
       '<button class="cat-card-btn" data-cat="'+(c.key||'')+'">تسوّقي هذا الصنف '+catChevron()+'</button></div>';
     stack.appendChild(el); catCards.push(el);
   });
@@ -760,7 +763,7 @@ renderProducts('all');
         price:+p.price||0, sizes:p.sizes||'', badge:null, emoji:'👟', colors:colors
       });
     });
-    if(list.length){ PRODUCTS=list; renderProducts(currentFilter); }
+    if(list.length){ PRODUCTS=list; renderProducts(currentFilter); renderCatRail(); }
   }).catch(function(err){ console.error('Could not load products from Firestore:',err); });
 })();
 
