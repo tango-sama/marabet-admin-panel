@@ -209,6 +209,40 @@ a{color:var(--gold)}
 </head>
 <body>
 
+<!-- ═══════════ ADMIN PASSWORD GATE ═══════════
+     Light client-side lock — keeps the panel out of casual reach. It is NOT real security:
+     the data is reachable through the public Firestore rules, so anyone determined can still
+     read it. For real protection, move to Firebase Auth + rules that require an admin login. -->
+<div id="adminGate" style="position:fixed;inset:0;z-index:99999;background:#0f0f0f;display:flex;align-items:center;justify-content:center;font-family:system-ui,Segoe UI,sans-serif">
+  <div style="background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:2rem;width:min(90%,340px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="font-size:2rem;margin-bottom:.5rem">🔒</div>
+    <div style="color:#fff;font-weight:700;margin-bottom:.25rem">Admin Access</div>
+    <div style="color:#888;font-size:.8rem;margin-bottom:1rem">Enter the password to continue</div>
+    <input id="adminPass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:.7rem;border-radius:8px;border:1px solid #333;background:#0f0f0f;color:#fff;margin-bottom:.75rem;text-align:center;font-size:1rem">
+    <button id="adminEnter" style="width:100%;padding:.7rem;border-radius:8px;border:none;background:#C9A84C;color:#111;font-weight:700;cursor:pointer;font-size:.95rem">Enter</button>
+    <div id="adminErr" style="color:#e25563;font-size:.78rem;margin-top:.6rem;display:none">Wrong password</div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY='bm_admin_ok', PASS='tango88';
+  var gate=document.getElementById('adminGate');
+  if(sessionStorage.getItem(KEY)==='1'){ if(gate) gate.parentNode.removeChild(gate); return; }
+  function tryPass(){
+    if(document.getElementById('adminPass').value===PASS){
+      sessionStorage.setItem(KEY,'1');
+      if(gate) gate.parentNode.removeChild(gate);
+    } else {
+      document.getElementById('adminErr').style.display='block';
+    }
+  }
+  document.getElementById('adminEnter').addEventListener('click',tryPass);
+  var p=document.getElementById('adminPass');
+  p.addEventListener('keydown',function(e){ if(e.key==='Enter') tryPass(); });
+  p.focus();
+})();
+</script>
+
 <button class="collapse-btn" id="collapseBtn" title="Toggle sidebar">&#9776;</button>
 
 <aside class="sidebar" id="sidebar">

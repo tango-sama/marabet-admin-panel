@@ -6,6 +6,12 @@
 <title>بازار مرابط — Bazar Merabet | الأحذية والحقائب</title>
 <meta name="description" content="بازار مرابط — وجهة الأحذية والحقائب الفاخرة في تقرت، الجزائر.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Warm up the connections to Firebase/Storage so the hero + product images start downloading sooner -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+<link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -181,6 +187,11 @@ nav.scrolled{background:rgba(247,245,241,.85);backdrop-filter:blur(16px);padding
 .fpill{background:var(--bg-2);border:1px solid var(--line);color:var(--ink-2);font-family:var(--sans);font-size:.8rem;font-weight:500;letter-spacing:.3px;padding:.5rem 1.2rem;border-radius:100px;cursor:pointer;transition:all .3s}
 .fpill:hover{border-color:var(--gold);color:var(--gold)}
 .fpill.active{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pager{display:flex;justify-content:center;flex-wrap:wrap;gap:.5rem;margin-top:2.5rem}
+.pg-btn{min-width:40px;height:40px;padding:0 .75rem;border:1px solid var(--line);background:var(--bg-2);color:var(--ink-2);border-radius:10px;font-family:var(--sans);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .25s}
+.pg-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.pg-btn.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
 .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
 .pcard{position:relative;cursor:pointer;opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
 .pcard.in{opacity:1;transform:translateY(0)}
@@ -426,6 +437,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
     </div>
   </div>
   <div class="pgrid" id="pgrid"></div>
+  <div class="pager" id="pager"></div>
 </section>
 
 <!-- STATS -->
@@ -534,23 +546,31 @@ document.getElementById('ticker').innerHTML=brands.concat(brands).concat(brands)
 function renderCatRail(cats){
   document.getElementById('catRail').innerHTML=cats.map(c=>`
   <div class="cat-tile" onclick="filterTo('${c.key}')">
-    ${c.photo?`<img src="${c.photo}" alt="${c.name}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div class="ci">${c.icon||'🛍️'}</div>`}
+    ${c.photo?`<img src="${c.photo}" alt="${c.name}" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div class="ci">${c.icon||'🛍️'}</div>`}
     <div class="cat-meta"><div class="nm">${c.name}</div><div class="ct"><bdi>${c.count||''}</bdi> ←</div></div>
   </div>`).join('');
 }
 renderCatRail(CATS);
 
-let activeColors={},currentFilter='all';
+let activeColors={},currentFilter='all',prodPage=1;
+const PER_PAGE=25;
 function renderProducts(cat){
   const grid=document.getElementById('pgrid');
-  const list=cat==='all'?PRODUCTS:PRODUCTS.filter(p=>p.cat===cat);
-  if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--ink-2);padding:3rem;text-align:center">لا توجد منتجات في هذا الصنف حالياً.</div>';return;}
+  const pager=document.getElementById('pager');
+  const full=cat==='all'?PRODUCTS:PRODUCTS.filter(p=>p.cat===cat);
+  if(!full.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--ink-2);padding:3rem;text-align:center">لا توجد منتجات في هذا الصنف حالياً.</div>';if(pager)pager.innerHTML='';return;}
+  // Show at most PER_PAGE products per page; clamp the page in case the list shrank (e.g. after filtering).
+  const pages=Math.ceil(full.length/PER_PAGE);
+  if(prodPage>pages) prodPage=pages; if(prodPage<1) prodPage=1;
+  const start=(prodPage-1)*PER_PAGE;
+  const list=full.slice(start,start+PER_PAGE);
   grid.innerHTML=list.map(p=>{
     const ci=activeColors[p.id]||0;
     const dots=p.colors.map((c,i)=>`<div class="cdot${i===ci?' on':''}" data-pid="${p.id}" data-ci="${i}" style="background:${c.h};border-color:${i===ci?'var(--ink)':'var(--line)'}" onclick="event.stopPropagation();setColor('${p.id}',${i})" title="${c.n}"></div>`).join('');
     const cur=p.colors[ci];
-    // each color can carry its own image; fall back to base emoji
-    const visual=cur.img?`<img src="${cur.img}" alt="${p.name} ${cur.n}" style="width:100%;height:100%;object-fit:cover">`:p.emoji;
+    // each color can carry its own image; fall back to base emoji. lazy + async-decode so off-screen
+    // cards don't block the first paint.
+    const visual=cur.img?`<img src="${cur.img}" alt="${p.name} ${cur.n}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">`:p.emoji;
     return `<article class="pcard" data-card="${p.id}" onclick="location.href='product.html?id=${p.id}'">
       <div class="pcard-img">
         ${p.badge?`<span class="pcard-badge">${p.badge}</span>`:''}
@@ -567,8 +587,18 @@ function renderProducts(cat){
   // Reveal the collection immediately once it has products — otherwise the section's reveal-on-scroll
   // animation (.rv{opacity:0}) keeps it hidden on first load until a category click scrolls it into view.
   const coll=document.getElementById('collection'); if(coll) coll.classList.add('in');
+  renderPager(pages);
   requestAnimationFrame(()=>document.querySelectorAll('.pcard').forEach((c,i)=>setTimeout(()=>c.classList.add('in'),i*55)));
 }
+function renderPager(pages){
+  const el=document.getElementById('pager'); if(!el) return;
+  if(pages<=1){ el.innerHTML=''; return; }
+  let html='<button class="pg-btn" '+(prodPage===1?'disabled':'')+' onclick="goPage('+(prodPage-1)+')">‹</button>';
+  for(let i=1;i<=pages;i++) html+='<button class="pg-btn'+(i===prodPage?' on':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+  html+='<button class="pg-btn" '+(prodPage===pages?'disabled':'')+' onclick="goPage('+(prodPage+1)+')">›</button>';
+  el.innerHTML=html;
+}
+function goPage(n){ prodPage=n; renderProducts(currentFilter); const c=document.getElementById('collection'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); }
 function setColor(pid,i){
   activeColors[pid]=i;
   const p=PRODUCTS.find(x=>String(x.id)===String(pid)); if(!p) return;
@@ -580,7 +610,7 @@ function setColor(pid,i){
     visualEl.style.transition='opacity .1s';
     visualEl.style.opacity='0';
     setTimeout(()=>{
-      visualEl.innerHTML = col.img ? '<img src="'+col.img+'" alt="'+p.name+' '+col.n+'" style="width:100%;height:100%;object-fit:cover">' : p.emoji;
+      visualEl.innerHTML = col.img ? '<img src="'+col.img+'" alt="'+p.name+' '+col.n+'" decoding="async" style="width:100%;height:100%;object-fit:cover">' : p.emoji;
       visualEl.style.opacity='1';
     },70);
   }
@@ -591,8 +621,8 @@ function setColor(pid,i){
     d.style.borderColor=on?'var(--ink)':'var(--line)';
   });
 }
-function filterTo(cat){currentFilter=cat;document.querySelectorAll('.fpill').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));renderProducts(cat);document.getElementById('collection').scrollIntoView({behavior:'smooth'});}
-document.getElementById('filterBar').addEventListener('click',e=>{const p=e.target.closest('.fpill');if(!p)return;currentFilter=p.dataset.cat;document.querySelectorAll('.fpill').forEach(x=>x.classList.toggle('active',x===p));renderProducts(p.dataset.cat);});
+function filterTo(cat){currentFilter=cat;prodPage=1;document.querySelectorAll('.fpill').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));renderProducts(cat);document.getElementById('collection').scrollIntoView({behavior:'smooth'});}
+document.getElementById('filterBar').addEventListener('click',e=>{const p=e.target.closest('.fpill');if(!p)return;currentFilter=p.dataset.cat;prodPage=1;document.querySelectorAll('.fpill').forEach(x=>x.classList.toggle('active',x===p));renderProducts(p.dataset.cat);});
 function order(pid){const p=PRODUCTS.find(x=>String(x.id)===String(pid));if(!p)return;const c=p.colors[activeColors[pid]||0];const msg=encodeURIComponent(`مرحبا، أريد طلب:\nالمنتج: ${p.name} — ${p.brand}\nاللون: ${c.n}\nالسعر: ${p.price} دج\n\nيرجى إخباري بالمقاسات المتاحة. شكراً!`);window.open('https://wa.me/213772423191?text='+msg,'_blank');}
 
 function submitForm(e){e.preventDefault();const n=document.getElementById('fname').value,ph=document.getElementById('fphone').value,pr=document.getElementById('fproduct').value,m=document.getElementById('fmsg').value;const t=`مرحبا، اسمي ${n}${ph?'\nهاتف: '+ph:''}${pr?'\nالمنتج: '+pr:''}\n\n${m}`;window.open('https://wa.me/213772423191?text='+encodeURIComponent(t),'_blank');}
@@ -602,6 +632,9 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>40));
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.1});
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 document.getElementById('burger').addEventListener('click',()=>{const m=document.getElementById('navMenu');const open=m.style.display==='flex';m.style.cssText=open?'':'display:flex;flex-direction:column;position:fixed;top:58px;right:0;left:0;background:rgba(247,245,241,.98);padding:2rem;gap:1.5rem;border-bottom:1px solid var(--line);z-index:199;box-shadow:var(--shadow)';});
+// Tapping a menu link collapses the mobile menu (clearing the inline styles falls back to the
+// CSS, which hides .nav-menu on mobile). Harmless on desktop where CSS keeps it visible.
+document.getElementById('navMenu').addEventListener('click',e=>{ if(e.target.closest('a')) document.getElementById('navMenu').style.cssText=''; });
 
 renderProducts('all');
 
@@ -639,11 +672,11 @@ renderProducts('all');
 (function loadStorefrontImages(){
   function applyHero(src){ if(!src) return; const ph=document.querySelector('.hero-photo'); if(!ph) return;
     const illus=ph.querySelector('.ph-illus'); if(illus) illus.remove();
-    let img=ph.querySelector('img.hero-set'); if(!img){ img=document.createElement('img'); img.className='hero-set'; ph.insertBefore(img, ph.firstChild); }
+    let img=ph.querySelector('img.hero-set'); if(!img){ img=document.createElement('img'); img.className='hero-set'; img.decoding='async'; img.setAttribute('fetchpriority','high'); ph.insertBefore(img, ph.firstChild); }
     img.src=src; img.alt='بازار مرابط'; }
   function applyFeatured(src){ if(!src) return; const fv=document.querySelector('.featured-visual'); if(!fv) return;
     const big=fv.querySelector('.big'); if(big) big.remove();
-    let img=fv.querySelector('img.featured-set'); if(!img){ img=document.createElement('img'); img.className='featured-set'; img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; fv.appendChild(img); }
+    let img=fv.querySelector('img.featured-set'); if(!img){ img=document.createElement('img'); img.className='featured-set'; img.loading='lazy'; img.decoding='async'; img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; fv.appendChild(img); }
     img.src=src; img.alt='مجموعة جديدة'; }
   function apply(a){ a=a||{}; applyHero(a.hero); applyFeatured(a.featured); }
   // instant from localStorage (admin's own device), then authoritative from Firestore (all visitors)
