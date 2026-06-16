@@ -254,6 +254,7 @@ a{color:var(--gold)}
     <div class="nav-item" data-page="dashboard"><span class="icon">📊</span> Dashboard</div>
     <div class="nav-item" data-page="orders"><span class="icon">📦</span> Orders <span class="nav-badge" id="orderCount" style="background:var(--danger)">0</span></div>
     <div class="nav-label">Settings</div>
+    <div class="nav-item" data-page="design"><span class="icon">🎨</span> Website Design</div>
     <div class="nav-item" data-page="settings"><span class="icon">⚙️</span> Settings</div>
   </nav>
 </aside>
@@ -292,6 +293,55 @@ a{color:var(--gold)}
     <!-- ORDERS PAGE -->
     <div class="page" id="page-orders">
       <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Customer</th><th>Product</th><th>Color</th><th>Size</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+    </div>
+
+    <!-- WEBSITE DESIGN PAGE -->
+    <div class="page" id="page-design">
+      <div class="settings-wrap">
+        <div class="settings-section">Opening pictures</div>
+        <div><label class="settings-label">Background website picture</label>
+          <input class="settings-input" id="bgImage" placeholder="https://… or upload below">
+          <input type="file" id="bgFile" accept="image/*" style="display:none">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-top:.4rem">
+            <button class="btn btn-outline btn-sm" id="bgUploadBtn" type="button">⬆️ Upload (→ WebP)</button>
+            <img id="bgPreview" style="display:none;height:46px;border-radius:8px;border:1px solid var(--line);object-fit:cover">
+          </div>
+        </div>
+        <div style="margin-top:.6rem"><label class="settings-label">Expand picture (the photo that grows on scroll)</label>
+          <input class="settings-input" id="expandImage" placeholder="https://… or upload below">
+          <input type="file" id="expandFile" accept="image/*" style="display:none">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-top:.4rem">
+            <button class="btn btn-outline btn-sm" id="expandUploadBtn" type="button">⬆️ Upload (→ WebP)</button>
+            <img id="expandPreview" style="display:none;height:46px;border-radius:8px;border:1px solid var(--line);object-fit:cover">
+          </div>
+        </div>
+
+        <div class="settings-section">First section text</div>
+        <div><label class="settings-label">Brand title shown over the opening</label>
+          <input class="settings-input" id="heroTitleInput" placeholder="بازار مرابط"></div>
+
+        <div class="settings-section">Main hero text</div>
+        <div><label class="settings-label">Headline — one line per row</label>
+          <textarea class="settings-input" id="heroHeadlineInput" rows="3" style="resize:vertical;line-height:1.6" placeholder="كل ما&#10;تحتاجينه&#10;في مكان واحد"></textarea></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Description paragraph</label>
+          <textarea class="settings-input" id="heroDescInput" rows="3" style="resize:vertical;line-height:1.6" placeholder="من الأحذية الأنيقة إلى الحقائب العصرية …"></textarea></div>
+
+        <div class="settings-section">Featured collection</div>
+        <div><label class="settings-label">Corner tag</label><input class="settings-input" id="featTag" placeholder="مجموعة جديدة"></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Eyebrow / subtitle</label><input class="settings-input" id="featSub" placeholder="مجموعة 2025 · حصرياً"></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Title</label><input class="settings-input" id="featTitle" placeholder="الأناقة في"></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Title — highlighted words (gold italic)</label><input class="settings-input" id="featTitleEm" placeholder="كل خطوة"></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Description</label>
+          <textarea class="settings-input" id="featDesc" rows="3" style="resize:vertical;line-height:1.6" placeholder="اكتشف أحدث ما وصل …"></textarea></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Button text</label><input class="settings-input" id="featBtnText" placeholder="تسوّق الآن"></div>
+        <div style="margin-top:.6rem"><label class="settings-label">Button link (e.g. #collection)</label><input class="settings-input" id="featBtnLink" placeholder="#collection"></div>
+
+        <button class="btn btn-gold" id="saveDesignBtn" style="margin-top:.6rem">💾 Save pictures &amp; text</button>
+
+        <div class="settings-section">Home sections — show / hide</div>
+        <div style="font-size:.72rem;color:var(--gray);margin-bottom:.6rem">Turn any section off to hide it from the home page. Saves instantly.</div>
+        <div id="sectionToggles"></div>
+      </div>
     </div>
 
     <!-- SETTINGS PAGE -->
@@ -435,7 +485,7 @@ function convertToWebP(file) {
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
-var products=[], categories=[], orders=[], SETTINGS={}, currentPageName='products';
+var products=[], categories=[], orders=[], SETTINGS={}, APPEARANCE={}, currentPageName='products';
 var drawerProduct=null, drawerSlots=[];
 // Preset colors — the picked swatch's name becomes the variant name (editable below).
 var PRESETS=[
@@ -524,11 +574,12 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.toggle('active',n.dataset.page===name);});
   var pg=$_('page-'+name); if(pg) pg.classList.add('active');
-  $_('pageTitle').textContent=name.charAt(0).toUpperCase()+name.slice(1);
+  $_('pageTitle').textContent=(name==='design'?'Website Design':name.charAt(0).toUpperCase()+name.slice(1));
   if(name==='products') renderSheet();
   if(name==='categories') renderCats();
   if(name==='orders') refreshOrders();
   if(name==='settings') renderSettings();
+  if(name==='design') renderDesign();
   if(name==='dashboard') updateStats();
 }
 document.querySelectorAll('.nav-item').forEach(function(n){n.addEventListener('click',function(){showPage(n.dataset.page);if(isMobile())closeMobileNav();});});
@@ -1127,6 +1178,97 @@ function wireImageUpload(btnId, fileId, inputId, previewId, storagePath, onUrl){
 wireImageUpload('heroUploadBtn','heroFile','heroImage','heroPreview','appearance/hero.webp',function(url){ SETTINGS.heroImage=url; fbSaveAppearance({hero:url}); showSettingsSave(); });
 wireImageUpload('featuredUploadBtn','featuredFile','featuredImage','featuredPreview','appearance/featured.webp',function(url){ SETTINGS.featuredImage=url; fbSaveAppearance({featured:url}); showSettingsSave(); });
 
+// ═══════════════════════════════════════════════════════════
+// WEBSITE DESIGN  (appearance/site: bgImage, expandImage, heroTitle, sections{})
+// ═══════════════════════════════════════════════════════════
+var HOME_SECTIONS=[
+  ['expand','Opening — store reveal (magic expand)'],
+  ['hero','Main hero — headline + photo'],
+  ['ticker','Scrolling ticker'],
+  ['categories','Categories'],
+  ['featured','Featured collection'],
+  ['collection','Products / Collection'],
+  ['stats','Stats band (500+ / 20+ …)'],
+  ['about','Why us / About'],
+  ['contact','Contact']
+];
+function renderDesign(){
+  $_('bgImage').value=APPEARANCE.bgImage||'';
+  $_('expandImage').value=APPEARANCE.expandImage||'';
+  $_('heroTitleInput').value=APPEARANCE.heroTitle||'';
+  $_('heroHeadlineInput').value=APPEARANCE.heroHeadline||'';
+  $_('heroDescInput').value=APPEARANCE.heroDesc||'';
+  $_('featTag').value=APPEARANCE.featuredTag||'';
+  $_('featSub').value=APPEARANCE.featuredSub||'';
+  $_('featTitle').value=APPEARANCE.featuredTitle||'';
+  $_('featTitleEm').value=APPEARANCE.featuredTitleEm||'';
+  $_('featDesc').value=APPEARANCE.featuredDesc||'';
+  $_('featBtnText').value=APPEARANCE.featuredBtnText||'';
+  $_('featBtnLink').value=APPEARANCE.featuredBtnLink||'';
+  [['bgPreview',APPEARANCE.bgImage],['expandPreview',APPEARANCE.expandImage]].forEach(function(p){
+    var el=$_(p[0]); if(!el) return; if(p[1]){ el.src=p[1]; el.style.display='inline-block'; } else { el.style.display='none'; }
+  });
+  var wrap=$_('sectionToggles'); if(!wrap) return; wrap.innerHTML='';
+  var secs=APPEARANCE.sections||{};
+  var labels={}; HOME_SECTIONS.forEach(function(s){ labels[s[0]]=s[1]; });
+  // saved order first (known keys only), then any sections missing from it
+  var order=(APPEARANCE.sectionOrder||[]).filter(function(k){ return labels[k]; });
+  HOME_SECTIONS.forEach(function(s){ if(order.indexOf(s[0])<0) order.push(s[0]); });
+  order.forEach(function(key){
+    var on=secs[key]!==false;
+    var row=document.createElement('div');
+    row.setAttribute('data-secrow',key); row.setAttribute('draggable','true');
+    row.style.cssText='display:flex;align-items:center;gap:.6rem;justify-content:space-between;padding:.55rem .3rem;border-bottom:1px solid var(--line);background:var(--bg-2);border-radius:6px;cursor:grab';
+    row.innerHTML='<span class="sec-drag" style="color:var(--gray);font-size:1.05rem;line-height:1;user-select:none">⠿</span>'+
+      '<label class="settings-label" style="margin:0;flex:1;pointer-events:none">'+esc(labels[key])+'</label>'+
+      '<label class="toggle"><input type="checkbox" data-seckey="'+key+'"'+(on?' checked':'')+'><span class="toggle-slider"></span></label>';
+    wrap.appendChild(row);
+  });
+}
+// Drag-to-reorder the section rows → saves appearance.sectionOrder (storefront reorders to match)
+(function initSectionReorder(){
+  var wrap=$_('sectionToggles'); if(!wrap) return; var dragEl=null;
+  wrap.addEventListener('dragstart',function(e){ var r=e.target.closest('[data-secrow]'); if(!r) return; dragEl=r; e.dataTransfer.effectAllowed='move'; setTimeout(function(){ r.style.opacity='.4'; },0); });
+  wrap.addEventListener('dragover',function(e){ if(!dragEl) return; e.preventDefault(); var r=e.target.closest('[data-secrow]'); if(!r||r===dragEl) return;
+    var rect=r.getBoundingClientRect(); var after=(e.clientY-rect.top)/rect.height>0.5; wrap.insertBefore(dragEl, after?r.nextSibling:r); });
+  wrap.addEventListener('drop',function(e){ e.preventDefault(); });
+  wrap.addEventListener('dragend',function(){ if(!dragEl) return; dragEl.style.opacity=''; dragEl=null;
+    var order=Array.prototype.slice.call(wrap.querySelectorAll('[data-secrow]')).map(function(r){ return r.getAttribute('data-secrow'); });
+    APPEARANCE.sectionOrder=order;
+    fbSaveAppearance({sectionOrder:order}).then(function(){ toast('✅ Section order saved','success'); }).catch(function(){ toast('Could not save order','error'); });
+  });
+})();
+// Section show/hide — saves immediately to appearance/site
+$_('sectionToggles').addEventListener('change',function(e){
+  var cb=e.target.closest('input[data-seckey]'); if(!cb) return;
+  var key=cb.dataset.seckey;
+  APPEARANCE.sections=APPEARANCE.sections||{}; APPEARANCE.sections[key]=cb.checked;
+  fbSaveAppearance({sections:APPEARANCE.sections})
+    .then(function(){ toast(cb.checked?'✅ Section shown on home':'🚫 Section hidden','success'); })
+    .catch(function(){ cb.checked=!cb.checked; APPEARANCE.sections[key]=cb.checked; toast('Could not save','error'); });
+});
+// Picture uploads → WebP → Storage → appearance/site (storefront reads bgImage / expandImage)
+wireImageUpload('bgUploadBtn','bgFile','bgImage','bgPreview','appearance/background.webp',function(url){ APPEARANCE.bgImage=url; fbSaveAppearance({bgImage:url}); });
+wireImageUpload('expandUploadBtn','expandFile','expandImage','expandPreview','appearance/expand.webp',function(url){ APPEARANCE.expandImage=url; fbSaveAppearance({expandImage:url}); });
+// Save manually-typed URLs + the first-section text
+$_('saveDesignBtn').addEventListener('click',function(){
+  APPEARANCE.bgImage=$_('bgImage').value.trim()||null;
+  APPEARANCE.expandImage=$_('expandImage').value.trim()||null;
+  APPEARANCE.heroTitle=$_('heroTitleInput').value;
+  APPEARANCE.heroHeadline=$_('heroHeadlineInput').value;
+  APPEARANCE.heroDesc=$_('heroDescInput').value;
+  APPEARANCE.featuredTag=$_('featTag').value;
+  APPEARANCE.featuredSub=$_('featSub').value;
+  APPEARANCE.featuredTitle=$_('featTitle').value;
+  APPEARANCE.featuredTitleEm=$_('featTitleEm').value;
+  APPEARANCE.featuredDesc=$_('featDesc').value;
+  APPEARANCE.featuredBtnText=$_('featBtnText').value;
+  APPEARANCE.featuredBtnLink=$_('featBtnLink').value;
+  fbSaveAppearance({bgImage:APPEARANCE.bgImage,expandImage:APPEARANCE.expandImage,heroTitle:APPEARANCE.heroTitle,heroHeadline:APPEARANCE.heroHeadline,heroDesc:APPEARANCE.heroDesc,featuredTag:APPEARANCE.featuredTag,featuredSub:APPEARANCE.featuredSub,featuredTitle:APPEARANCE.featuredTitle,featuredTitleEm:APPEARANCE.featuredTitleEm,featuredDesc:APPEARANCE.featuredDesc,featuredBtnText:APPEARANCE.featuredBtnText,featuredBtnLink:APPEARANCE.featuredBtnLink})
+    .then(function(){ toast('Design saved ✓','success'); })
+    .catch(function(){ toast('Save failed','error'); });
+});
+
 // Category picture upload → WebP → Storage → category.photo (storefront shows it on the tile).
 var _catPhotoTarget=null;
 $_('catsBody').addEventListener('click',function(e){
@@ -1176,8 +1318,8 @@ $_('saveCatsBtn').addEventListener('click',saveCats);
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-Promise.all([fbGetProducts(),fbGetCategories(),fbGetOrders(),fbGetSettings()]).then(function(r){
-  products=normIds(r[0]);categories=normIds(r[1]);orders=r[2];SETTINGS=r[3]||{};
+Promise.all([fbGetProducts(),fbGetCategories(),fbGetOrders(),fbGetSettings(),fbGetAppearance()]).then(function(r){
+  products=normIds(r[0]);categories=normIds(r[1]);orders=r[2];SETTINGS=r[3]||{};APPEARANCE=r[4]||{};
   // Seed defaults if empty
   if(!products.length&&!categories.length){
     var batch=db.batch();

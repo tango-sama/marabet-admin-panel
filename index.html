@@ -146,7 +146,7 @@ nav.scrolled{background:rgba(247,245,241,.85);backdrop-filter:blur(16px);padding
 @keyframes ticker{to{transform:translateX(-50%)}}
 
 /* ============ SECTION ============ */
-.sec{max-width:1400px;margin:0 auto;padding:7rem 3rem}
+.sec{max-width:1400px;margin:0 auto;padding:4rem 3rem}
 .sec-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:3.5rem;flex-wrap:wrap;gap:1.5rem}
 .sec-mark{display:flex;align-items:baseline;gap:1rem}
 .sec-num{font-family:var(--serif);font-size:.9rem;color:var(--gold);font-style:italic}
@@ -304,7 +304,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
   .hf-rating .rtx{font-size:.66rem}
   .hf-product .pic{width:38px;height:38px;font-size:1.3rem}
   .hero-scroll{display:none}
-  .sec,.contact{padding:4.5rem 1.5rem}.featured-copy{padding:3rem 1.5rem}
+  .sec,.contact{padding:3rem 1.5rem}.featured-copy{padding:3rem 1.5rem}
   .featured{border-radius:0}
   .pgrid{grid-template-columns:repeat(2,1fr);gap:1rem}.cat-rail{grid-template-columns:1fr 1fr}
   .cdot{width:26px;height:26px}.pcard-colors{gap:14px}
@@ -352,8 +352,40 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
   <button class="burger" id="burger"><span></span><span></span><span></span></button>
 </nav>
 
+<!-- MAGIC EXPAND (ported from React "ScrollExpandMedia" to vanilla JS, sticky-scroll) -->
+<style>
+.expand-track{position:relative;height:230vh;background:#000}
+.expand-pin{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000}
+.expand-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.5) saturate(1.05);transform:scale(1.08);will-change:opacity}
+.expand-bg::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.4)}
+.expand-media{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);overflow:hidden;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.55);will-change:width,height,border-radius}
+.expand-media img{width:100%;height:100%;object-fit:cover;display:block}
+.expand-media .veil{position:absolute;inset:0;background:#000;will-change:opacity}
+.expand-particles{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;transition:opacity 1.2s var(--ease)}
+.expand-title{position:absolute;top:50%;left:0;width:100%;z-index:10;text-align:center;pointer-events:none;will-change:transform,opacity}
+.expand-title .w{font-family:var(--serif);font-weight:700;font-size:clamp(2.6rem,8vw,5.5rem);line-height:1.05;display:inline-block;background:linear-gradient(180deg,#FCEFC8 0%,#E7C879 45%,#C49A3E 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;filter:drop-shadow(0 3px 22px rgba(0,0,0,.7)) drop-shadow(0 0 2px rgba(0,0,0,.6))}
+.expand-hint{position:absolute;bottom:7vh;left:0;right:0;text-align:center;z-index:10;color:#fff;font-family:var(--sans);font-size:.78rem;letter-spacing:5px;font-weight:600;opacity:.85;will-change:opacity}
+.expand-hint .chev{display:block;margin:.7rem auto 0;width:16px;height:16px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg);animation:expandBob 1.6s var(--ease) infinite}
+@keyframes expandBob{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+@media (prefers-reduced-motion:reduce){.expand-track{height:100vh}.expand-pin{position:relative}}
+</style>
+<div class="expand-track" id="expandTrack" data-sec="expand">
+  <div class="expand-pin">
+    <div class="expand-bg" id="expandBg" style="background-image:url('/storefront.jpg')"></div>
+    <div class="expand-media" id="expandMedia">
+      <img src="/storefront.jpg" alt="متجر بازار مرابط في تقرت" decoding="async">
+      <div class="veil" id="expandVeil"></div>
+    </div>
+    <div id="sparkles" class="expand-particles"></div>
+    <div class="expand-title" id="expandTitle">
+      <span class="w">بازار مرابط</span>
+    </div>
+    <div class="expand-hint" id="expandHint">مرّري للأسفل<span class="chev"></span></div>
+  </div>
+</div>
+
 <!-- HERO -->
-<header class="hero">
+<header class="hero" data-sec="hero">
   <div class="hero-copy">
     <div class="hero-eyebrow"><span class="dot"></span> تسوّقي بثقة · تقرت</div>
     <h1 class="hero-h1">
@@ -394,20 +426,42 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 </header>
 
 <!-- TICKER -->
-<div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+<div class="ticker" aria-hidden="true" data-sec="ticker"><div class="ticker-track" id="ticker"></div></div>
 
-<!-- CATEGORIES -->
-<section class="sec rv" id="categories">
+<!-- CATEGORIES (stacked-card explorer — ported from React "AnimatedCardStack" to vanilla JS) -->
+<style>
+.cat-stack-wrap{display:flex;flex-direction:column;align-items:center;width:100%;margin-top:1rem}
+.cat-stack{position:relative;height:380px;width:100%;max-width:560px;margin:0 auto}
+.cat-card{position:absolute;left:50%;bottom:0;width:min(512px,90vw);height:300px;transform:translateX(-50%);background:var(--bg-2);border:1px solid var(--line);border-bottom:none;border-radius:20px 20px 0 0;box-shadow:var(--shadow-lg);padding:.7rem;overflow:hidden;display:flex;flex-direction:column;gap:.6rem;transition:transform .7s cubic-bezier(.22,1,.36,1),opacity .55s ease;will-change:transform,opacity}
+.cat-card-img{height:196px;border-radius:13px;overflow:hidden;position:relative;background:linear-gradient(135deg,var(--gold-soft),var(--sage-soft));display:flex;align-items:center;justify-content:center}
+.cat-card-img img{width:100%;height:100%;object-fit:cover;display:block}
+.cat-card-img .ci{font-size:4.2rem}
+.cat-card-foot{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.1rem .5rem .2rem}
+.cat-card-txt{display:flex;flex-direction:column;min-width:0}
+.cat-card-txt .t{font-family:var(--serif);font-weight:700;color:var(--ink);font-size:1.15rem;line-height:1.2}
+.cat-card-txt .d{color:var(--ink-3);font-size:.78rem}
+.cat-card-btn{display:inline-flex;align-items:center;gap:.35rem;background:var(--ink);color:var(--bg);border:none;border-radius:100px;padding:.65rem 1.05rem;font-family:var(--sans);font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .3s,transform .2s}
+.cat-card-btn:hover{background:var(--gold);transform:translateY(-1px)}
+.cat-card-btn svg{transform:scaleX(-1)}
+.cat-explore{margin-top:1.4rem;display:inline-flex;align-items:center;gap:.5rem;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:.7rem 1.5rem;font-family:var(--sans);font-weight:600;font-size:.9rem;cursor:pointer;transition:all .3s}
+.cat-explore:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-1px)}
+.cat-explore .cx{display:inline-block;transition:transform .5s var(--ease)}
+.cat-explore:hover .cx{transform:rotate(180deg)}
+</style>
+<section class="sec rv" id="categories" data-sec="categories">
   <div class="sec-head">
     <div class="sec-mark"><span class="sec-num">01</span>
       <div><div class="sec-eyebrow">الأصناف</div><h2 class="sec-title">تسوّق حسب <em>الصنف</em></h2></div>
     </div>
   </div>
-  <div class="cat-rail" id="catRail"></div>
+  <div class="cat-stack-wrap">
+    <div class="cat-stack" id="catStack"></div>
+    <button class="cat-explore" id="catExplore">اكتشفي صنفاً آخر <span class="cx">↻</span></button>
+  </div>
 </section>
 
 <!-- FEATURED -->
-<section class="rv" style="padding:0 3rem" id="featured">
+<section class="rv" style="padding:0 3rem" id="featured" data-sec="featured">
   <div class="featured">
     <div class="featured-inner">
       <div class="featured-visual"><div class="float-tag">مجموعة جديدة</div><div class="big">👟</div></div>
@@ -422,7 +476,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 </section>
 
 <!-- COLLECTION -->
-<section class="sec rv" id="collection">
+<section class="sec rv" id="collection" data-sec="collection">
   <div class="sec-head">
     <div class="sec-mark"><span class="sec-num">02</span>
       <div><div class="sec-eyebrow">المجموعة</div><h2 class="sec-title">أبرز <em>المنتجات</em></h2></div>
@@ -441,7 +495,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 </section>
 
 <!-- STATS -->
-<section class="rv" style="padding:0 3rem">
+<section class="rv" style="padding:0 3rem" data-sec="stats">
   <div class="stats"><div class="stats-inner">
     <div class="stat-cell"><div class="n"><span class="num">500+</span></div><div class="l">منتج متاح</div></div>
     <div class="stat-cell"><div class="n"><span class="num">20+</span></div><div class="l">ماركة عالمية</div></div>
@@ -451,7 +505,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 </section>
 
 <!-- WHY -->
-<section class="sec rv" id="about">
+<section class="sec rv" id="about" data-sec="about">
   <div class="sec-head">
     <div class="sec-mark"><span class="sec-num">03</span>
       <div><div class="sec-eyebrow">لماذا نحن</div><h2 class="sec-title">تجربة <em>استثنائية</em></h2></div>
@@ -466,7 +520,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 </section>
 
 <!-- CONTACT -->
-<section class="contact rv" id="contact">
+<section class="contact rv" id="contact" data-sec="contact">
   <div class="sec-head">
     <div class="sec-mark"><span class="sec-num">04</span>
       <div><div class="sec-eyebrow">تواصل معنا</div><h2 class="sec-title">زورونا أو <em>راسلونا</em></h2></div>
@@ -543,13 +597,47 @@ let PRODUCTS=[
 const brands=['NIKE','ADIDAS','PUMA','BATA','REEBOK','NEW BALANCE','SKECHERS','LACOSTE'];
 document.getElementById('ticker').innerHTML=brands.concat(brands).concat(brands).map(b=>`<span class="ticker-item">${b}</span><span class="ticker-dot"></span>`).join('');
 
-function renderCatRail(cats){
-  document.getElementById('catRail').innerHTML=cats.map(c=>`
-  <div class="cat-tile" onclick="filterTo('${c.key}')">
-    ${c.photo?`<img src="${c.photo}" alt="${c.name}" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div class="ci">${c.icon||'🛍️'}</div>`}
-    <div class="cat-meta"><div class="nm">${c.name}</div><div class="ct"><bdi>${c.count||''}</bdi> ←</div></div>
-  </div>`).join('');
+// Category stacked-card explorer (ported from React "AnimatedCardStack"; CSS-transition spring)
+var catCards=[], catOrder=[], catBusy=false;
+var CAT_POS=[{s:1,y:12},{s:.95,y:-16},{s:.9,y:-44}];
+function catChevron(){ return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M9.5 18L15.5 12L9.5 6"/></svg>'; }
+function catPlace(el,pos,instant){
+  if(instant) el.style.transition='none';
+  if(pos<3){ var p=CAT_POS[pos]; el.style.transform='translateX(-50%) translateY('+p.y+'px) scale('+p.s+')'; el.style.opacity='1'; el.style.zIndex=String(10-pos); el.style.pointerEvents=(pos===0?'auto':'none'); }
+  else { el.style.transform='translateX(-50%) translateY(-44px) scale(.9)'; el.style.opacity='0'; el.style.zIndex='1'; el.style.pointerEvents='none'; }
+  if(instant){ void el.offsetWidth; el.style.transition=''; }
 }
+function catLayout(instant){ catOrder.forEach(function(idx,pos){ var el=catCards[idx]; if(el) catPlace(el,pos,instant); }); }
+function renderCatRail(cats){
+  var stack=document.getElementById('catStack'); if(!stack) return;
+  stack.innerHTML=''; catCards=[];
+  (cats||[]).forEach(function(c){
+    var el=document.createElement('div'); el.className='cat-card';
+    var visual=c.photo?'<img src="'+c.photo+'" alt="'+(c.name||'')+'" loading="lazy" decoding="async">':'<div class="ci">'+(c.icon||'🛍️')+'</div>';
+    el.innerHTML='<div class="cat-card-img">'+visual+'</div>'+
+      '<div class="cat-card-foot"><div class="cat-card-txt"><span class="t">'+(c.name||'')+'</span><span class="d"><bdi>'+(c.count||'')+'</bdi></span></div>'+
+      '<button class="cat-card-btn" data-cat="'+(c.key||'')+'">تسوّقي هذا الصنف '+catChevron()+'</button></div>';
+    stack.appendChild(el); catCards.push(el);
+  });
+  catOrder=catCards.map(function(_,i){return i;});
+  catLayout(true);
+}
+function catAdvance(){
+  if(catBusy||catOrder.length<2) return; catBusy=true;
+  var front=catCards[catOrder[0]];
+  front.style.zIndex='20'; front.style.transform='translateX(-50%) translateY(360px) scale(1)'; front.style.opacity='0';
+  setTimeout(function(){
+    catOrder.push(catOrder.shift());   // front goes to the back of the stack
+    catPlace(front,99,true);           // snap it above instantly, then…
+    catLayout(false);                  // …everyone springs to their new slot
+    catBusy=false;
+  }, 640);
+}
+(function initCatStack(){
+  var stack=document.getElementById('catStack'), exp=document.getElementById('catExplore');
+  if(stack) stack.addEventListener('click',function(e){ var b=e.target.closest('.cat-card-btn'); if(b&&typeof filterTo==='function') filterTo(b.dataset.cat); });
+  if(exp) exp.addEventListener('click',catAdvance);
+})();
 renderCatRail(CATS);
 
 let activeColors={},currentFilter='all',prodPage=1;
@@ -678,10 +766,38 @@ renderProducts('all');
     const big=fv.querySelector('.big'); if(big) big.remove();
     let img=fv.querySelector('img.featured-set'); if(!img){ img=document.createElement('img'); img.className='featured-set'; img.loading='lazy'; img.decoding='async'; img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; fv.appendChild(img); }
     img.src=src; img.alt='مجموعة جديدة'; }
-  function apply(a){ a=a||{}; applyHero(a.hero); applyFeatured(a.featured); }
-  // instant from localStorage (admin's own device), then authoritative from Firestore (all visitors)
+  // Magic-expand opening: background picture (backdrop) + expand picture (the card that grows)
+  function applyBgImage(src){ if(!src) return; const bg=document.getElementById('expandBg'); if(bg) bg.style.backgroundImage="url('"+src+"')"; }
+  function applyExpandImage(src){ if(!src) return; const m=document.getElementById('expandMedia'); if(!m) return; const img=m.querySelector('img'); if(img) img.src=src; }
+  // Editable text of the first section (the gold brand line over the opening)
+  function applyHeroTitle(t){ if(t==null||t==='') return; const el=document.querySelector('.expand-title .w'); if(el) el.textContent=t; }
+  // Main hero headline — one line per row; rebuilds the animated .line spans (line 2 stays gold/italic via CSS)
+  function applyHeroHeadline(t){ if(t==null||t==='') return; const h1=document.querySelector('.hero-h1'); if(!h1) return;
+    const lines=String(t).split('\n').map(function(s){return s.trim();}).filter(Boolean); if(!lines.length) return;
+    h1.innerHTML=''; lines.forEach(function(line){ const o=document.createElement('span'); o.className='line'; const i=document.createElement('span'); i.textContent=line; o.appendChild(i); h1.appendChild(o); }); }
+  function applyHeroDesc(t){ if(t==null||t==='') return; const el=document.querySelector('.hero-desc'); if(el) el.textContent=t; }
+  // Per-section show/hide — a section is hidden only when its flag is explicitly false
+  function applySections(secs){ if(!secs) return; document.querySelectorAll('[data-sec]').forEach(function(el){ if(secs[el.getAttribute('data-sec')]===false) el.style.display='none'; }); }
+  // Reorder the home sections to the admin-defined order (sections are contiguous siblings before the footer)
+  function applySectionOrder(order){ if(!order||!order.length) return;
+    var secs=Array.prototype.slice.call(document.querySelectorAll('[data-sec]')); if(!secs.length) return;
+    var parent=secs[0].parentNode, anchor=secs[secs.length-1].nextSibling, byKey={}, seen={};
+    secs.forEach(function(el){ byKey[el.getAttribute('data-sec')]=el; });
+    order.forEach(function(k){ if(byKey[k]){ parent.insertBefore(byKey[k], anchor); seen[k]=1; } });
+    secs.forEach(function(el){ if(!seen[el.getAttribute('data-sec')]) parent.insertBefore(el, anchor); }); }
+  // Featured collection — all text + button (managed in admin → Website Design)
+  function applyFeaturedText(a){
+    function set(sel,t){ if(t==null||t==='') return; var el=document.querySelector(sel); if(el) el.textContent=t; }
+    set('.featured .float-tag', a.featuredTag);
+    set('.featured .ssub', a.featuredSub);
+    if(a.featuredTitle!=null && a.featuredTitle!==''){ var h3=document.querySelector('.featured h3'); if(h3){ h3.textContent=a.featuredTitle; if(a.featuredTitleEm){ h3.appendChild(document.createTextNode(' ')); var em=document.createElement('em'); em.textContent=a.featuredTitleEm; h3.appendChild(em); } } }
+    set('.featured .featured-copy p', a.featuredDesc);
+    var btn=document.querySelector('.featured .btn-fill-gold'); if(btn){ if(a.featuredBtnText) btn.textContent=a.featuredBtnText; if(a.featuredBtnLink) btn.setAttribute('href', a.featuredBtnLink); }
+  }
+  function apply(a){ a=a||{}; applyHero(a.hero); applyFeatured(a.featured); applyFeaturedText(a); applyBgImage(a.bgImage); applyExpandImage(a.expandImage); applyHeroTitle(a.heroTitle); applyHeroHeadline(a.heroHeadline); applyHeroDesc(a.heroDesc); applySections(a.sections); applySectionOrder(a.sectionOrder); }
+  // instant from localStorage (cached on every visit), then authoritative from Firestore
   try{ apply(JSON.parse(localStorage.getItem('bm_appearance'))||{}); }catch(e){}
-  if(typeof firebase!=='undefined'){ firebase.firestore().doc('appearance/site').get().then(function(d){ if(d.exists) apply(d.data()); }).catch(function(){}); }
+  if(typeof firebase!=='undefined'){ firebase.firestore().doc('appearance/site').get().then(function(d){ if(d.exists){ apply(d.data()); try{ localStorage.setItem('bm_appearance', JSON.stringify(d.data())); }catch(e){} } }).catch(function(){}); }
 })();
 
 // ── live categories (+ uploaded pictures) from Firestore; falls back to the built-in list ──
@@ -698,6 +814,92 @@ renderProducts('all');
 
 // safety: ensure hero headline is always visible even if animation is interrupted
 setTimeout(()=>{document.querySelectorAll('.hero-h1 .line span').forEach(s=>{s.style.opacity='1';s.style.transform='none';});},1500);
+</script>
+
+<!-- Sparkles particle field (vanilla tsParticles engine; Vite bundles this module). -->
+<script type="module">
+  import { tsParticles } from '@tsparticles/engine';
+  import { loadSlim } from '@tsparticles/slim';
+
+  const host = document.getElementById('sparkles');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (host && !reduce) {
+    (async () => {
+      await loadSlim(tsParticles);
+      await tsParticles.load({
+        id: 'sparkles',
+        options: {
+          fullScreen: { enable: false },
+          background: { color: { value: 'transparent' } },
+          fpsLimit: 120,
+          detectRetina: true,
+          particles: {
+            color: { value: '#FBF3DD' },
+            number: { value: 120, density: { enable: true, width: 1080, height: 1080 } },
+            move: { enable: true, direction: 'none', speed: { min: 0.1, max: 1 }, outModes: { default: 'out' } },
+            opacity: {
+              value: { min: 0.1, max: 1 },
+              animation: { enable: true, speed: 4, sync: false, startValue: 'random', mode: 'auto' },
+            },
+            size: { value: { min: 0.4, max: 1.1 } },
+            shape: { type: 'circle' },
+          },
+        },
+      });
+      host.style.opacity = '1'; // fade in once the field is ready (mirrors the original)
+    })();
+  }
+</script>
+
+<!-- Magic-expand scroll driver (sticky-scroll progress -> media size / title split). -->
+<script>
+(function(){
+  var track = document.getElementById('expandTrack');
+  if(!track) return;
+  var media = document.getElementById('expandMedia');
+  var bg    = document.getElementById('expandBg');
+  var veil  = document.getElementById('expandVeil');
+  var title = document.getElementById('expandTitle');
+  var hint  = document.getElementById('expandHint');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var clamp = function(v,a,b){ return Math.min(b, Math.max(a, v)); };
+  var lerp  = function(a,b,t){ return a + (b-a)*t; };
+  var isMobile = function(){ return window.innerWidth < 768; };
+
+  // Reduced motion: just show the photo expanded, no scroll effect.
+  if(reduce){
+    media.style.width='100%'; media.style.height='100%'; media.style.borderRadius='0';
+    veil.style.opacity='0.25'; bg.style.opacity='0'; title.style.opacity='0'; hint.style.opacity='0';
+    return;
+  }
+
+  var ticking=false;
+  function update(){
+    ticking=false;
+    var startW = isMobile()?240:340, startH = isMobile()?360:460;
+    var scrollable = track.offsetHeight - window.innerHeight;
+    var p = clamp((-track.getBoundingClientRect().top)/scrollable, 0, 1);
+
+    var mediaH = lerp(startH, window.innerHeight, p);
+    media.style.width        = lerp(startW, window.innerWidth, p) + 'px';
+    media.style.height       = mediaH + 'px';
+    media.style.borderRadius = lerp(24, 0, p) + 'px';
+    veil.style.opacity = (0.4 - p*0.4).toFixed(3);   // photo brightens as it grows
+    bg.style.opacity   = (1 - p).toFixed(3);          // backdrop fades out
+
+    // brand sits just above the opening picture, rising + fading as it expands
+    var gap = isMobile()?14:24;
+    title.style.transform = 'translateY(calc(-100% - ' + (mediaH/2 + gap) + 'px))';
+    title.style.opacity = clamp(1 - (p-0.3)/0.35, 0, 1);
+    hint.style.opacity  = clamp(1 - p/0.25, 0, 1) * 0.85;
+  }
+  function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(update); } }
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', onScroll);
+  update();
+})();
 </script>
 </body>
 </html>
