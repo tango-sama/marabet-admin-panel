@@ -564,6 +564,9 @@ function renderProducts(cat){
       <div class="pcard-foot"><div class="pcard-price"><span class="num">${p.price.toLocaleString()}</span> <span>دج</span></div><div class="pcard-sizes"><span class="ltr">${p.sizes}</span></div></div>
     </article>`;
   }).join('');
+  // Reveal the collection immediately once it has products — otherwise the section's reveal-on-scroll
+  // animation (.rv{opacity:0}) keeps it hidden on first load until a category click scrolls it into view.
+  const coll=document.getElementById('collection'); if(coll) coll.classList.add('in');
   requestAnimationFrame(()=>document.querySelectorAll('.pcard').forEach((c,i)=>setTimeout(()=>c.classList.add('in'),i*55)));
 }
 function setColor(pid,i){
@@ -573,12 +576,13 @@ function setColor(pid,i){
   // update only this card's image
   const visualEl=document.querySelector('.pe[data-visual="'+pid+'"]');
   if(visualEl){
-    visualEl.style.transition='opacity .25s';
+    // Quick crossfade: swap the image almost immediately so the switch feels instant.
+    visualEl.style.transition='opacity .1s';
     visualEl.style.opacity='0';
     setTimeout(()=>{
       visualEl.innerHTML = col.img ? '<img src="'+col.img+'" alt="'+p.name+' '+col.n+'" style="width:100%;height:100%;object-fit:cover">' : p.emoji;
       visualEl.style.opacity='1';
-    },200);
+    },70);
   }
   // update active dot styling within this card only
   document.querySelectorAll('.cdot[data-pid="'+pid+'"]').forEach(d=>{

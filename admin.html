@@ -54,10 +54,13 @@ body{background:var(--black);color:var(--white);font-family:var(--font);display:
 .btn-icon:hover{background:var(--card3);color:var(--white)}
 .btn-icon.save-row{color:var(--gold);border:1px solid rgba(201,168,76,.4);border-radius:4px;font-weight:700;animation:pulse-gold 1.2s ease-in-out infinite}
 .btn-icon.save-row:hover{background:var(--gold-dim)}
-/* Product sheet: the gold ✓ only appears while a row has unsaved edits */
-#sheetBody .btn-icon.save-row{display:none}
-#sheetBody .btn-icon.save-row.dirty{display:inline-block}
+/* Product & category sheets: the gold ✓ only appears while a row has unsaved edits */
+#sheetBody .btn-icon.save-row,#catsBody .btn-icon.save-row{display:none}
+#sheetBody .btn-icon.save-row.dirty,#catsBody .btn-icon.save-row.dirty{display:inline-block}
 @keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0)}50%{box-shadow:0 0 0 3px rgba(201,168,76,.25)}}
+.carrier-status{font-size:.7rem;font-weight:700;padding:.12rem .55rem;border-radius:100px;vertical-align:middle;margin-right:.4rem;letter-spacing:.2px}
+.carrier-status.on{background:rgba(40,167,69,.16);color:#28a745}
+.carrier-status.off{background:rgba(150,150,150,.16);color:var(--gray)}
 .btn-icon.danger:hover{color:var(--danger)}
 
 .page{display:none}.page.active{display:block}
@@ -282,8 +285,12 @@ a{color:var(--gold)}
             <img id="featuredPreview" style="display:none;height:46px;border-radius:8px;border:1px solid var(--line);object-fit:cover">
           </div>
         </div>
-        <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:.5rem">💾 Save Settings</button>
-        <div class="settings-section">Delivery — Yalidine</div>
+        <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:.5rem;display:none">💾 Save Settings</button>
+        <div class="settings-section" style="color:#E11900">Delivery — Yalidine <span id="yalidineStatus" class="carrier-status off">⚪ checking…</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem">
+          <label class="settings-label" style="margin:0">Show Yalidine at checkout</label>
+          <label class="toggle"><input type="checkbox" id="yalidineEnabled" checked><span class="toggle-slider"></span></label>
+        </div>
         <div><label class="settings-label">Yalidine API ID</label><input class="settings-input" id="yalidineId" placeholder="API ID"></div>
         <div><label class="settings-label">Yalidine API Token</label><input class="settings-input" id="yalidineToken" type="password" placeholder="API Token"></div>
         <div><label class="settings-label">Pickup Wilaya</label><input class="settings-input" id="yalidineWilaya" placeholder="Touggourt"></div>
@@ -292,7 +299,11 @@ a{color:var(--gold)}
         <button class="btn btn-outline" id="syncGeoBtn" style="margin-top:.5rem;margin-left:.5rem">🌍 Sync Yalidine wilayas/communes</button>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Run once after saving your keys so the order form uses Yalidine's official wilaya/commune names (auto-refreshes daily after that).</div>
 
-        <div class="settings-section">Delivery — Noest</div>
+        <div class="settings-section" style="color:#1565C0">Delivery — Noest <span id="noestStatus" class="carrier-status off">⚪ checking…</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem">
+          <label class="settings-label" style="margin:0">Show Noest at checkout</label>
+          <label class="toggle"><input type="checkbox" id="noestEnabled" checked><span class="toggle-slider"></span></label>
+        </div>
         <div><label class="settings-label">Noest API Token</label><input class="settings-input" id="noestToken" type="password" placeholder="API Token"></div>
         <div><label class="settings-label">Noest user_guid</label><input class="settings-input" id="noestGuid" placeholder="user_guid"></div>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">🔒 Write-only, same as Yalidine. Get both from your Noest account (app.noest-dz.com → API). Leave blank to keep the current value.</div>
@@ -408,7 +419,7 @@ var PRESETS=[
 // FIREBASE HELPERS
 // ═══════════════════════════════════════════════════════════
 function fbGetProducts() { return db.collection('products').get().then(function(s){var r=[];s.forEach(function(d){r.push(Object.assign({_docId:d.id},d.data()));});return r;}); }
-function fbSaveProduct(p) { var d=Object.assign({},p); delete d._docId; return p._docId?db.collection('products').doc(p._docId).set(d):db.collection('products').add(d).then(function(ref){p._docId=ref.id;}); }
+function fbSaveProduct(p, opts) { var d=Object.assign({},p); delete d._docId; return p._docId?db.collection('products').doc(p._docId).set(d, opts||{}):db.collection('products').add(d).then(function(ref){p._docId=ref.id;}); }
 function fbDeleteProduct(id) { return db.collection('products').doc(id).delete(); }
 function fbGetCategories() { return db.collection('categories').get().then(function(s){var r=[];s.forEach(function(d){r.push(Object.assign({_docId:d.id},d.data()));});return r;}); }
 function fbSaveCategory(c) { var d=Object.assign({},c); delete d._docId; return c._docId?db.collection('categories').doc(c._docId).set(d):db.collection('categories').add(d).then(function(ref){c._docId=ref.id;}); }
@@ -615,14 +626,18 @@ function missingFields(p) {
   return m;
 }
 
-function saveOneProduct(p) {
+// Row ✓ confirm saves only the lightweight text fields (merge write) so it doesn't re-upload the
+// heavy base64 variant photos every time — that made the confirm hang for seconds. Pass
+// includeVariants=true (from the photo drawer) when the colors/photos themselves actually changed.
+function saveOneProduct(p, includeVariants) {
   var miss=missingFields(p);
   if(miss.length){ toast('Cannot save — missing: '+miss.join(', '),'error'); return Promise.resolve(false); }
-  return fbSaveProduct({
+  var payload={
     _docId:p.id, name:p.name||'', brand:p.brand||'', category:p.category||'',
-    price:+p.price||0, sizes:p.sizes||'', active:p.active!==false,
-    variants:(p.variants||[]).map(function(v){return{color:v.color,hex:v.hex,photo:v.photo||null};})
-  }).then(function(){
+    price:+p.price||0, sizes:p.sizes||'', active:p.active!==false
+  };
+  if(includeVariants) payload.variants=(p.variants||[]).map(function(v){return{color:v.color,hex:v.hex,photo:v.photo||null};});
+  return fbSaveProduct(payload, {merge:true}).then(function(){
     p._dirty=false;
     var btn=$_('sheetBody').querySelector('[data-save="'+p.id+'"]');
     if(btn) btn.classList.remove('dirty');
@@ -654,7 +669,7 @@ function renderCats() {
     +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="key" value="'+esc(c.key||'')+'"></td>'
     +'<td style="text-align:center">'+products.filter(function(p){return p.category===c.key;}).length+'</td>'
     +'<td><label class="toggle"><input type="checkbox" data-cid="'+esc(c.id)+'" data-cfield="visible" '+(c.visible!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
-    +'<td class="col-actions"><button class="btn-icon save-row" data-savecat="'+esc(c.id)+'">💾</button><button class="btn-icon danger" data-delcat="'+esc(c.id)+'">🗑</button></td>'
+    +'<td class="col-actions"><button class="btn-icon save-row'+(c._dirty?' dirty':'')+'" data-savecat="'+esc(c.id)+'" title="Confirm / Save category">✓</button><button class="btn-icon danger" data-delcat="'+esc(c.id)+'">🗑</button></td>'
   +'</tr>';}).join('');
 }
 $_('catsBody').addEventListener('input',function(e){
@@ -662,10 +677,13 @@ $_('catsBody').addEventListener('input',function(e){
   var c=categories.find(function(x){return x.id===cid;}); if(!c) return;
   var f=e.target.dataset.cfield;
   if(f==='visible') c.visible=e.target.checked; else c[f]=e.target.value;
+  c._dirty=true;
+  var row=e.target.closest('tr'), btn=row&&row.querySelector('.save-row');
+  if(btn) btn.classList.add('dirty');
 });
 $_('catsBody').addEventListener('click',function(e){
   var s=e.target.closest('[data-savecat]'), d=e.target.closest('[data-delcat]');
-  if(s){var c=categories.find(function(x){return x.id===s.dataset.savecat;});if(c){fbSaveCategory(c).then(function(){toast('Category saved','success');syncCatFilters();});}}
+  if(s){var c=categories.find(function(x){return x.id===s.dataset.savecat;});if(c){delete c._dirty;fbSaveCategory(c).then(function(){s.classList.remove('dirty');toast('Category saved','success');syncCatFilters();}).catch(function(){c._dirty=true;s.classList.add('dirty');toast('Save failed','error');});}}
   if(d){if(!confirm('Delete?'))return;var cid=d.dataset.delcat;fbDeleteCategory(cid).catch(function(){});categories=categories.filter(function(x){return x.id!==cid;});renderCats();toast('Category deleted','error');}
 });
 function addCatRow(){categories.push({id:uid(),name:'',key:'',visible:true});renderCats();}
@@ -783,7 +801,40 @@ function renderSettings() {
   $_('settingIg').value=SETTINGS.igUrl||'';
   $_('heroImage').value=SETTINGS.heroImage||'';
   $_('featuredImage').value=SETTINGS.featuredImage||'';
+  hideSettingsSave();  // fields just (re)loaded — nothing to save yet
+  // Carrier on/off switches (default ON when never set)
+  $_('yalidineEnabled').checked=SETTINGS.yalidineEnabled!==false;
+  $_('noestEnabled').checked=SETTINGS.noestEnabled!==false;
+  refreshCarrierStatus();
 }
+
+// Carrier API "connected" sign. The API keys are write-only (rules block reading them back), so we
+// use the synced wilaya/fee lists in delivery_data/<carrier> as the proxy: those only get written
+// when a sync with working credentials succeeds. Green = connected & synced, grey = not yet.
+function refreshCarrierStatus() {
+  [['yalidine','yalidineStatus'],['noest','noestStatus']].forEach(function(pair){
+    var el=$_(pair[1]); if(!el) return;
+    db.collection('delivery_data').doc(pair[0]).get().then(function(d){
+      var data=d.exists?(d.data()||{}):{};
+      var n=Array.isArray(data.wilayas)?data.wilayas.length:0;
+      if(n>0){ el.className='carrier-status on'; el.textContent='🟢 connected · '+n+' wilayas'; }
+      else { el.className='carrier-status off'; el.textContent='⚪ not connected — save keys & sync'; }
+    }).catch(function(){ el.className='carrier-status off'; el.textContent='⚪ not connected — save keys & sync'; });
+  });
+}
+
+// Each carrier toggle persists immediately to settings/general (public read), so the order form
+// can hide carriers the admin turned off.
+[['yalidineEnabled','Yalidine'],['noestEnabled','Noest']].forEach(function(pair){
+  var el=$_(pair[0]); if(!el) return;
+  el.addEventListener('change',function(){
+    SETTINGS[pair[0]]=el.checked;
+    var patch={}; patch[pair[0]]=el.checked;
+    db.collection('settings').doc('general').set(patch,{merge:true})
+      .then(function(){ toast((el.checked?'✅ '+pair[1]+' shown at checkout':'🚫 '+pair[1]+' hidden at checkout'),'success'); })
+      .catch(function(){ el.checked=!el.checked; SETTINGS[pair[0]]=el.checked; toast('Could not save','error'); });
+  });
+});
 
 // ═══════════════════════════════════════════════════════════
 // PHOTO DRAWER
@@ -928,7 +979,7 @@ function finalizeDrawerSave() {
   // Route through saveOneProduct so the doc id stays p.id (same as row-save) — avoids duplicate docs.
   // If the product is still missing required info, saveOneProduct reports it; the photos stay
   // attached to the row (dirty) so they persist once the rest is filled in and ✓ is clicked.
-  saveOneProduct(p).then(function(ok){
+  saveOneProduct(p, true).then(function(ok){
     renderSheet();
     if(ok) toast('Saved '+n+' color variant'+(n!==1?'s':''),'success');
   });
@@ -969,10 +1020,16 @@ $_('saveSettingsBtn').addEventListener('click',function(){
   SETTINGS.igUrl=$_('settingIg').value;
   SETTINGS.heroImage=$_('heroImage').value;
   SETTINGS.featuredImage=$_('featuredImage').value;
-  fbSaveSettings(SETTINGS).then(function(){toast('Settings saved','success');});
+  fbSaveSettings(SETTINGS).then(function(){toast('Settings saved','success');hideSettingsSave();});
   // Also save appearance for storefront
   fbSaveAppearance({hero:SETTINGS.heroImage||null,featured:SETTINGS.featuredImage||null});
 });
+
+// Settings save button stays hidden until a field is actually edited, then hides again on save.
+var SETTINGS_FIELDS=['settingStoreName','waNumber','settingFb','settingIg','heroImage','featuredImage'];
+function showSettingsSave(){ var b=$_('saveSettingsBtn'); if(b) b.style.display='inline-block'; }
+function hideSettingsSave(){ var b=$_('saveSettingsBtn'); if(b) b.style.display='none'; }
+SETTINGS_FIELDS.forEach(function(id){ var el=$_(id); if(el) el.addEventListener('input',showSettingsSave); });
 
 // Delivery keys → settings/delivery doc. Write-only (rules block reading it back), so we only
 // send the fields that were actually filled in, leaving the rest untouched.
@@ -1013,7 +1070,7 @@ $_('syncCarriersBtn').addEventListener('click',function(){
   fbFunctions.httpsCallable('syncCarriers')()
     .then(function(res){ var r=(res&&res.data&&res.data.result)||{}; var parts=[];
       if(r.yalidine) parts.push('Yalidine: '+r.yalidine.wilayas+' wilayas'); if(r.noest) parts.push('Noest: '+r.noest.wilayas+' wilayas');
-      toast(parts.length?('Synced — '+parts.join(' · ')):'Nothing synced — save carrier keys first','success'); })
+      toast(parts.length?('Synced — '+parts.join(' · ')):'Nothing synced — save carrier keys first','success'); refreshCarrierStatus(); })
     .catch(function(err){ toast('Sync failed: '+((err&&err.message)||'error'),'error'); })
     .then(function(){ btn.disabled=false; btn.textContent=label; });
 });
@@ -1033,8 +1090,8 @@ function wireImageUpload(btnId, fileId, inputId, previewId, storagePath, onUrl){
     .then(function(){ btn.disabled=false; btn.textContent=label; });
   });
 }
-wireImageUpload('heroUploadBtn','heroFile','heroImage','heroPreview','appearance/hero.webp',function(url){ SETTINGS.heroImage=url; fbSaveAppearance({hero:url}); });
-wireImageUpload('featuredUploadBtn','featuredFile','featuredImage','featuredPreview','appearance/featured.webp',function(url){ SETTINGS.featuredImage=url; fbSaveAppearance({featured:url}); });
+wireImageUpload('heroUploadBtn','heroFile','heroImage','heroPreview','appearance/hero.webp',function(url){ SETTINGS.heroImage=url; fbSaveAppearance({hero:url}); showSettingsSave(); });
+wireImageUpload('featuredUploadBtn','featuredFile','featuredImage','featuredPreview','appearance/featured.webp',function(url){ SETTINGS.featuredImage=url; fbSaveAppearance({featured:url}); showSettingsSave(); });
 
 // Category picture upload → WebP → Storage → category.photo (storefront shows it on the tile).
 var _catPhotoTarget=null;

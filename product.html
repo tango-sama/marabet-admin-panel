@@ -286,6 +286,9 @@ function mapProduct(id,p,catMap){
 function showProduct(idParam){
   product=CATALOG.find(p=>String(p.id)===String(idParam))||CATALOG[0];
   curColor=0; curSize=null; qty=1; galIndex=0;
+  // If only one size is available, pre-select it so the customer doesn't have to tap it.
+  const okSizes=product.sizes.map((s,i)=>s.ok?i:-1).filter(i=>i>=0);
+  if(okSizes.length===1) curSize=okSizes[0];
   render();
 }
 function loadProduct(){

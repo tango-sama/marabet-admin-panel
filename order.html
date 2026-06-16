@@ -317,6 +317,32 @@ function loadCarriers(){
   });
 }
 
+// Hide carriers the admin switched off (settings/general, public read). Default ON when unset;
+// if somehow both are off, show both anyway so checkout is never blocked.
+function applyCarrierVisibility(s){
+  s=s||{};
+  let yOn=s.yalidineEnabled!==false, nOn=s.noestEnabled!==false;
+  if(!yOn && !nOn){ yOn=nOn=true; }
+  const states={yalidine:yOn, noest:nOn};
+  const avail=[];
+  Object.keys(states).forEach(name=>{
+    const el=document.querySelector('.co-opt[data-co="'+name+'"]');
+    if(el) el.style.display=states[name]?'':'none';
+    if(states[name]) avail.push(name);
+  });
+  // If the pre-selected carrier got hidden, switch to an available one.
+  if(avail.length && avail.indexOf(company)<0){
+    const sel=document.querySelector('.co-opt[data-co="'+avail[0]+'"]');
+    if(sel) pickCompany(sel);
+  }
+}
+function loadCarrierVisibility(){
+  if(typeof firebase==='undefined') return;
+  firebase.firestore().doc('settings/general').get()
+    .then(d=>{ if(d.exists) applyCarrierVisibility(d.data()); })
+    .catch(()=>{});
+}
+
 // Resolve the home/desk fee for the selected wilaya from the CURRENT carrier's table,
 // then update the option labels + summary.
 function updateDeliveryPrices(){
@@ -358,6 +384,7 @@ function init(){
   selectProduct(idParam);  // render immediately from fallback, then refresh from Firestore
   if(initFirebase()){
     loadCarriers();
+    loadCarrierVisibility();
     // Fetch ONLY this order's product (not the whole catalog of base64 photos) so the
     // summary loads fast on mobile.
     firebase.firestore().collection('products').doc(idParam).get().then(d=>{
