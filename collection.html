@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>بازار مرابط — Bazar Merabet | الأحذية والحقائب</title>
+<title>المجموعة — بازار مرابط | كل المنتجات</title>
 <meta name="description" content="بازار مرابط — وجهة الأحذية والحقائب الفاخرة في تقرت، الجزائر.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -154,6 +154,9 @@ nav.scrolled{background:rgba(247,245,241,.85);backdrop-filter:blur(16px);padding
 .sec-title{font-family:var(--serif);font-size:clamp(2rem,4.5vw,3.3rem);color:var(--ink);line-height:1.05;font-weight:700;margin-top:.6rem}
 .sec-title em{font-style:italic;color:var(--gold)}
 .sec-num,.sec-eyebrow{display:none}
+/* Dedicated collection page: show only the products section */
+[data-sec]:not([data-sec="collection"]){display:none!important}
+#collection{padding-top:6.5rem}
 
 /* ============ CATEGORIES ============ */
 .cat-rail{display:grid;grid-template-columns:repeat(5,1fr);gap:1.25rem;height:420px}
@@ -345,10 +348,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
     <span class="brand-fr">Bazar Merabet · Touggourt</span>
   </div>
   <ul class="nav-menu" id="navMenu">
-    <li><a href="collection.html">المجموعة</a></li>
-    <li><a href="#categories">الأصناف</a></li>
-    <li><a href="#about">عن المحل</a></li>
-    <li><a href="#contact">تواصل</a></li>
+    <li><a href="#collection">المجموعة</a></li>
+    <li><a href="index.html#categories">الأصناف</a></li>
+    <li><a href="index.html#about">عن المحل</a></li>
+    <li><a href="index.html#contact">تواصل</a></li>
   </ul>
   <a class="nav-cta" href="https://wa.me/213772423191" target="_blank">اطلب الآن</a>
   <button class="burger" id="burger"><span></span><span></span><span></span></button>
@@ -397,8 +400,8 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
     </h1>
     <p class="hero-desc">من الأحذية الأنيقة إلى الحقائب العصرية — اعثري على إطلالتك المثالية بأرقى الماركات وأفضل الأسعار. تجربة تسوّق تستحقينها.</p>
     <div class="hero-actions">
-      <a class="btn-fill" href="collection.html">تسوّقي الآن</a>
-      <a class="btn-ghost" href="#categories">تصفّحي الأصناف ←</a>
+      <a class="btn-fill" href="#collection">تسوّقي الآن</a>
+      <a class="btn-ghost" href="index.html#categories">تصفّحي الأصناف ←</a>
     </div>
     <div class="hero-trust">
       <div class="avs">
@@ -471,7 +474,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
         <div class="ssub">مجموعة 2025 · حصرياً</div>
         <h3>الأناقة في <em>كل خطوة</em></h3>
         <p>اكتشف أحدث ما وصل من الأحذية الرياضية والكلاسيكية، مصممة لتمنحك الراحة والأناقة في آن واحد. متوفرة الآن بكميات محدودة.</p>
-        <a class="btn-fill-gold" href="collection.html">تسوّق الآن</a>
+        <a class="btn-fill-gold" href="#collection">تسوّق الآن</a>
       </div>
     </div>
   </div>
@@ -481,12 +484,19 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
 <section class="sec rv" id="collection" data-sec="collection">
   <div class="sec-head">
     <div class="sec-mark"><span class="sec-num">02</span>
-      <div><div class="sec-eyebrow">المجموعة</div><h2 class="sec-title">أبرز <em>المنتجات</em></h2></div>
+      <div><div class="sec-eyebrow">المجموعة</div><h2 class="sec-title">كل <em>المنتجات</em></h2></div>
     </div>
-    <a class="btn-ghost" href="collection.html">شاهدي الكل ←</a>
+    <div class="filter-bar" id="filterBar">
+      <button class="fpill active" data-cat="all">الكل</button>
+      <button class="fpill" data-cat="mens_shoes">رجالي</button>
+      <button class="fpill" data-cat="womens_shoes">نسائي</button>
+      <button class="fpill" data-cat="kids">أطفال</button>
+      <button class="fpill" data-cat="bags">حقائب</button>
+      <button class="fpill" data-cat="sports">رياضي</button>
+    </div>
   </div>
   <div class="pgrid" id="pgrid"></div>
-  <div style="text-align:center;margin-top:2.5rem"><a class="btn-fill" href="collection.html" style="display:inline-block">شاهدي كل المنتجات</a></div>
+  <div class="pager" id="pager"></div>
 </section>
 
 <!-- STATS -->
@@ -553,8 +563,8 @@ footer{background:var(--bg-2);border-top:1px solid var(--line);padding:4rem 3rem
         <div class="foot-brand-ar">بازار مرابط</div>
         <div class="foot-brand-d">وجهتك الأولى للأحذية والحقائب الفاخرة في تقرت، الجزائر. أناقة وجودة في كل خطوة.</div>
       </div>
-      <div class="foot-col"><h4>تسوّق</h4><ul><li><a href="collection.html">المجموعة</a></li><li><a href="#categories">الأصناف</a></li><li><a href="#featured">الجديد</a></li></ul></div>
-      <div class="foot-col"><h4>المحل</h4><ul><li><a href="#about">عن المحل</a></li><li><a href="#contact">تواصل</a></li><li><a href="https://wa.me/213772423191" target="_blank">اطلب الآن</a></li></ul></div>
+      <div class="foot-col"><h4>تسوّق</h4><ul><li><a href="#collection">المجموعة</a></li><li><a href="index.html#categories">الأصناف</a></li><li><a href="index.html#featured">الجديد</a></li></ul></div>
+      <div class="foot-col"><h4>المحل</h4><ul><li><a href="index.html#about">عن المحل</a></li><li><a href="index.html#contact">تواصل</a></li><li><a href="https://wa.me/213772423191" target="_blank">اطلب الآن</a></li></ul></div>
       <div class="foot-col"><h4>تابعنا</h4><ul><li><a href="https://www.facebook.com/BazarMerabetLilAhziya" target="_blank">فيسبوك</a></li><li><a href="https://www.instagram.com/Bazar_Merabet" target="_blank">إنستغرام</a></li><li><a href="https://wa.me/213772423191" target="_blank">واتساب</a></li></ul></div>
     </div>
     <div class="foot-bottom">
@@ -630,7 +640,7 @@ function catAdvance(){
 }
 (function initCatStack(){
   var stack=document.getElementById('catStack'), exp=document.getElementById('catExplore');
-  if(stack) stack.addEventListener('click',function(e){ var b=e.target.closest('.cat-card-btn'); if(b) location.href='collection.html?cat='+encodeURIComponent(b.dataset.cat); });
+  if(stack) stack.addEventListener('click',function(e){ var b=e.target.closest('.cat-card-btn'); if(b&&typeof filterTo==='function') filterTo(b.dataset.cat); });
   if(exp) exp.addEventListener('click',catAdvance);
 })();
 renderCatRail(CATS);
@@ -642,8 +652,11 @@ function renderProducts(cat){
   const pager=document.getElementById('pager');
   const full=cat==='all'?PRODUCTS:PRODUCTS.filter(p=>p.cat===cat);
   if(!full.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--ink-2);padding:3rem;text-align:center">لا توجد منتجات في هذا الصنف حالياً.</div>';if(pager)pager.innerHTML='';return;}
-  // Home teaser: show only the first few; the full filterable, paginated grid lives on collection.html
-  const list=full.slice(0,8);
+  // Show at most PER_PAGE products per page; clamp the page in case the list shrank (e.g. after filtering).
+  const pages=Math.ceil(full.length/PER_PAGE);
+  if(prodPage>pages) prodPage=pages; if(prodPage<1) prodPage=1;
+  const start=(prodPage-1)*PER_PAGE;
+  const list=full.slice(start,start+PER_PAGE);
   grid.innerHTML=list.map(p=>{
     const ci=activeColors[p.id]||0;
     const dots=p.colors.map((c,i)=>`<div class="cdot${i===ci?' on':''}" data-pid="${p.id}" data-ci="${i}" style="background:${c.h};border-color:${i===ci?'var(--ink)':'var(--line)'}" onclick="event.stopPropagation();setColor('${p.id}',${i})" title="${c.n}"></div>`).join('');
@@ -667,6 +680,7 @@ function renderProducts(cat){
   // Reveal the collection immediately once it has products — otherwise the section's reveal-on-scroll
   // animation (.rv{opacity:0}) keeps it hidden on first load until a category click scrolls it into view.
   const coll=document.getElementById('collection'); if(coll) coll.classList.add('in');
+  renderPager(pages);
   requestAnimationFrame(()=>document.querySelectorAll('.pcard').forEach((c,i)=>setTimeout(()=>c.classList.add('in'),i*55)));
 }
 function renderPager(pages){
@@ -717,8 +731,9 @@ function flipApply(cat){
     onComplete:function(){ grid.classList.remove('flipping'); } });
 }
 function filterTo(cat){currentFilter=cat;prodPage=1;document.querySelectorAll('.fpill').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));flipApply(cat);document.getElementById('collection').scrollIntoView({behavior:'smooth'});}
-// Home shows a teaser only — no filter bar here (full filtering lives on collection.html)
-(function(){ var fb=document.getElementById('filterBar'); if(fb) fb.addEventListener('click',e=>{const p=e.target.closest('.fpill');if(!p)return;currentFilter=p.dataset.cat;prodPage=1;document.querySelectorAll('.fpill').forEach(x=>x.classList.toggle('active',x===p));flipApply(p.dataset.cat);}); })();
+document.getElementById('filterBar').addEventListener('click',e=>{const p=e.target.closest('.fpill');if(!p)return;currentFilter=p.dataset.cat;prodPage=1;document.querySelectorAll('.fpill').forEach(x=>x.classList.toggle('active',x===p));flipApply(p.dataset.cat);});
+// Collection page: deep-link a category via ?cat= (from the home page) and render immediately
+(function(){ var c=new URLSearchParams(location.search).get('cat'); if(c&&c!=='all'){ currentFilter=c; document.querySelectorAll('.fpill').forEach(function(p){p.classList.toggle('active',p.dataset.cat===c);}); } renderProducts(currentFilter); })();
 function order(pid){const p=PRODUCTS.find(x=>String(x.id)===String(pid));if(!p)return;const c=p.colors[activeColors[pid]||0];const msg=encodeURIComponent(`مرحبا، أريد طلب:\nالمنتج: ${p.name} — ${p.brand}\nاللون: ${c.n}\nالسعر: ${p.price} دج\n\nيرجى إخباري بالمقاسات المتاحة. شكراً!`);window.open('https://wa.me/213772423191?text='+msg,'_blank');}
 
 function submitForm(e){e.preventDefault();const n=document.getElementById('fname').value,ph=document.getElementById('fphone').value,pr=document.getElementById('fproduct').value,m=document.getElementById('fmsg').value;const t=`مرحبا، اسمي ${n}${ph?'\nهاتف: '+ph:''}${pr?'\nالمنتج: '+pr:''}\n\n${m}`;window.open('https://wa.me/213772423191?text='+encodeURIComponent(t),'_blank');}
@@ -908,6 +923,13 @@ setTimeout(()=>{document.querySelectorAll('.hero-h1 .line span').forEach(s=>{s.s
   window.addEventListener('resize', onScroll);
   update();
 })();
+</script>
+<!-- GSAP + Flip (free since v3.12) — powers the collection filter animation -->
+<script type="module">
+  import gsap from 'gsap';
+  import { Flip } from 'gsap/Flip';
+  gsap.registerPlugin(Flip);
+  window.gsap = gsap; window.Flip = Flip;
 </script>
 </body>
 </html>

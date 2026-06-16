@@ -291,8 +291,40 @@ a{color:var(--gold)}
     </div>
 
     <!-- ORDERS PAGE -->
+    <style>
+    .orders-list{display:flex;flex-direction:column;gap:1rem;max-width:920px}
+    .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem}
+    .order-card.is-done{opacity:.62}
+    .ord-head{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
+    .ord-head-l{min-width:0}
+    .ord-tag{display:inline-block;font-size:.7rem;font-weight:800;padding:.25rem .6rem;border-radius:100px;margin-bottom:.2rem}
+    .ord-tag.new{background:rgba(76,175,80,.18);color:#86d98a}
+    .ord-tag.done{background:rgba(201,168,76,.18);color:var(--gold-light)}
+    .ord-tag.carrier.yal{background:rgba(225,25,0,.18);color:#FF9A8C}
+    .ord-tag.carrier.noest{background:rgba(30,115,232,.18);color:#9DBBF5}
+    .ord-num{margin-right:.4rem;color:var(--white);font-size:.95rem}
+    .ord-when{font-size:.74rem;color:var(--gray);margin-top:.3rem}
+    .ord-total{font-weight:900;color:var(--danger);font-size:1.15rem;text-align:left;white-space:nowrap}
+    .ord-break{font-size:.7rem;color:var(--gray);margin-top:.2rem;text-align:left}
+    .ord-prod{background:var(--card3);border-radius:9px;padding:.6rem .8rem;margin:.7rem 0;color:var(--white);font-size:.86rem}
+    .ord-meta{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;font-size:.8rem;color:var(--gray)}
+    .ord-meta .num{direction:ltr;unicode-bidi:isolate}
+    .ord-ship{background:rgba(201,168,76,.12);border-radius:9px;padding:.55rem .8rem;margin-top:.6rem;font-size:.82rem;color:var(--gold-light)}
+    .ord-ship .num{direction:ltr;unicode-bidi:isolate}
+    .ord-notename{margin-top:.5rem;font-size:.8rem;color:var(--gray)}
+    .ord-notename b{color:var(--white)}
+    .ord-noteedit{margin-top:.7rem}
+    .ord-noteedit label{display:block;font-size:.74rem;font-weight:800;color:var(--white);margin-bottom:.35rem}
+    .note-inp{width:100%}
+    .ord-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem}
+    .ord-carrier{color:#fff!important;border:none}
+    .ord-carrier.yal{background:#E11900}
+    .ord-carrier.noest{background:#1E73E8}
+    .ord-carrier.dim{opacity:.4;filter:grayscale(.5)}
+    @media(max-width:600px){ .ord-actions .btn{flex:1 1 auto;justify-content:center} }
+    </style>
     <div class="page" id="page-orders">
-      <div class="sheet-wrap"><table class="sheet"><thead><tr><th>#</th><th>Customer</th><th>Product</th><th>Color</th><th>Size</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+      <div id="ordersBody" class="orders-list"></div>
     </div>
 
     <!-- WEBSITE DESIGN PAGE -->
@@ -370,6 +402,14 @@ a{color:var(--gold)}
           </div>
         </div>
         <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:.5rem;display:none">💾 Save Settings</button>
+
+        <div class="settings-section">Orders</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .4rem">
+          <label class="settings-label" style="margin:0">📝 Product name on delivery note</label>
+          <label class="toggle"><input type="checkbox" id="noteNameEnabled" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div style="font-size:.72rem;color:var(--gray)">When <b>ON</b>, you type a custom product name per order that prints on the parcel instead of the real one (privacy). When <b>OFF</b>, the field is hidden and the real product name is used.</div>
+
         <div class="settings-section" style="color:#E11900">Delivery — Yalidine <span id="yalidineStatus" class="carrier-status off">⚪ checking…</span></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem">
           <label class="settings-label" style="margin:0">Show Yalidine at checkout</label>
@@ -787,48 +827,94 @@ function refreshOrders() {
 
 function renderOrders() {
   var body=$_('ordersBody'); if(!body) return;
-  if(!orders.length){body.innerHTML='<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No orders</div></div></td></tr>';updateStats();return;}
+  if(!orders.length){body.innerHTML='<div class="empty"><div class="empty-icon">📦</div><div>No orders yet</div></div>';updateStats();return;}
   var s=[].concat(orders.filter(function(o){return !o.fulfilled;}),orders.filter(function(o){return o.fulfilled;}));
-  body.innerHTML=s.map(function(o){return '<tr style="'+(o.fulfilled?'opacity:.55':'')+'">'
-    +'<td>'+esc(o.num||'')+'</td>'
-    +'<td>'+esc(o.customer||'')+' <button class="btn-icon" data-cust="'+esc(o._docId||'')+'" title="View full submission" style="border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.75rem">ℹ️</button><br><small style="color:var(--gray)">'+esc(o.phone||'')+'</small></td>'
-    +'<td>'+esc(o.product||'')+'</td>'
-    +'<td><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:'+(o.colorHex||'#888')+';display:inline-block"></span>'+esc(o.color||'')+'</span></td>'
-    +'<td>'+esc(o.size||'')+'</td><td>'+(o.price||0).toLocaleString()+' DZD</td>'
-    +'<td>'+(o.fulfilled
-        ? '<span style="color:var(--gold)">✅ Done</span>'+(o.deliveryTracking
-            ? '<br><small style="color:var(--gray)">🚚 '+esc(o.deliveryTracking)+(o.deliveryLastStatus?' · <span style="color:var(--gold-light)">'+esc(o.deliveryLastStatus)+'</span>':'')+'</small>'
-            : (o.deliveryStatus==='Failed'
-                ? '<br><small style="color:var(--danger)">⚠ delivery failed</small>'
-                : '<br><small style="color:var(--gray)">⏳ sending to Yalidine…</small>'))
-        : '<span style="color:var(--success)">📝 '+esc(o.status||'New')+'</span>')+'</td>'
-    +'<td style="white-space:nowrap">'
-      +(!o.fulfilled?'<button class="btn btn-sm" style="background:var(--gold);color:var(--black);margin-right:4px" data-fulfill="'+esc(o._docId||'')+'">🚚</button>':'')
-      +(o.fulfilled&&o.deliveryTracking?'<button class="btn btn-outline btn-sm" style="margin-right:4px" data-track="'+esc(o._docId||'')+'" title="Refresh delivery status now">🔄</button>':'')
-      +'<button class="btn btn-outline btn-sm" style="margin-right:4px" data-wa="'+esc(o._docId||'')+'" title="Reply to customer on WhatsApp">💬</button>'
-      +'<button class="btn-icon danger" data-delord="'+esc(o._docId||'')+'">🗑</button>'
-    +'</td></tr>';
+  body.innerHTML=s.map(function(o){
+    var oid=esc(o._docId||'');
+    var when=(o.placedAt&&o.placedAt.toDate)?o.placedAt.toDate().toLocaleString('ar-DZ'):'';
+    var isNoest=String(o.deliveryCompany||'yalidine')==='noest';
+    var dtype=(o.deliveryType==='office'||/مكتب|stop\s*desk|office|bureau/i.test(String(o.delivery||o.deliveryType||'')))?'مكتب (Stop Desk)':'منزل';
+    var shipped=!!o.deliveryTracking;
+    var noteOn=SETTINGS.noteNameEnabled!==false;
+    var prod='• '+esc(o.product||'')+(o.brand?' · '+esc(o.brand):'')+(o.color?' · '+esc(o.color):'')+(o.size?' · '+esc(o.size):'')+' ×'+(o.qty||1);
+    var total=(o.total!=null?o.total:(o.price||0));
+    var head='<div class="ord-head"><div class="ord-head-l">'
+      +'<span class="ord-tag '+(o.fulfilled?'done':'new')+'">'+(o.fulfilled?'✅ تم التنفيذ':'📝 جديد')+'</span> '
+      +'<span class="ord-tag carrier '+(isNoest?'noest':'yal')+'">'+(isNoest?'🔵 Noest':'🔴 Yalidine')+' · '+dtype+'</span> '
+      +'<b class="ord-num">'+esc(o.num||'')+'</b>'
+      +'<div class="ord-when">'+esc(when)+'</div></div>'
+      +'<div class="ord-head-r"><div class="ord-total">'+(+total).toLocaleString()+' دج</div>'
+      +(o.deliveryFee!=null?'<div class="ord-break">منتجات '+(+(o.subtotal||0)).toLocaleString()+' + توصيل '+(+o.deliveryFee).toLocaleString()+'</div>':'')
+      +'</div></div>';
+    var meta='<div class="ord-meta"><span>👤 '+esc(o.customer||'')+' <button class="btn-icon" data-cust="'+oid+'" title="عرض كل التفاصيل" style="border:1px solid var(--border);border-radius:4px;padding:0 5px">ℹ️</button></span>'
+      +'<span class="num">📱 '+esc(o.phone||'')+'</span>'
+      +'<span>📍 '+esc(o.wilaya||'')+(o.commune?' - '+esc(o.commune):'')+'</span>'
+      +'<span>🚚 '+dtype+(o.deliveryFee!=null?' · '+(+o.deliveryFee).toLocaleString()+' دج':'')+'</span></div>';
+    var noteBlock=shipped
+      ? '<div class="ord-ship">📦 '+(isNoest?'Noest':'Yalidine')+': <b class="num">'+esc(o.deliveryTracking)+'</b>'
+          +(o.deliveryLastStatus?' · <span class="num" style="color:var(--gold-light)">'+esc(o.deliveryLastStatus)+'</span>':'')
+          +(o.deliveryLabel?' · <a href="'+esc(o.deliveryLabel)+'" target="_blank" style="color:var(--gold)">🏷️ طباعة الوصل</a>':'')+'</div>'
+          +(o.noteName?'<div class="ord-notename">📝 اسم المنتج على الوصل: <b>'+esc(o.noteName)+'</b></div>':'')
+      : (o.deliveryStatus==='Failed'?'<div class="ord-ship" style="background:rgba(225,25,0,.14);color:#FF9A8C">⚠ '+esc(o.deliveryError||'فشل إنشاء الطرد')+'</div>':'')
+          +(noteOn?'<div class="ord-noteedit"><label>📝 اسم المنتج على وصل التوصيل <span style="color:var(--danger)">*</span></label>'
+          +'<input class="settings-input note-inp" data-notefor="'+oid+'" value="'+esc(o.noteName||'')+'" placeholder="مثال: منتج تجميل — لن يظهر الاسم الحقيقي"></div>':'');
+    var actions='<div class="ord-actions">'
+      +'<button class="btn btn-green btn-sm" data-wa="'+oid+'">💬 واتساب</button>'
+      +(shipped
+        ? '<button class="btn btn-outline btn-sm" data-track="'+oid+'" title="تحديث حالة التوصيل">🔄 الحالة</button>'
+        : '<button class="btn btn-sm ord-carrier yal'+(isNoest?' dim':'')+'" data-oyal="'+oid+'" title="'+(isNoest?'الزبون اختار Noest':'اختيار الزبون')+'">🔴 طرد Yalidine</button>'
+          +'<button class="btn btn-sm ord-carrier noest'+(isNoest?'':' dim')+'" data-onoest="'+oid+'" title="'+(isNoest?'اختيار الزبون':'الزبون اختار Yalidine')+'">🔵 طرد Noest</button>')
+      +'<button class="btn btn-outline btn-sm" data-fulfill="'+oid+'">'+(o.fulfilled?'↩ تعليم كجديد':'✓ تم التنفيذ')+'</button>'
+      +'<button class="btn btn-danger btn-sm" data-delord="'+oid+'">حذف</button></div>';
+    return '<div class="order-card'+(o.fulfilled?' is-done':'')+'">'+head+'<div class="ord-prod">'+prod+'</div>'+meta+noteBlock+actions+'</div>';
   }).join('');
   updateStats();
 }
 $_('ordersBody').addEventListener('click',function(e){
-  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]'), tr=e.target.closest('[data-track]');
+  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]'), tr=e.target.closest('[data-track]'), oy=e.target.closest('[data-oyal]'), on=e.target.closest('[data-onoest]');
   if(info){ openCustomer(info.dataset.cust); return; }
-  // On-demand: fetch this parcel's live status from Yalidine via the callable function
+  if(oy){ dispatchCarrier(oy.dataset.oyal,'yalidine',oy); return; }
+  if(on){ dispatchCarrier(on.dataset.onoest,'noest',on); return; }
+  // On-demand: fetch this parcel's live status from the carrier via the callable function
   if(tr){
     var o=orders.find(function(x){return x._docId===tr.dataset.track;});
     if(!o||!o.deliveryTracking) return;
     tr.disabled=true; tr.textContent='…';
     fbFunctions.httpsCallable('trackParcel')({tracking:o.deliveryTracking, orderId:o._docId})
       .then(function(res){ var st=res&&res.data&&res.data.lastStatus; if(st){ o.deliveryLastStatus=st; renderOrders(); toast('🚚 '+st,'success'); } else { toast('No status returned','error'); } })
-      .catch(function(err){ tr.disabled=false; tr.textContent='🔄'; toast('Track failed: '+((err&&err.message)||'error'),'error'); });
+      .catch(function(err){ tr.disabled=false; tr.textContent='🔄 الحالة'; toast('Track failed: '+((err&&err.message)||'error'),'error'); });
     return;
   }
-  if(f){var oid=f.dataset.fulfill;var o=orders.find(function(x){return x._docId===oid;});if(o){o.fulfilled=true;o.status='Fulfilled';fbUpdateOrder(oid,{fulfilled:true,status:'Fulfilled'}).then(function(){renderOrders();toast('Order fulfilled — sending to Yalidine…','success');setTimeout(refreshOrders,6000);});}}
+  // Mark done / re-open (toggle). Becoming fulfilled triggers the carrier on the cloud side.
+  if(f){var oid=f.dataset.fulfill;var o=orders.find(function(x){return x._docId===oid;});if(o){var v=!o.fulfilled;o.fulfilled=v;o.status=v?'Fulfilled':'New';fbUpdateOrder(oid,{fulfilled:v,status:v?'Fulfilled':'New'}).then(function(){renderOrders();updateStats();toast(v?'تم التنفيذ — إرسال للناقل…':'أُعيد كجديد','success');if(v)setTimeout(refreshOrders,6000);});}return;}
   // Reply to the CUSTOMER (their phone), not the store's own number
-  if(w){var oid=w.dataset.wa;var o=orders.find(function(x){return x._docId===oid;});if(o){var msg='مرحبا '+(o.customer||'')+'، بخصوص طلبك '+(o.num||'')+' ('+(o.product||'')+'):';window.open('https://wa.me/'+waPhone(o.phone)+'?text='+encodeURIComponent(msg),'_blank');}}
-  if(d){var oid=d.dataset.delord;if(confirm('Delete order?')){fbDeleteOrder(oid).catch(function(){});orders=orders.filter(function(x){return x._docId!==oid;});renderOrders();toast('Order deleted','error');}}
+  if(w){var oid=w.dataset.wa;var o=orders.find(function(x){return x._docId===oid;});if(o){var msg='مرحبا '+(o.customer||'')+'، بخصوص طلبك '+(o.num||'')+' ('+(o.product||'')+'):';window.open('https://wa.me/'+waPhone(o.phone)+'?text='+encodeURIComponent(msg),'_blank');}return;}
+  if(d){var oid=d.dataset.delord;if(confirm('حذف هذا الطلب؟')){fbDeleteOrder(oid).catch(function(){});orders=orders.filter(function(x){return x._docId!==oid;});renderOrders();updateStats();toast('تم حذف الطلب','error');}return;}
 });
+// Save the "product name on note" inline as the admin edits it
+$_('ordersBody').addEventListener('change',function(e){
+  var i=e.target.closest('.note-inp'); if(!i) return;
+  var o=orders.find(function(x){return x._docId===String(i.dataset.notefor);}); if(!o) return;
+  var v=i.value.trim(); o.noteName=v; i.style.borderColor='';
+  fbUpdateOrder(o._docId,{noteName:v}).catch(function(err){ console.error(err); });
+});
+// Pick a carrier and ship: sets company + note + fulfilled → the cloud trigger creates the parcel
+function dispatchCarrier(oid,company,btn){
+  var o=orders.find(function(x){return x._docId===oid;}); if(!o) return;
+  var noteOn=SETTINGS.noteNameEnabled!==false;
+  var inp=document.querySelector('.note-inp[data-notefor="'+oid+'"]');
+  var note=inp?inp.value.trim():(o.noteName||'');
+  if(noteOn && !note){ toast('أدخلي اسم المنتج على وصل التوصيل أولاً','error'); if(inp){ inp.style.borderColor='var(--danger)'; inp.focus(); } return; }
+  var label=company==='noest'?'Noest':'Yalidine';
+  if(!confirm('إنشاء طرد '+label+' لـ '+(o.customer||o.num)+'؟'+(noteOn?'\nاسم المنتج على الوصل: «'+note+'»':''))) return;
+  if(btn){ btn.disabled=true; btn.textContent='⏳ جاري الإنشاء…'; }
+  var patch={deliveryCompany:company,fulfilled:true,status:'Fulfilled'};
+  if(noteOn){ patch.noteName=note; o.noteName=note; }   // off → no note sent → cloud uses the real product name
+  o.deliveryCompany=company; o.fulfilled=true; o.status='Fulfilled';
+  fbUpdateOrder(oid,patch)
+    .then(function(){ renderOrders(); updateStats(); toast('🚚 جاري إنشاء طرد '+label+'…','success'); setTimeout(refreshOrders,6000); })
+    .catch(function(err){ if(btn){ btn.disabled=false; } toast('فشل: '+((err&&err.message)||'error'),'error'); });
+}
 
 // Normalize an Algerian phone to wa.me international format (0xxxxxxxxx → 213xxxxxxxxx)
 function waPhone(p){
@@ -890,6 +976,7 @@ function renderSettings() {
   // Carrier on/off switches (default ON when never set)
   $_('yalidineEnabled').checked=SETTINGS.yalidineEnabled!==false;
   $_('noestEnabled').checked=SETTINGS.noestEnabled!==false;
+  $_('noteNameEnabled').checked=SETTINGS.noteNameEnabled!==false;
   refreshCarrierStatus();
 }
 
@@ -920,6 +1007,16 @@ function refreshCarrierStatus() {
       .catch(function(){ el.checked=!el.checked; SETTINGS[pair[0]]=el.checked; toast('Could not save','error'); });
   });
 });
+// Product-name-on-note feature toggle → settings/general. Off = the real product name prints on the parcel.
+(function(){ var el=$_('noteNameEnabled'); if(!el) return;
+  el.addEventListener('change',function(){
+    var on=el.checked; SETTINGS.noteNameEnabled=on;
+    db.collection('settings').doc('general').set({noteNameEnabled:on},{merge:true})
+      .then(function(){ toast(on?'✅ حقل اسم المنتج على الوصل مُفعّل':'🚫 سيُستخدم اسم المنتج الحقيقي على الوصل','success'); })
+      .catch(function(){ el.checked=!on; SETTINGS.noteNameEnabled=!on; toast('Could not save','error'); });
+    renderOrders();
+  });
+})();
 
 // ═══════════════════════════════════════════════════════════
 // PHOTO DRAWER

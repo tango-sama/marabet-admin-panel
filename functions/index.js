@@ -93,8 +93,9 @@ exports.createDeliveryOnFulfill = onDocumentUpdated(
         address: after.address || [after.commune, after.wilaya].filter(Boolean).join(", "),
         to_commune_name: after.commune || "",
         to_wilaya_name: after.wilayaFr || after.wilaya || "",
-        product_list: [after.product, after.brand, after.color, after.size]
-            .filter(Boolean).join(" / ") + (after.qty ? ` x${after.qty}` : ""),
+        product_list: (after.noteName && String(after.noteName).trim()) ||
+            ([after.product, after.brand, after.color, after.size]
+                .filter(Boolean).join(" / ") + (after.qty ? ` x${after.qty}` : "")),
         price: amount,
         do_insurance: false,
         declared_value: amount,
@@ -361,8 +362,9 @@ async function createNoestDelivery(after, ref, orderId) {
   let phone = String(after.phone || "").replace(/[^\d]/g, "");
   if (phone && phone[0] !== "0") phone = "0" + phone;
   const amount = clampAmount(after.subtotal || after.total || after.price || 0);
-  const productList = ([after.product, after.brand, after.color, after.size]
-      .filter(Boolean).join(" / ") + (after.qty ? ` x${after.qty}` : "")) || "منتجات";
+  const productList = (after.noteName && String(after.noteName).trim()) ||
+      (([after.product, after.brand, after.color, after.size]
+          .filter(Boolean).join(" / ") + (after.qty ? ` x${after.qty}` : "")) || "منتجات");
 
   const payload = {
     user_guid: guid,
