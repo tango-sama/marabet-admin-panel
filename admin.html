@@ -241,6 +241,13 @@ a{color:var(--gold)}
   .prod-row,.cat-row{cursor:pointer}
   .col-photo::after{content:'▸';font-size:.55rem;color:var(--gray);margin-left:4px;opacity:.6;vertical-align:middle}
   tr.expanded .col-photo::after{content:'▾'}
+  /* Expanded card: photo strip spans the full card width instead of the cramped ~100px the base cap left it */
+  .prod-row.expanded td.col-photo{display:block;width:100%;max-width:none;padding:.5rem .7rem}
+  .prod-row.expanded td.col-photo::before{display:block;margin-bottom:.45rem}
+  .prod-row.expanded td.col-photo::after{display:none}
+  .prod-row.expanded td.col-photo .photo-strip{width:100%}
+  .prod-row.expanded td.col-photo .photo-strip img,
+  .prod-row.expanded td.col-photo .photo-strip .photo-placeholder{width:60px;height:60px}
   /* Collapsible cells stay hidden on mobile until expanded */
   .prod-row .coll-cell{display:none!important}
   .prod-row.expanded .coll-cell{display:flex!important}
