@@ -86,26 +86,16 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .cell-input:hover,.cell-select:hover{border-color:var(--border);background:var(--card2)}
 .cell-input:focus,.cell-select:focus{border-color:var(--gold);background:var(--card2)}
 .col-num{width:36px;text-align:center;color:var(--gray);font-size:.72rem}
-.col-photo{width:64px;cursor:pointer;position:relative}
-.col-photo::after{content:'▸';font-size:.55rem;color:var(--gray);margin-left:4px;opacity:.6;vertical-align:middle}
-tr.expanded .col-photo::after{content:'▾'}
-.col-actions{width:140px;white-space:nowrap;text-align:right}
-/* Product row collapse/expand */
-.prod-row{cursor:pointer}
-.prod-row:not(.expanded) .col-num{display:none}
-.prod-row .coll-cell{display:none}
-.prod-row.expanded .coll-cell{display:table-cell}
+.col-photo{width:64px;position:relative}
+.col-active{width:52px;text-align:center}
+.col-actions{width:84px;white-space:nowrap;text-align:center}
+/* Collapse/expand is a MOBILE-ONLY feature (see the @media max-width:768px block). On
+   desktop every product/category cell is always shown — no expand caret, no row toggling.
+   Only the dirty-state save (✓) button still hides until the row has unsaved edits. */
 .prod-row .save-row{display:none}
 .prod-row .save-row.dirty{display:inline-flex}
-/* Category row collapse/expand */
-.cat-row{cursor:pointer}
-.cat-row:not(.expanded) .col-num{display:none}
-.cat-row .cat-coll-cell{display:none}
-.cat-row.expanded .cat-coll-cell{display:table-cell}
 .cat-row .save-row{display:none}
 .cat-row .save-row.dirty{display:inline-flex}
-/* Name shows as plain text when collapsed — can't edit */
-.cat-row:not(.expanded) td[data-label="Name"] .cell-input{pointer-events:none;background:transparent;border-color:transparent}
 .photo-cell{width:48px;height:48px;border-radius:4px;border:1px solid var(--border);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:1.3rem;transition:all .15s;flex-shrink:0}
 .photo-cell:hover{border-color:var(--gold)}
 .photo-cell img{width:100%;height:100%;object-fit:cover}
@@ -115,6 +105,12 @@ tr.expanded .col-photo::after{content:'▾'}
 .photo-strip img{width:44px;height:44px;border-radius:3px;object-fit:cover;flex-shrink:0;scroll-snap-align:start;border:1px solid var(--border);cursor:pointer}
 /* Photo column takes available space without pushing other cells off-screen */
 .prod-row .col-photo{width:auto;max-width:calc(100vw - 260px)}
+/* Desktop: keep #, photo, state and action columns tight so Name/Price/etc get the space.
+   The photo strip scrolls horizontally inside its cap instead of stretching the whole column. */
+@media(min-width:769px){
+  .prod-row .col-photo{width:150px;max-width:150px}
+  .prod-row .photo-strip{max-width:150px}
+}
 .photo-strip img:hover{border-color:var(--gold)}
 .photo-strip .photo-placeholder{width:44px;height:44px;border-radius:3px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;cursor:pointer}
 .variants-cell{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -241,6 +237,10 @@ a{color:var(--gold)}
   /* Photo strip fills available space without pushing toggle/delete off-screen */
   .prod-row:not(.expanded) td.col-photo{flex:1 1 0;min-width:48px;max-width:calc(100vw - 110px);overflow:hidden}
   .variants-cell{flex-wrap:wrap}
+  /* Tap target + expand caret — collapse/expand exists only at this width */
+  .prod-row,.cat-row{cursor:pointer}
+  .col-photo::after{content:'▸';font-size:.55rem;color:var(--gray);margin-left:4px;opacity:.6;vertical-align:middle}
+  tr.expanded .col-photo::after{content:'▾'}
   /* Collapsible cells stay hidden on mobile until expanded */
   .prod-row .coll-cell{display:none!important}
   .prod-row.expanded .coll-cell{display:flex!important}
@@ -375,13 +375,12 @@ a{color:var(--gold)}
     <!-- ORDERS PAGE -->
     <style>
     .orders-list{display:flex;flex-direction:column;gap:1rem;max-width:920px}
-    .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;cursor:pointer}
+    .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem}
     .order-card.is-done{opacity:.62}
-    /* Collapsed by default: only the top section + customer info show. Click to stretch open. */
-    .ord-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
-    .order-card.expanded .ord-body{grid-template-rows:1fr}
+    /* Desktop: order cards are always fully shown. Collapse/expand is mobile-only (see media query below). */
+    .ord-body{display:grid;grid-template-rows:1fr}
     .ord-body-inner{overflow:hidden;min-height:0}
-    .ord-toggle{display:flex;align-items:center;justify-content:center;gap:.45rem;margin-top:.7rem;padding-top:.55rem;border-top:1px dashed var(--border);font-size:.72rem;color:var(--gray);user-select:none}
+    .ord-toggle{display:none;align-items:center;justify-content:center;gap:.45rem;margin-top:.7rem;padding-top:.55rem;border-top:1px dashed var(--border);font-size:.72rem;color:var(--gray);user-select:none}
     .ord-toggle::after{content:'عرض التفاصيل'}
     .order-card.expanded .ord-toggle::after{content:'إخفاء التفاصيل'}
     .ord-caret{transition:transform .22s}
@@ -416,6 +415,13 @@ a{color:var(--gold)}
     .ord-carrier.noest{background:#1E73E8}
     .ord-carrier.zr{background:#E0A800;color:#1a1a1a!important}
     .ord-carrier.dim{opacity:.4;filter:grayscale(.5)}
+    /* Collapse/expand order cards only on mobile — desktop keeps them fully open */
+    @media(max-width:768px){
+      .order-card{cursor:pointer}
+      .ord-body{grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+      .order-card.expanded .ord-body{grid-template-rows:1fr}
+      .ord-toggle{display:flex}
+    }
     @media(max-width:600px){ .ord-actions .btn{flex:1 1 auto;justify-content:center} }
     </style>
     <div class="page" id="page-orders">
@@ -841,6 +847,9 @@ $_('sheetBody').addEventListener('focusout',function(e){
   e.target.value=fmtMoney(p.price);
 });
 
+// Collapse/expand only exists on the mobile layout — must match the @media max-width:768px breakpoint.
+function isMobileView(){ return window.matchMedia('(max-width:768px)').matches; }
+
 // Smoothly stretch a collapsible row (product/category) open/closed instead of a hard
 // jump — measures the height before and after toggling, then tweens between them. Same
 // feel as the order cards, which use the CSS grid 0fr→1fr trick (rows can't, being a table).
@@ -861,7 +870,7 @@ $_('sheetBody').addEventListener('click',function(e){
   // Toggle expand/collapse on product rows when clicking non-interactive area
   if(!e.target.closest('button, input, select, .photo-cell, .toggle')){
     var row=e.target.closest('tr.prod-row');
-    if(row){
+    if(row&&isMobileView()){
       // Accordion: opening a product collapses whichever one is already open
       if(!row.classList.contains('expanded')){
         var openRow=$_('sheetBody').querySelector('tr.prod-row.expanded');
@@ -977,7 +986,7 @@ $_('catsBody').addEventListener('click',function(e){
   // Toggle expand/collapse on category rows when clicking non-interactive area
   if(!e.target.closest('button, input, select, .toggle')){
     var row=e.target.closest('tr.cat-row');
-    if(row){
+    if(row&&isMobileView()){
       // Accordion: opening a category collapses whichever one is already open
       if(!row.classList.contains('expanded')){
         var openRow=$_('catsBody').querySelector('tr.cat-row.expanded');
@@ -1098,6 +1107,8 @@ $_('ordersBody').addEventListener('click',function(e){
   // Anything else on the card (header / customer row / toggle) stretches it open or closed.
   // Ignore taps on form controls, links and the note field so they keep working.
   if(e.target.closest('button,a,input,select,textarea,label,.ord-prodlink')) return;
+  // Collapse/expand is mobile-only — on desktop the card is already fully shown.
+  if(!isMobileView()) return;
   var card=e.target.closest('.order-card'); if(!card) return;
   var willExpand=!card.classList.contains('expanded');
   // Accordion: opening an order collapses whichever one is already open
