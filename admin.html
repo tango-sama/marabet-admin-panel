@@ -848,7 +848,8 @@ $_('sheetBody').addEventListener('focusout',function(e){
 });
 
 // Collapse/expand only exists on the mobile layout — must match the @media max-width:768px breakpoint.
-function isMobileView(){ return window.matchMedia('(max-width:768px)').matches; }
+var MQ_MOBILE=window.matchMedia('(max-width:768px)');
+function isMobileView(){ return MQ_MOBILE.matches; }
 
 // Smoothly stretch a collapsible row (product/category) open/closed instead of a hard
 // jump — measures the height before and after toggling, then tweens between them. Same
@@ -858,7 +859,7 @@ function animateRowToggle(row){
   var startH=row.offsetHeight;
   row.classList.toggle('expanded');
   var endH=row.offsetHeight;
-  if(startH===endH){ row.style.overflow=''; return; } // no height change (e.g. desktop horizontal reveal)
+  if(startH===endH){ row.style.overflow=''; return; } // nothing to tween
   row.style.overflow='hidden';
   var anim=row.animate([{height:startH+'px'},{height:endH+'px'}],{duration:260,easing:'cubic-bezier(.4,0,.2,1)'});
   row._heightAnim=anim;
