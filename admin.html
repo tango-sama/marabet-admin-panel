@@ -841,12 +841,35 @@ $_('sheetBody').addEventListener('focusout',function(e){
   e.target.value=fmtMoney(p.price);
 });
 
+// Smoothly stretch a collapsible row (product/category) open/closed instead of a hard
+// jump — measures the height before and after toggling, then tweens between them. Same
+// feel as the order cards, which use the CSS grid 0fr→1fr trick (rows can't, being a table).
+function animateRowToggle(row){
+  if(row._heightAnim) row._heightAnim.cancel();
+  var startH=row.offsetHeight;
+  row.classList.toggle('expanded');
+  var endH=row.offsetHeight;
+  if(startH===endH){ row.style.overflow=''; return; } // no height change (e.g. desktop horizontal reveal)
+  row.style.overflow='hidden';
+  var anim=row.animate([{height:startH+'px'},{height:endH+'px'}],{duration:260,easing:'cubic-bezier(.4,0,.2,1)'});
+  row._heightAnim=anim;
+  anim.onfinish=anim.oncancel=function(){ row.style.overflow=''; if(row._heightAnim===anim) row._heightAnim=null; };
+}
+
 // Sheet clicks: save row, delete, edit photo, expand/collapse product row
 $_('sheetBody').addEventListener('click',function(e){
   // Toggle expand/collapse on product rows when clicking non-interactive area
   if(!e.target.closest('button, input, select, .photo-cell, .toggle')){
     var row=e.target.closest('tr.prod-row');
-    if(row){ row.classList.toggle('expanded'); return; }
+    if(row){
+      // Accordion: opening a product collapses whichever one is already open
+      if(!row.classList.contains('expanded')){
+        var openRow=$_('sheetBody').querySelector('tr.prod-row.expanded');
+        if(openRow&&openRow!==row) animateRowToggle(openRow);
+      }
+      animateRowToggle(row);
+      return;
+    }
   }
   var saveBtn=e.target.closest('[data-save]'), delBtn=e.target.closest('[data-del]'), photoBtn=e.target.closest('[data-edit-photo]');
   if(saveBtn) {
@@ -886,7 +909,7 @@ function addBlankRows(n) {
 function missingFields(p) {
   var m=[];
   if(!(p.name&&p.name.trim())) m.push('name');
-  if(!(p.brand&&p.brand.trim())) m.push('brand');
+  // Brand is optional — admin can leave it empty
   if(!(p.category&&p.category.trim())) m.push('category');
   if(!(+p.price>0)) m.push('price');
   if(!(p.sizes&&String(p.sizes).trim())) m.push('sizes');
@@ -954,7 +977,15 @@ $_('catsBody').addEventListener('click',function(e){
   // Toggle expand/collapse on category rows when clicking non-interactive area
   if(!e.target.closest('button, input, select, .toggle')){
     var row=e.target.closest('tr.cat-row');
-    if(row){ row.classList.toggle('expanded'); return; }
+    if(row){
+      // Accordion: opening a category collapses whichever one is already open
+      if(!row.classList.contains('expanded')){
+        var openRow=$_('catsBody').querySelector('tr.cat-row.expanded');
+        if(openRow&&openRow!==row) animateRowToggle(openRow);
+      }
+      animateRowToggle(row);
+      return;
+    }
   }
   var s=e.target.closest('[data-savecat]'), d=e.target.closest('[data-delcat]');
   if(s){var c=categories.find(function(x){return x.id===s.dataset.savecat;});if(c){delete c._dirty;fbSaveCategory(c).then(function(){s.classList.remove('dirty');toast('Category saved','success');syncCatFilters();}).catch(function(){c._dirty=true;s.classList.add('dirty');toast('Save failed','error');});}}
@@ -1069,6 +1100,14 @@ $_('ordersBody').addEventListener('click',function(e){
   if(e.target.closest('button,a,input,select,textarea,label,.ord-prodlink')) return;
   var card=e.target.closest('.order-card'); if(!card) return;
   var willExpand=!card.classList.contains('expanded');
+  // Accordion: opening an order collapses whichever one is already open
+  if(willExpand){
+    var openCard=$_('ordersBody').querySelector('.order-card.expanded');
+    if(openCard&&openCard!==card){
+      openCard.classList.remove('expanded');
+      var oo=orders.find(function(x){return x._docId===openCard.dataset.oid;}); if(oo) oo._expanded=false;
+    }
+  }
   card.classList.toggle('expanded',willExpand);
   // Remember the state so re-renders (dispatch, track, fulfill…) don't snap the card shut.
   var o=orders.find(function(x){return x._docId===card.dataset.oid;}); if(o) o._expanded=willExpand;
