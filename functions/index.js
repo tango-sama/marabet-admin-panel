@@ -64,6 +64,9 @@ exports.createDeliveryOnFulfill = onDocumentUpdated(
       if (String(after.deliveryCompany || "yalidine") === "noest") {
         return createNoestDelivery(after, ref, event.params.orderId);
       }
+      if (String(after.deliveryCompany || "yalidine") === "zrexpress") {
+        return createZrExpressDelivery(after, ref, event.params.orderId);
+      }
 
       // Credentials come from settings/delivery (set in admin → Settings → Delivery).
       const credSnap = await db.doc("settings/delivery").get();
@@ -209,7 +212,35 @@ exports.syncDeliveryStatuses = onSchedule("every 3 hours", async () => {
 exports.trackParcel = onCall(async (req) => {
   const tracking = String((req.data && req.data.tracking) || "").trim();
   const orderId = String((req.data && req.data.orderId) || "").trim();
+  const company = String((req.data && req.data.company) || "yalidine").trim();
   if (!tracking) throw new HttpsError("invalid-argument", "tracking is required");
+
+  // ZRExpress: look up the parcel by its tracking number and read the current state name.
+  if (company === "zrexpress") {
+    const zr = (await db.doc("settings/zrexpress").get()).data() || {};
+    if (!zr.tenantId || !zr.apiKey) throw new HttpsError("failed-precondition", "ZRExpress keys not set in Settings → Delivery (ZRExpress)");
+    const headers = {"X-Tenant": String(zr.tenantId), "X-Api-Key": String(zr.apiKey), "Content-Type": "application/json"};
+    let sBody;
+    try {
+      const sRes = await fetch(ZR_BASE + "/parcels/search", {
+        method: "POST", headers,
+        body: JSON.stringify({pageNumber: 1, pageSize: 1,
+          advancedFilter: {logic: "and", filters: [{field: "trackingNumber", operator: "eq", value: tracking}]}}),
+      });
+      sBody = await sRes.json();
+    } catch (e) {
+      throw new HttpsError("unavailable", "Could not reach ZRExpress: " + String(e));
+    }
+    const row = ((sBody && (sBody.data || sBody.items || sBody.results)) || [])[0] || {};
+    const lastStatus = (row.state && (row.state.name || row.state.stateName)) || row.stateName || null;
+    if (!lastStatus) throw new HttpsError("not-found", "Parcel not found at ZRExpress");
+    if (orderId) {
+      await db.doc(`orders/${orderId}`).update({
+        deliveryLastStatus: lastStatus, deliveryStatusAt: FieldValue.serverTimestamp(),
+      }).catch(() => {});
+    }
+    return {tracking, lastStatus};
+  }
 
   const cred = (await db.doc("settings/delivery").get()).data() || {};
   if (!cred.apiId || !cred.apiToken) {
@@ -392,15 +423,25 @@ async function createNoestDelivery(after, ref, orderId) {
       body = text;
     }
     if (res.ok && body && body.success === true && body.tracking) {
+      // Try to fetch a printable label URL from Noest.
+      let labelUrl = null;
+      try {
+        const lRes = await fetch(NOEST_BASE + "/api/public/get/label/" + body.tracking, {headers});
+        if (lRes.ok) {
+          const lData = await lRes.json();
+          labelUrl = (lData && (lData.label || lData.url || lData.link || lData.print_url)) || null;
+          if (!labelUrl && typeof lData === "string") labelUrl = lData;
+        }
+      } catch (e) { /* label is optional — don't fail the whole delivery */ }
       await ref.update({
         deliveryProvider: "Noest",
         deliveryTracking: body.tracking,
-        deliveryLabel: null,
+        deliveryLabel: labelUrl,
         deliveryStatus: "Created",
         deliveryError: null,
         deliveryAt: FieldValue.serverTimestamp(),
       });
-      logger.info(`Noest parcel created for ${orderId}: ${body.tracking}`);
+      logger.info(`Noest parcel created for ${orderId}: ${body.tracking}${labelUrl ? " (label fetched)" : ""}`);
     } else {
       const msg = (body && (body.message || JSON.stringify(body))) || `HTTP ${res.status}`;
       await ref.update({deliveryStatus: "Failed", deliveryError: msg});
@@ -410,6 +451,197 @@ async function createNoestDelivery(after, ref, orderId) {
     await ref.update({deliveryStatus: "Failed", deliveryError: String(e)});
     logger.error(`Noest request error for ${orderId}:`, e);
   }
+}
+
+// ═══════════════════════════ ZRExpress carrier (api.zrexpress.app) ═══════════════════════════
+const ZR_BASE = "https://api.zrexpress.app/api/v1";
+
+// 0XXXXXXXXX → +213XXXXXXXXX (ZRExpress wants international format).
+function zrPhone(p) {
+  let d = String(p || "").replace(/[^\d]/g, "");
+  if (d.startsWith("213")) return "+" + d;
+  if (d.startsWith("0")) d = d.slice(1);
+  return "+213" + d;
+}
+
+// A throwaway-but-valid UUID v4 (the parcel API requires a customerId even when we don't
+// link to a stored ZRExpress customer — the spec explicitly allows a random one).
+function randomUuid() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0; const v = c === "x" ? r : ((r & 0x3) | 0x8);
+    return v.toString(16);
+  });
+}
+
+/**
+ * createZrExpressDelivery: called from the createDeliveryOnFulfill trigger when the
+ * customer chose ZRExpress. Credentials live in settings/zrexpress = { tenantId, apiKey }
+ * (write-only for clients). The order must carry the ZRExpress territory UUIDs that the
+ * checkout saved: cityTerritoryId (wilaya) and districtTerritoryId (commune).
+ */
+async function createZrExpressDelivery(after, ref, orderId) {
+  const cred = (await db.doc("settings/zrexpress").get()).data() || {};
+  const tenantId = String(cred.tenantId || "").trim();
+  const apiKey = String(cred.apiKey || "").trim();
+  if (!tenantId || !apiKey) {
+    await ref.update({deliveryStatus: "Failed", deliveryError: "ZRExpress keys not set in Settings → Delivery (ZRExpress)"});
+    logger.error("ZRExpress keys missing in settings/zrexpress");
+    return;
+  }
+  const cityTerritoryId = String(after.cityTerritoryId || "").trim();
+  const districtTerritoryId = String(after.districtTerritoryId || "").trim();
+  if (!cityTerritoryId || !districtTerritoryId) {
+    await ref.update({deliveryStatus: "Failed", deliveryError: "Order is missing ZRExpress territory UUIDs (re-run territory sync, then re-order)"});
+    return;
+  }
+
+  const headers = {"X-Tenant": tenantId, "X-Api-Key": apiKey, "Content-Type": "application/json"};
+  const isPickup = String(after.deliveryType || "") === "desk";
+
+  // Pickup-point parcels need a hubId. Find a pickup hub in the destination city (same
+  // idea as Noest's stop-desk lookup); if none exists, fall back to home delivery.
+  let deliveryType = isPickup ? "pickup-point" : "home";
+  let hubId = null;
+  if (isPickup) {
+    try {
+      const hRes = await fetch(ZR_BASE + "/hubs/search", {
+        method: "POST", headers, body: JSON.stringify({pageNumber: 1, pageSize: 200}),
+      });
+      const hBody = await hRes.json();
+      const hubs = (hBody && (hBody.data || hBody.items || hBody.results)) || [];
+      const hit = hubs.find((h) => h && h.IsPickupPoint &&
+          h.address && String(h.address.cityTerritoryId) === cityTerritoryId);
+      if (hit) hubId = hit.id; else deliveryType = "home";
+    } catch (e) {
+      deliveryType = "home"; // network/desk lookup failed → ship home so the order still goes out
+    }
+  }
+
+  // Privacy note name (same behaviour as Yalidine/Noest) → falls back to the real product.
+  const description = ((after.noteName && String(after.noteName).trim()) ||
+      ([after.product, after.brand, after.color, after.size].filter(Boolean).join(" / ") +
+          (after.qty ? ` x${after.qty}` : "")) || "منتجات").slice(0, 250);
+  const amount = clampAmount(after.total || after.subtotal || after.price || 0);
+  const qty = Number(after.qty) || 1;
+  const unit = clampAmount((after.subtotal || amount) / qty);
+
+  const payload = {
+    customer: {
+      customerId: randomUuid(),
+      name: (String(after.customer || "").trim() || "Client").slice(0, 200),
+      phone: {number1: zrPhone(after.phone)},
+    },
+    deliveryAddress: {
+      cityTerritoryId,
+      districtTerritoryId,
+      street: String(after.address || "").slice(0, 200),
+    },
+    orderedProducts: [{
+      productName: (String(after.product || "منتج").trim()).slice(0, 200),
+      unitPrice: unit,
+      quantity: qty,
+      stockType: "none",
+      length: 20, width: 10, height: 1, weight: 1,
+    }],
+    amount,
+    description: description.length < 2 ? "منتجات" : description,
+    deliveryType,
+    externalId: String(after.num || orderId),
+  };
+  if (deliveryType === "pickup-point" && hubId) payload.hubId = hubId;
+
+  try {
+    const res = await fetch(ZR_BASE + "/parcels", {method: "POST", headers, body: JSON.stringify(payload)});
+    const text = await res.text();
+    let body; try { body = JSON.parse(text); } catch (e) { body = text; }
+    if ((res.status === 201 || res.ok) && body && body.id) {
+      const parcelId = body.id;
+      // The create response only returns the parcel id; fetch the tracking number via search.
+      let tracking = null;
+      try {
+        const sRes = await fetch(ZR_BASE + "/parcels/search", {
+          method: "POST", headers,
+          body: JSON.stringify({pageNumber: 1, pageSize: 1,
+            advancedFilter: {logic: "and", filters: [{field: "externalId", operator: "eq", value: payload.externalId}]}}),
+        });
+        const sBody = await sRes.json();
+        const row = ((sBody && (sBody.data || sBody.items || sBody.results)) || [])[0] || {};
+        tracking = row.trackingNumber || null;
+      } catch (e) { /* tracking will fill in via webhook/sync later */ }
+      // Try to fetch a printable label from ZRExpress.
+      let labelUrl = null;
+      try {
+        const lRes = await fetch(ZR_BASE + "/parcels/" + parcelId + "/label", {headers});
+        if (lRes.ok) {
+          const lData = await lRes.json();
+          labelUrl = (lData && (lData.label || lData.url || lData.link || lData.printUrl)) || null;
+          if (!labelUrl && typeof lData === "string") labelUrl = lData;
+        }
+      } catch (e) { /* label is optional — don't fail the whole delivery */ }
+      await ref.update({
+        deliveryProvider: "ZRExpress",
+        deliveryParcelId: parcelId,
+        deliveryTracking: tracking || parcelId,
+        deliveryLabel: labelUrl,
+        deliveryStatus: "Created",
+        deliveryError: null,
+        deliveryAt: FieldValue.serverTimestamp(),
+      });
+      logger.info(`ZRExpress parcel created for ${payload.externalId}: ${tracking || parcelId}${labelUrl ? " (label fetched)" : ""}`);
+    } else {
+      const msg = (body && (body.detail || (body.errors && JSON.stringify(body.errors)) || body.title)) ||
+          (typeof body === "string" ? body : `HTTP ${res.status}`);
+      await ref.update({deliveryStatus: "Failed", deliveryError: String(msg)});
+      logger.error(`ZRExpress create failed for ${payload.externalId}: ${msg}`);
+    }
+  } catch (e) {
+    await ref.update({deliveryStatus: "Failed", deliveryError: String(e)});
+    logger.error(`ZRExpress request error for ${payload.externalId}:`, e);
+  }
+}
+
+// Cache ZRExpress territories (wilayas + communes, with their UUIDs) into delivery_data/zrexpress.
+// Shape is richer than Yalidine/Noest because parcels need the commune's UUID, not just its name:
+//   { wilayas:[{id,code,ar,fr,home,pickup}], communes:{<wilayaUuid>:[{id,name,home,pickup}]}, fees:{<wilayaUuid>:{home,desk}} }
+// ZRExpress exposes no fee grid, so we price by the standard Algeria wilaya `code` using YAL_FEES.
+async function syncZrTerritories(cred) {
+  const tenantId = String(cred.tenantId || "").trim();
+  const apiKey = String(cred.apiKey || "").trim();
+  if (!tenantId || !apiKey) return null;
+  const headers = {"X-Tenant": tenantId, "X-Api-Key": apiKey, "Content-Type": "application/json"};
+  const res = await fetch(ZR_BASE + "/territories/search", {
+    method: "POST", headers,
+    body: JSON.stringify({pageNumber: 1, pageSize: 5000, orderBy: ["code asc"]}),
+  });
+  const body = await res.json();
+  const rows = (body && (body.data || body.items || body.results)) || [];
+
+  const wilayas = [];
+  const communesByW = {};
+  rows.forEach((t) => {
+    const del = t.delivery || {};
+    if (t.level === "wilaya") {
+      wilayas.push({id: t.id, code: Number(t.code) || null, ar: t.name, fr: t.name,
+        home: del.hasHomeDelivery !== false, pickup: !!del.hasPickupPoint});
+    } else if (t.level === "commune" && t.parentId) {
+      (communesByW[t.parentId] = communesByW[t.parentId] || []).push({
+        id: t.id, name: t.name, home: del.hasHomeDelivery !== false, pickup: !!del.hasPickupPoint,
+      });
+    }
+  });
+  // Keep only wilayas that can actually receive a delivery, and price them by their code.
+  const fees = {};
+  const usable = wilayas.filter((w) => w.home || w.pickup);
+  usable.forEach((w) => {
+    const f = YAL_FEES[String(w.code)];
+    if (f) fees[w.id] = {home: f[0], desk: f[1]};
+  });
+  const communes = {};
+  usable.forEach((w) => { communes[w.id] = communesByW[w.id] || []; });
+
+  await db.doc("delivery_data/zrexpress").set({wilayas: usable, communes, fees, updatedAt: FieldValue.serverTimestamp()});
+  return {wilayas: usable.length, communes: Object.values(communes).reduce((a, b) => a + b.length, 0)};
 }
 
 // ───────────── Per-carrier wilaya/commune/fee lists (delivery_data/<carrier>) ─────────────
@@ -452,6 +684,7 @@ async function writeCarrierData(name, wilayaIds, communesByW, feeTable) {
 exports.syncCarriers = onCall({timeoutSeconds: 120}, async () => {
   const yal = (await db.doc("settings/delivery").get()).data() || {};
   const no = (await db.doc("settings/noest").get()).data() || {};
+  const zr = (await db.doc("settings/zrexpress").get()).data() || {};
   const out = {};
   try {
     // YALIDINE
@@ -482,6 +715,10 @@ exports.syncCarriers = onCall({timeoutSeconds: 120}, async () => {
         if (c.is_active != 0) (byW[c.wilaya_id] = byW[c.wilaya_id] || []).push(c.nom);
       });
       out.noest = await writeCarrierData("noest", wArr.map((w) => w.code), byW, NOEST_FEES);
+    }
+    // ZREXPRESS — territories carry their own UUIDs, so this writes the richer shape itself.
+    if (zr.tenantId && zr.apiKey) {
+      out.zrexpress = await syncZrTerritories(zr);
     }
   } catch (e) {
     throw new HttpsError("internal", String((e && e.message) || e));

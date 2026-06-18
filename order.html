@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>تقديم الطلب — بازار مرابط</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
@@ -159,8 +159,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-f
       <div class="ffield full" style="margin-bottom:1rem">
         <label>شركة التوصيل <span class="req">*</span></label>
         <div class="company-opts" id="companyOpts">
-          <div class="co-opt on" data-co="yalidine" onclick="pickCompany(this)"><span class="co-dot" style="background:#E11900"></span> Yalidine — ياليدين</div>
+          <div class="co-opt" data-co="yalidine" onclick="pickCompany(this)"><span class="co-dot" style="background:#E11900"></span> Yalidine — ياليدين</div>
           <div class="co-opt" data-co="noest" onclick="pickCompany(this)"><span class="co-dot" style="background:#1A7F4B"></span> Noest — نوست</div>
+          <div class="co-opt" data-co="zrexpress" onclick="pickCompany(this)" style="display:none"><span class="co-dot" style="background:#E0A800"></span> ZRExpress — زد آر</div>
         </div>
       </div>
       <div class="frow">
@@ -268,7 +269,7 @@ const WILAYAS={
   'بجاية':['بجاية','أقبو','صدوق','أميزور','تيشي'],
 };
 
-let product=null, color=0, size='42', qty=1, delivery='home', company='yalidine';
+let product=null, color=0, size='42', qty=1, delivery='home', company=null;
 
 // Per-wilaya Yalidine fees, keyed by wilaya id: [home, stopdesk] in DZD. Embedded fallback
 // so prices work even before geo/fees is synced; overridden at runtime by Firestore (geo/fees).
@@ -289,7 +290,9 @@ function fallbackCarrier(feeTable){
   ids.forEach(id=>{ const f=feeTable[String(id)]; if(f) fees[String(id)]={home:f[0],desk:f[1]}; communes[String(id)]=WILAYAS[WILAYA_NAMES[id][0]]||[]; });
   return { wilayas:ids.map(id=>({id,ar:WILAYA_NAMES[id][0],fr:WILAYA_NAMES[id][1]})), communes, fees };
 }
-let CARRIERS={ yalidine:fallbackCarrier(YAL_FEES), noest:fallbackCarrier(NOEST_FEES) };
+// ZRExpress has no offline fallback — it needs real territory UUIDs from delivery_data/zrexpress
+// (synced by the admin), so it stays empty + hidden until that loads.
+let CARRIERS={ yalidine:fallbackCarrier(YAL_FEES), noest:fallbackCarrier(NOEST_FEES), zrexpress:{wilayas:[],communes:{},fees:{}} };
 function carrier(){ return CARRIERS[company]||CARRIERS.yalidine; }
 function wilayaById(id){ return carrier().wilayas.find(w=>String(w.id)===String(id))||null; }
 
@@ -297,7 +300,7 @@ function populateWilayas(){
   const ws=document.getElementById('fwilaya');
   const cur=ws.value;
   // Option VALUE is the wilaya id (stable across carriers); label shows "16 - الجزائر".
-  ws.innerHTML='<option value="">اختر الولاية</option>'+carrier().wilayas.map(w=>`<option value="${w.id}">${w.id} - ${w.ar}</option>`).join('');
+  ws.innerHTML='<option value="">اختر الولاية</option>'+carrier().wilayas.map(w=>`<option value="${w.id}">${(w.code!=null?w.code:w.id)} - ${w.ar||w.fr||''}</option>`).join('');
   ws.value=(cur && wilayaById(cur))?cur:'';
 }
 
@@ -305,13 +308,15 @@ function populateWilayas(){
 function loadCarriers(){
   if(typeof firebase==='undefined') return;
   const fs=firebase.firestore();
-  ['yalidine','noest'].forEach(name=>{
+  ['yalidine','noest','zrexpress'].forEach(name=>{
     fs.doc('delivery_data/'+name).get().then(d=>{
       if(!d.exists) return;
       const data=d.data()||{};
       if(Array.isArray(data.wilayas) && data.wilayas.length){
         CARRIERS[name]={ wilayas:data.wilayas, communes:data.communes||{}, fees:data.fees||{} };
         if(name===company){ populateWilayas(); onWilaya(); }
+        // ZRExpress only becomes selectable once its list arrives — re-evaluate carrier visibility.
+        if(name==='zrexpress' && window._generalSettings) applyCarrierVisibility(window._generalSettings);
       }
     }).catch(err=>console.error('Could not load '+name+' delivery data:',err));
   });
@@ -321,9 +326,12 @@ function loadCarriers(){
 // if somehow both are off, show both anyway so checkout is never blocked.
 function applyCarrierVisibility(s){
   s=s||{};
-  let yOn=s.yalidineEnabled!==false, nOn=s.noestEnabled!==false;
-  if(!yOn && !nOn){ yOn=nOn=true; }
-  const states={yalidine:yOn, noest:nOn};
+  let yOn=s.yalidineEnabled!==false, nOn=s.noestEnabled!==false, zOn=s.zrexpressEnabled!==false;
+  // ZRExpress can only be offered once its territory list (with UUIDs) has actually synced.
+  const zReady=!!(CARRIERS.zrexpress && CARRIERS.zrexpress.wilayas && CARRIERS.zrexpress.wilayas.length);
+  zOn=zOn && zReady;
+  if(!yOn && !nOn && !zOn){ yOn=nOn=true; }
+  const states={yalidine:yOn, noest:nOn, zrexpress:zOn};
   const avail=[];
   Object.keys(states).forEach(name=>{
     const el=document.querySelector('.co-opt[data-co="'+name+'"]');
@@ -339,7 +347,7 @@ function applyCarrierVisibility(s){
 function loadCarrierVisibility(){
   if(typeof firebase==='undefined') return;
   firebase.firestore().doc('settings/general').get()
-    .then(d=>{ if(d.exists) applyCarrierVisibility(d.data()); })
+    .then(d=>{ if(d.exists){ window._generalSettings=d.data(); applyCarrierVisibility(d.data()); } })
     .catch(()=>{});
 }
 
@@ -401,9 +409,12 @@ function init(){
 function onWilaya(){
   const id=document.getElementById('fwilaya').value;
   const cs=document.getElementById('fcommune');
-  const list=carrier().communes[String(id)];
-  if(id && list && list.length){
-    cs.innerHTML='<option value="">اختر البلدية</option>'+list.map(c=>`<option>${c}</option>`).join('');
+  // Commune entries are plain name strings (Yalidine/Noest) or {id,name} objects (ZRExpress,
+  // where we must keep the district UUID for the parcel API). Normalise to {name,id}.
+  const raw=carrier().communes[String(id)]||[];
+  const list=raw.map(c=> typeof c==='string'?{name:c,id:''}:{name:(c&&c.name)||'',id:(c&&c.id)||''});
+  if(id && list.length){
+    cs.innerHTML='<option value="">اختر البلدية</option>'+list.map(c=>`<option value="${c.name}" data-tid="${c.id}">${c.name}</option>`).join('');
   }else{
     cs.innerHTML='<option value="">اختر البلدية</option>';
   }
@@ -460,24 +471,33 @@ function validate(){
   });
   // phone basic check
   if(phone.value && !/^0[567][0-9]{8}$/.test(phone.value.replace(/\s/g,''))){phone.classList.add('err');ok=false;}
-  if(!ok) alert('الرجاء ملء جميع الحقول المطلوبة بشكل صحيح (الاسم، هاتف صحيح، الولاية، البلدية)');
+  if(!company) ok=false;
+  if(!ok) alert('الرجاء ملء جميع الحقول المطلوبة بشكل صحيح (شركة التوصيل، الاسم، هاتف صحيح، الولاية، البلدية)');
   return ok;
 }
 
 function buildOrder(){
   const c=product.colors[color]||product.colors[0];
   const w=wilayaById(document.getElementById('fwilaya').value);
+  const csel=document.getElementById('fcommune');
+  const copt=csel.options[csel.selectedIndex];
+  const districtTid=copt?(copt.getAttribute('data-tid')||''):'';
+  const isZr=company==='zrexpress';
+  const coName=company?(isZr?'ZRExpress':(company==='noest'?'Noest':'Yalidine')):'';
   const sub=product.price*qty, del=DELIVERY_PRICES[delivery]||0;
   return {
     oid:'#BM-'+Math.floor(1000+Math.random()*9000),
     name:document.getElementById('fname').value,
     phone:document.getElementById('fphone').value,
-    wilaya:w?w.ar:'', wilayaFr:w?w.fr:'', wilayaId:w?w.id:null,
-    commune:document.getElementById('fcommune').value,
+    wilaya:w?(w.ar||w.fr||''):'', wilayaFr:w?(w.fr||w.ar||''):'', wilayaId:w?(isZr?(w.code||null):w.id):null,
+    // ZRExpress addresses are keyed by territory UUIDs, not numeric ids/names.
+    cityTerritoryId:(isZr&&w)?String(w.id):null,
+    districtTerritoryId:isZr?(districtTid||null):null,
+    commune:csel.value,
     address:document.getElementById('faddr').value,
     note:document.getElementById('fnote').value,
     company, deliveryType:delivery,
-    delivery:(company==='noest'?'Noest':'Yalidine')+' · '+(delivery==='home'?'توصيل للمنزل':'مكتب التوصيل'),
+    delivery:(coName?coName+' · ':'')+(delivery==='home'?'توصيل للمنزل':'مكتب التوصيل'),
     product:product.name, brand:product.brand, color:c.n, size, qty,
     subtotal:sub, deliveryFee:del, total:sub+del
   };
@@ -494,6 +514,7 @@ function confirmOrder(){
       color:o.color, colorHex:(c&&c.h)||'#888888', size:o.size, qty:o.qty,
       price:o.total, subtotal:o.subtotal, deliveryFee:o.deliveryFee, total:o.total,
       wilaya:o.wilaya, wilayaFr:o.wilayaFr, wilayaId:o.wilayaId, commune:o.commune,
+      cityTerritoryId:o.cityTerritoryId||null, districtTerritoryId:o.districtTerritoryId||null,
       address:o.address, note:o.note, delivery:o.delivery,
       deliveryCompany:o.company, deliveryType:o.deliveryType,
       status:'New', fulfilled:false, placedAt:firebase.firestore.FieldValue.serverTimestamp()

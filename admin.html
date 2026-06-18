@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bazar Merabet — Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -61,7 +61,8 @@ body{background:var(--black);color:var(--white);font-family:var(--font);display:
 .carrier-status{font-size:.7rem;font-weight:700;padding:.12rem .55rem;border-radius:100px;vertical-align:middle;margin-right:.4rem;letter-spacing:.2px}
 .carrier-status.on{background:rgba(40,167,69,.16);color:#28a745}
 .carrier-status.off{background:rgba(150,150,150,.16);color:var(--gray)}
-.btn-icon.danger:hover{color:var(--danger)}
+.btn-icon.danger{color:var(--danger)}
+.btn-icon.danger:hover{color:var(--danger);background:rgba(229,57,53,.12)}
 
 .page{display:none}.page.active{display:block}
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
@@ -85,10 +86,37 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .cell-input:hover,.cell-select:hover{border-color:var(--border);background:var(--card2)}
 .cell-input:focus,.cell-select:focus{border-color:var(--gold);background:var(--card2)}
 .col-num{width:36px;text-align:center;color:var(--gray);font-size:.72rem}
-.col-photo{width:64px}.col-actions{width:140px;white-space:nowrap;text-align:right}
-.photo-cell{width:48px;height:48px;border-radius:4px;border:1px solid var(--border);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:1.3rem;transition:all .15s}
+.col-photo{width:64px;cursor:pointer;position:relative}
+.col-photo::after{content:'▸';font-size:.55rem;color:var(--gray);margin-left:4px;opacity:.6;vertical-align:middle}
+tr.expanded .col-photo::after{content:'▾'}
+.col-actions{width:140px;white-space:nowrap;text-align:right}
+/* Product row collapse/expand */
+.prod-row{cursor:pointer}
+.prod-row:not(.expanded) .col-num{display:none}
+.prod-row .coll-cell{display:none}
+.prod-row.expanded .coll-cell{display:table-cell}
+.prod-row .save-row{display:none}
+.prod-row .save-row.dirty{display:inline-flex}
+/* Category row collapse/expand */
+.cat-row{cursor:pointer}
+.cat-row:not(.expanded) .col-num{display:none}
+.cat-row .cat-coll-cell{display:none}
+.cat-row.expanded .cat-coll-cell{display:table-cell}
+.cat-row .save-row{display:none}
+.cat-row .save-row.dirty{display:inline-flex}
+/* Name shows as plain text when collapsed — can't edit */
+.cat-row:not(.expanded) td[data-label="Name"] .cell-input{pointer-events:none;background:transparent;border-color:transparent}
+.photo-cell{width:48px;height:48px;border-radius:4px;border:1px solid var(--border);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:1.3rem;transition:all .15s;flex-shrink:0}
 .photo-cell:hover{border-color:var(--gold)}
 .photo-cell img{width:100%;height:100%;object-fit:cover}
+.photo-strip{display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:0 2px}
+.photo-strip::-webkit-scrollbar{height:3px}
+.photo-strip::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.photo-strip img{width:44px;height:44px;border-radius:3px;object-fit:cover;flex-shrink:0;scroll-snap-align:start;border:1px solid var(--border);cursor:pointer}
+/* Photo column takes available space without pushing other cells off-screen */
+.prod-row .col-photo{width:auto;max-width:calc(100vw - 260px)}
+.photo-strip img:hover{border-color:var(--gold)}
+.photo-strip .photo-placeholder{width:44px;height:44px;border-radius:3px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;cursor:pointer}
 .variants-cell{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .variant-chip{display:inline-flex;align-items:center;gap:4px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:2px 6px 2px 4px;font-size:.68rem;color:var(--white)}
 .variant-chip .dot{width:11px;height:11px;border-radius:50%;border:1px solid rgba(255,255,255,.2);flex-shrink:0}
@@ -152,7 +180,9 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 textarea.json-input{width:100%;min-height:140px;background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:monospace;font-size:.75rem;padding:.75rem;border-radius:4px;outline:none;resize:vertical;margin-top:.75rem}
 .settings-wrap{max-width:560px;display:flex;flex-direction:column;gap:1rem}
 .settings-label{font-size:.72rem;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px}
-.settings-section{font-size:.8rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;font-weight:600;padding-top:.5rem}
+.settings-section{font-size:.8rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;font-weight:600;margin-bottom:.5rem}
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:1rem}
+.settings-card .settings-section{padding-top:0}
 .settings-input{background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.85rem;padding:.55rem .85rem;border-radius:4px;outline:none;width:100%}
 .settings-input:focus{border-color:var(--gold)}
 .danger-zone{border:1px solid rgba(229,57,53,.3);border-radius:8px;padding:1.25rem;margin-top:.5rem}
@@ -185,10 +215,62 @@ a{color:var(--gold)}
   .topbar{padding:.6rem 1rem .6rem 3.6rem}
   .topbar-title{margin-left:0;font-size:.95rem}
   .content{padding:.85rem}
-  .sheet-wrap{-webkit-overflow-scrolling:touch}
   .stats-row{grid-template-columns:repeat(2,1fr);gap:.6rem}
   .stat-value{font-size:1.45rem}
-  .toolbar-right{margin-left:0}
+  /* Toolbars stack and fill the width so buttons are easy to tap */
+  .toolbar-left,.toolbar-right{width:100%}
+  .toolbar-right{margin-left:0;justify-content:flex-start;flex-wrap:wrap}
+  .toolbar-left .filter-select{flex:1 1 auto}
+  .filter-select{padding:.55rem .8rem;font-size:.85rem}
+  .btn-sm{padding:.55rem .9rem;font-size:.8rem}
+  /* "+ 5 Rows" is bulk entry — hide it on phones, "+ Row" is enough */
+  #add5Btn{display:none}
+  /* Wide product/category sheets turn into stacked cards instead of a 900px scroll */
+  .sheet-wrap{background:transparent;border:none;border-radius:0;overflow-x:visible;-webkit-overflow-scrolling:touch}
+  table.sheet{min-width:0}
+  .sheet thead{display:none}
+  .sheet tbody,.sheet tr,.sheet td{display:block;width:100%}
+  .sheet tr{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:.85rem;padding:.2rem .15rem;overflow:hidden}
+  .sheet tr:hover td{background:transparent}
+  .sheet td{border-bottom:1px solid rgba(201,168,76,.07);display:flex;align-items:center;gap:.75rem;padding:.55rem .85rem;text-align:left}
+  .sheet tr td:last-child{border-bottom:none}
+  .sheet td[data-label]::before{content:attr(data-label);flex:0 0 80px;font-size:.64rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);font-weight:700}
+  .sheet td.col-num{background:var(--card2);color:var(--gold);font-weight:800;font-size:.78rem}
+  .sheet td.col-num::before{color:var(--gold)}
+  .sheet td.col-photo,.sheet td.col-active,.sheet td.col-actions,.sheet td.col-prodcount,.sheet td.variants-cell{text-align:left;justify-content:flex-start;width:100%}
+  /* Photo strip fills available space without pushing toggle/delete off-screen */
+  .prod-row:not(.expanded) td.col-photo{flex:1 1 0;min-width:48px;max-width:calc(100vw - 110px);overflow:hidden}
+  .variants-cell{flex-wrap:wrap}
+  /* Collapsible cells stay hidden on mobile until expanded */
+  .prod-row .coll-cell{display:none!important}
+  .prod-row.expanded .coll-cell{display:flex!important}
+  .prod-row .save-row{display:none!important}
+  .prod-row .save-row.dirty{display:inline-flex!important}
+  /* Collapsed product row: photo, active, delete in one compact row */
+  .prod-row:not(.expanded){display:flex!important;flex-wrap:wrap;align-items:center;gap:.35rem;padding:.35rem .5rem!important}
+  .prod-row:not(.expanded) td{border-bottom:none!important;padding:.15rem .25rem!important;width:auto!important;flex:none}
+  .prod-row:not(.expanded) td[data-label]::before{display:none!important}
+  .prod-row:not(.expanded) .coll-cell{display:none!important}
+  .prod-row:not(.expanded) .col-num{display:none!important}
+  .prod-row:not(.expanded) .col-active{margin-left:auto}
+  .prod-row:not(.expanded) .col-actions .btn-icon{font-size:1rem;padding:6px 10px}
+  /* Category row collapse/expand on mobile */
+  .cat-row .cat-coll-cell{display:none!important}
+  .cat-row.expanded .cat-coll-cell{display:flex!important}
+  .cat-row .save-row{display:none!important}
+  .cat-row .save-row.dirty{display:inline-flex!important}
+  .cat-row:not(.expanded){display:flex!important;flex-wrap:wrap;align-items:center;gap:.35rem;padding:.35rem .5rem!important}
+  .cat-row:not(.expanded) td{border-bottom:none!important;padding:.15rem .25rem!important;width:auto!important;flex:none}
+  .cat-row:not(.expanded) td[data-label]::before{display:none!important}
+  .cat-row:not(.expanded) td[data-label="Name"]{flex:1 1 0;min-width:80px}
+  .cat-row:not(.expanded) td[data-label="Name"] .cell-input{pointer-events:none;background:transparent;border-color:transparent}
+  .cat-row:not(.expanded) .cat-coll-cell{display:none!important}
+  .cat-row:not(.expanded) .col-num{display:none!important}
+  .cat-row:not(.expanded) .col-active{margin-left:auto}
+  .cat-row:not(.expanded) .col-actions .btn-icon{font-size:1rem;padding:6px 10px}
+  /* 16px input text stops iOS Safari from auto-zooming on focus */
+  .cell-input,.cell-select{flex:1;min-width:0;font-size:16px;padding:.6rem .7rem}
+  .col-actions .btn-icon{font-size:1.15rem;padding:8px 12px}
   /* Modal + photo drawer fill the screen properly */
   .modal{width:100%;max-width:100%;max-height:92dvh;padding:1.25rem}
   /* Dynamic viewport height keeps the Save/Cancel bar above the phone's browser UI */
@@ -293,8 +375,17 @@ a{color:var(--gold)}
     <!-- ORDERS PAGE -->
     <style>
     .orders-list{display:flex;flex-direction:column;gap:1rem;max-width:920px}
-    .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem}
+    .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;cursor:pointer}
     .order-card.is-done{opacity:.62}
+    /* Collapsed by default: only the top section + customer info show. Click to stretch open. */
+    .ord-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+    .order-card.expanded .ord-body{grid-template-rows:1fr}
+    .ord-body-inner{overflow:hidden;min-height:0}
+    .ord-toggle{display:flex;align-items:center;justify-content:center;gap:.45rem;margin-top:.7rem;padding-top:.55rem;border-top:1px dashed var(--border);font-size:.72rem;color:var(--gray);user-select:none}
+    .ord-toggle::after{content:'عرض التفاصيل'}
+    .order-card.expanded .ord-toggle::after{content:'إخفاء التفاصيل'}
+    .ord-caret{transition:transform .22s}
+    .order-card.expanded .ord-caret{transform:rotate(180deg)}
     .ord-head{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
     .ord-head-l{min-width:0}
     .ord-tag{display:inline-block;font-size:.7rem;font-weight:800;padding:.25rem .6rem;border-radius:100px;margin-bottom:.2rem}
@@ -302,11 +393,14 @@ a{color:var(--gold)}
     .ord-tag.done{background:rgba(201,168,76,.18);color:var(--gold-light)}
     .ord-tag.carrier.yal{background:rgba(225,25,0,.18);color:#FF9A8C}
     .ord-tag.carrier.noest{background:rgba(30,115,232,.18);color:#9DBBF5}
+    .ord-tag.carrier.zr{background:rgba(224,168,0,.20);color:#F2D06B}
     .ord-num{margin-right:.4rem;color:var(--white);font-size:.95rem}
     .ord-when{font-size:.74rem;color:var(--gray);margin-top:.3rem}
     .ord-total{font-weight:900;color:var(--danger);font-size:1.15rem;text-align:left;white-space:nowrap}
     .ord-break{font-size:.7rem;color:var(--gray);margin-top:.2rem;text-align:left}
     .ord-prod{background:var(--card3);border-radius:9px;padding:.6rem .8rem;margin:.7rem 0;color:var(--white);font-size:.86rem}
+    .ord-prodlink{cursor:pointer;color:var(--gold-light);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+    .ord-prodlink:hover{color:var(--gold)}
     .ord-meta{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;font-size:.8rem;color:var(--gray)}
     .ord-meta .num{direction:ltr;unicode-bidi:isolate}
     .ord-ship{background:rgba(201,168,76,.12);border-radius:9px;padding:.55rem .8rem;margin-top:.6rem;font-size:.82rem;color:var(--gold-light)}
@@ -320,6 +414,7 @@ a{color:var(--gold)}
     .ord-carrier{color:#fff!important;border:none}
     .ord-carrier.yal{background:#E11900}
     .ord-carrier.noest{background:#1E73E8}
+    .ord-carrier.zr{background:#E0A800;color:#1a1a1a!important}
     .ord-carrier.dim{opacity:.4;filter:grayscale(.5)}
     @media(max-width:600px){ .ord-actions .btn{flex:1 1 auto;justify-content:center} }
     </style>
@@ -330,6 +425,7 @@ a{color:var(--gold)}
     <!-- WEBSITE DESIGN PAGE -->
     <div class="page" id="page-design">
       <div class="settings-wrap">
+        <div class="settings-card">
         <div class="settings-section">Opening pictures</div>
         <div><label class="settings-label">Background website picture</label>
           <input class="settings-input" id="bgImage" placeholder="https://… or upload below">
@@ -347,17 +443,23 @@ a{color:var(--gold)}
             <img id="expandPreview" style="display:none;height:46px;border-radius:8px;border:1px solid var(--line);object-fit:cover">
           </div>
         </div>
+        </div>
 
+        <div class="settings-card">
         <div class="settings-section">First section text</div>
         <div><label class="settings-label">Brand title shown over the opening</label>
           <input class="settings-input" id="heroTitleInput" placeholder="بازار مرابط"></div>
+        </div>
 
+        <div class="settings-card">
         <div class="settings-section">Main hero text</div>
         <div><label class="settings-label">Headline — one line per row</label>
           <textarea class="settings-input" id="heroHeadlineInput" rows="3" style="resize:vertical;line-height:1.6" placeholder="كل ما&#10;تحتاجينه&#10;في مكان واحد"></textarea></div>
         <div style="margin-top:.6rem"><label class="settings-label">Description paragraph</label>
           <textarea class="settings-input" id="heroDescInput" rows="3" style="resize:vertical;line-height:1.6" placeholder="من الأحذية الأنيقة إلى الحقائب العصرية …"></textarea></div>
+        </div>
 
+        <div class="settings-card">
         <div class="settings-section">Featured collection</div>
         <div><label class="settings-label">Corner tag</label><input class="settings-input" id="featTag" placeholder="مجموعة جديدة"></div>
         <div style="margin-top:.6rem"><label class="settings-label">Eyebrow / subtitle</label><input class="settings-input" id="featSub" placeholder="مجموعة 2025 · حصرياً"></div>
@@ -367,23 +469,29 @@ a{color:var(--gold)}
           <textarea class="settings-input" id="featDesc" rows="3" style="resize:vertical;line-height:1.6" placeholder="اكتشف أحدث ما وصل …"></textarea></div>
         <div style="margin-top:.6rem"><label class="settings-label">Button text</label><input class="settings-input" id="featBtnText" placeholder="تسوّق الآن"></div>
         <div style="margin-top:.6rem"><label class="settings-label">Button link (e.g. #collection)</label><input class="settings-input" id="featBtnLink" placeholder="#collection"></div>
+        </div>
 
         <button class="btn btn-gold" id="saveDesignBtn" style="margin-top:.6rem">💾 Save pictures &amp; text</button>
 
+        <div class="settings-card">
         <div class="settings-section">Home sections — show / hide</div>
         <div style="font-size:.72rem;color:var(--gray);margin-bottom:.6rem">Turn any section off to hide it from the home page. Saves instantly.</div>
         <div id="sectionToggles"></div>
+        </div>
       </div>
     </div>
 
     <!-- SETTINGS PAGE -->
     <div class="page" id="page-settings">
       <div class="settings-wrap">
+        <div class="settings-card">
         <div class="settings-section">Store</div>
         <div><label class="settings-label">Store Name</label><input class="settings-input" id="settingStoreName"></div>
         <div><label class="settings-label">WhatsApp Number</label><input class="settings-input" id="waNumber" placeholder="213772423191"></div>
         <div><label class="settings-label">Facebook URL</label><input class="settings-input" id="settingFb"></div>
         <div><label class="settings-label">Instagram URL</label><input class="settings-input" id="settingIg"></div>
+        </div>
+        <div class="settings-card">
         <div class="settings-section">Appearance</div>
         <div><label class="settings-label">Hero Image</label>
           <input class="settings-input" id="heroImage" placeholder="https://… or upload below">
@@ -402,14 +510,18 @@ a{color:var(--gold)}
           </div>
         </div>
         <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:.5rem;display:none">💾 Save Settings</button>
+        </div>
 
+        <div class="settings-card">
         <div class="settings-section">Orders</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .4rem">
           <label class="settings-label" style="margin:0">📝 Product name on delivery note</label>
           <label class="toggle"><input type="checkbox" id="noteNameEnabled" checked><span class="toggle-slider"></span></label>
         </div>
         <div style="font-size:.72rem;color:var(--gray)">When <b>ON</b>, you type a custom product name per order that prints on the parcel instead of the real one (privacy). When <b>OFF</b>, the field is hidden and the real product name is used.</div>
+        </div>
 
+        <div class="settings-card">
         <div class="settings-section" style="color:#E11900">Delivery — Yalidine <span id="yalidineStatus" class="carrier-status off">⚪ checking…</span></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem">
           <label class="settings-label" style="margin:0">Show Yalidine at checkout</label>
@@ -422,7 +534,9 @@ a{color:var(--gold)}
         <button class="btn btn-gold" id="saveDeliveryBtn" style="margin-top:.5rem">🔑 Save Delivery Keys</button>
         <button class="btn btn-outline" id="syncGeoBtn" style="margin-top:.5rem;margin-left:.5rem">🌍 Sync Yalidine wilayas/communes</button>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Run once after saving your keys so the order form uses Yalidine's official wilaya/commune names (auto-refreshes daily after that).</div>
+        </div>
 
+        <div class="settings-card">
         <div class="settings-section" style="color:#1565C0">Delivery — Noest <span id="noestStatus" class="carrier-status off">⚪ checking…</span></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem">
           <label class="settings-label" style="margin:0">Show Noest at checkout</label>
@@ -432,10 +546,25 @@ a{color:var(--gold)}
         <div><label class="settings-label">Noest user_guid</label><input class="settings-input" id="noestGuid" placeholder="user_guid"></div>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">🔒 Write-only, same as Yalidine. Get both from your Noest account (app.noest-dz.com → API). Leave blank to keep the current value.</div>
         <button class="btn btn-gold" id="saveNoestBtn" style="margin-top:.5rem">🔑 Save Noest Keys</button>
+        </div>
 
+        <div class="settings-card">
+        <div class="settings-section" style="color:#E0A800">Delivery — ZRExpress <span id="zrexpressStatus" class="carrier-status off">⚪ checking…</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem">
+          <label class="settings-label" style="margin:0">Show ZRExpress at checkout</label>
+          <label class="toggle"><input type="checkbox" id="zrexpressEnabled" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div><label class="settings-label">ZRExpress Tenant ID (X-Tenant)</label><input class="settings-input" id="zrTenant" placeholder="tenant id"></div>
+        <div><label class="settings-label">ZRExpress API Key (X-Api-Key)</label><input class="settings-input" id="zrApiKey" type="password" placeholder="API token"></div>
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">🔒 Write-only, same as the others. Get the token from the ZRExpress portal → API Rest → Token API (shown only once). Leave blank to keep the current value.</div>
+        <button class="btn btn-gold" id="saveZrBtn" style="margin-top:.5rem">🔑 Save ZRExpress Keys</button>
+        </div>
+
+        <div class="settings-card">
         <div class="settings-section">Carrier lists (wilayas + fees)</div>
-        <button class="btn btn-outline" id="syncCarriersBtn">🚚 Sync carriers (Yalidine + Noest)</button>
+        <button class="btn btn-outline" id="syncCarriersBtn">🚚 Sync carriers (Yalidine + Noest + ZRExpress)</button>
         <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Run after saving keys. Pulls each carrier's own wilaya/commune list + delivery fees so that, at checkout, the customer picks the company and the wilaya list switches to match. (Only carriers with saved keys are synced.)</div>
+        </div>
 
         <div class="danger-zone">
           <div class="danger-zone-title">⚠️ Danger Zone</div>
@@ -471,6 +600,9 @@ a{color:var(--gold)}
 <!-- CUSTOMER MODAL -->
 <div class="modal-overlay" id="customerModal"><div class="modal"><div class="modal-title">Customer Details</div><div id="customerModalBody"></div><button class="modal-close" id="customerClose">✕</button></div></div>
 
+<!-- PRODUCT IMAGE POPUP (from an order) -->
+<div class="modal-overlay" id="prodImgModal"><div class="modal" style="max-width:440px;text-align:center"><div class="modal-title" id="prodImgTitle">Product</div><div id="prodImgBody"></div><button class="modal-close" id="prodImgClose">✕</button></div></div>
+
 <!-- IMPORT MODAL -->
 <div class="modal-overlay" id="importModal"><div class="modal"><div class="modal-title">Import Data</div><div class="upload-zone" id="jsonDrop"><div>Drop JSON file or click</div><input type="file" id="jsonFile" accept=".json"></div><textarea class="json-input" id="jsonPaste" placeholder="Or paste JSON here..."></textarea><div style="margin-top:1rem;display:flex;gap:.5rem"><button class="btn btn-gold" id="doImport">Import</button><button class="btn btn-outline" id="importCancel">Cancel</button></div></div></div>
 
@@ -503,6 +635,8 @@ function fmtMoney(n) { return (+n||0).toLocaleString('en-US'); }
 // Firestore docs come back with _docId but no id; the sheet keys every edit/save/delete off p.id,
 // so mirror the doc id onto id or existing products become uneditable (and saving creates duplicates).
 function normIds(arr) { (arr||[]).forEach(function(x){ x.id = x._docId || x.id || uid(); }); return arr || []; }
+// Newest products first (createdAt desc). Older rows that predate the timestamp keep their relative order at the bottom.
+function sortProductsNewestFirst() { products.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); }); }
 function toast(msg,type) { var t=$_('toast'); t.textContent=msg; t.className='toast '+(type||'')+' show'; clearTimeout(t._tid); t._tid=setTimeout(function(){t.classList.remove('show');},3500); }
 
 // WebP converter — downscales to MAX_DIM so photos stay small enough to store inline in Firestore (1MB/doc limit)
@@ -661,19 +795,21 @@ function renderSheet() {
 
   body.innerHTML=list.map(function(p,idx){
     var varsHtml=(p.variants||[]).map(function(v){return '<span class="variant-chip"><span class="dot" style="background:'+(v.hex||'#888')+'"></span>'+esc(v.color)+'</span>';}).join('');
-    var photoHtml=p.variants&&p.variants.filter(function(v){return v.photo;}).length
-      ? '<img src="'+p.variants.find(function(v){return v.photo;}).photo+'" alt="">' : '📷';
-    return '<tr>'
-      +'<td class="col-num">'+(idx+1)+'</td>'
-      +'<td class="col-photo"><div class="photo-cell" data-edit-photo="'+esc(p.id)+'">'+photoHtml+'</div></td>'
-      +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="name" value="'+esc(p.name||'')+'"></td>'
-      +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="brand" value="'+esc(p.brand||'')+'"></td>'
-      +'<td><select class="cell-select" data-pid="'+esc(p.id)+'" data-field="category">'+categories.map(function(c){return '<option value="'+esc(c.key)+'"'+(p.category===c.key?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></td>'
-      +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="price" type="text" inputmode="numeric" value="'+fmtMoney(p.price||0)+'"></td>'
-      +'<td><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="sizes" value="'+esc(p.sizes||'')+'" placeholder="39-45"></td>'
-      +'<td class="variants-cell">'+varsHtml+' <button class="btn-icon" data-edit-photo="'+esc(p.id)+'" title="Manage photos" style="font-size:.7rem;border:1px dashed var(--border);border-radius:4px;padding:2px 6px">✎</button></td>'
-      +'<td style="text-align:center"><label class="toggle"><input type="checkbox" data-pid="'+esc(p.id)+'" data-field="active" '+(p.active!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
-      +'<td class="col-actions"><button class="btn-icon save-row'+(p._dirty?' dirty':'')+'" data-save="'+esc(p.id)+'" title="Confirm / Save row">✓</button><button class="btn-icon danger" data-del="'+esc(p.id)+'" title="Delete product">🗑</button></td>'
+    var variantPhotos=(p.variants||[]).filter(function(v){return v.photo;});
+    var photoHtml=variantPhotos.length
+      ? '<div class="photo-strip" data-edit-photo="'+esc(p.id)+'">'+variantPhotos.map(function(v){return '<img src="'+v.photo+'" alt="'+esc(v.color||'')+'" title="'+esc(v.color||'')+'">';}).join('')+'</div>'
+      : '<div class="photo-cell" data-edit-photo="'+esc(p.id)+'">📷</div>';
+    return '<tr class="prod-row">'
+      +'<td class="col-num" data-label="#">'+(idx+1)+'</td>'
+      +'<td class="col-photo" data-label="Photo">'+photoHtml+'</td>'
+      +'<td class="coll-cell" data-label="Name"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="name" value="'+esc(p.name||'')+'"></td>'
+      +'<td class="coll-cell" data-label="Brand"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="brand" value="'+esc(p.brand||'')+'"></td>'
+      +'<td class="coll-cell" data-label="Category"><select class="cell-select" data-pid="'+esc(p.id)+'" data-field="category">'+categories.map(function(c){return '<option value="'+esc(c.key)+'"'+(p.category===c.key?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></td>'
+      +'<td class="coll-cell" data-label="Price"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="price" type="text" inputmode="numeric" value="'+fmtMoney(p.price||0)+'"></td>'
+      +'<td class="coll-cell" data-label="Sizes"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="sizes" value="'+esc(p.sizes||'')+'" placeholder="39-45"></td>'
+      +'<td class="coll-cell variants-cell" data-label="Colors">'+varsHtml+' <button class="btn-icon" data-edit-photo="'+esc(p.id)+'" title="Manage photos" style="font-size:.7rem;border:1px dashed var(--border);border-radius:4px;padding:2px 6px">✎</button></td>'
+      +'<td class="col-active" data-label="Active" style="text-align:center"><label class="toggle"><input type="checkbox" data-pid="'+esc(p.id)+'" data-field="active" '+(p.active!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
+      +'<td class="col-actions" data-label="Actions"><button class="btn-icon save-row'+(p._dirty?' dirty':'')+'" data-save="'+esc(p.id)+'" title="Confirm / Save row">✓</button><button class="btn-icon danger" data-del="'+esc(p.id)+'" title="Delete product">🗑</button></td>'
     +'</tr>';
   }).join('');
   updateStats();
@@ -705,8 +841,13 @@ $_('sheetBody').addEventListener('focusout',function(e){
   e.target.value=fmtMoney(p.price);
 });
 
-// Sheet clicks: save row, delete, edit photo
+// Sheet clicks: save row, delete, edit photo, expand/collapse product row
 $_('sheetBody').addEventListener('click',function(e){
+  // Toggle expand/collapse on product rows when clicking non-interactive area
+  if(!e.target.closest('button, input, select, .photo-cell, .toggle')){
+    var row=e.target.closest('tr.prod-row');
+    if(row){ row.classList.toggle('expanded'); return; }
+  }
   var saveBtn=e.target.closest('[data-save]'), delBtn=e.target.closest('[data-del]'), photoBtn=e.target.closest('[data-edit-photo]');
   if(saveBtn) {
     var p=products.find(function(x){return x.id===saveBtn.dataset.save;});
@@ -735,8 +876,9 @@ $_('sheetBody').addEventListener('click',function(e){
 });
 
 function addBlankRows(n) {
-  // Start clean: the ✓ save button stays hidden until the user types something into the row
-  for(var i=0;i<n;i++) products.push({id:uid(),name:'',brand:'',category:'sports',price:0,sizes:'',active:true,variants:[]});
+  // Start clean: the ✓ save button stays hidden until the user types something into the row.
+  // New rows go to the TOP so the newest product is first; createdAt keeps that order after a reload.
+  for(var i=0;i<n;i++) products.unshift({id:uid(),name:'',brand:'',category:'sports',price:0,sizes:'',active:true,variants:[],createdAt:Date.now()});
   renderSheet();
 }
 
@@ -761,6 +903,8 @@ function saveOneProduct(p, includeVariants) {
     _docId:p.id, name:p.name||'', brand:p.brand||'', category:p.category||'',
     price:+p.price||0, sizes:p.sizes||'', active:p.active!==false
   };
+  // Persist the creation time so "newest first" survives a reload (only for rows that have one).
+  if(p.createdAt) payload.createdAt=p.createdAt;
   if(includeVariants) payload.variants=(p.variants||[]).map(function(v){return{color:v.color,hex:v.hex,photo:v.photo||null};});
   return fbSaveProduct(payload, {merge:true}).then(function(){
     p._dirty=false;
@@ -784,17 +928,17 @@ function saveAll() {
 function renderCats() {
   var body=$_('catsBody'); if(!body) return;
   if(!categories.length){body.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📁</div><div>No categories</div></div></td></tr>';return;}
-  body.innerHTML=categories.map(function(c,i){return '<tr>'
-    +'<td>'+(i+1)+'</td>'
-    +'<td><div style="display:flex;align-items:center;gap:.4rem">'
+  body.innerHTML=categories.map(function(c,i){return '<tr class="cat-row">'
+    +'<td class="col-num" data-label="#">'+(i+1)+'</td>'
+    +'<td data-label="Picture"><div style="display:flex;align-items:center;gap:.4rem">'
       +(c.photo?'<img src="'+esc(c.photo)+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">':'<span style="width:40px;height:40px;border-radius:8px;background:var(--card-2,#2a2a2a);display:inline-flex;align-items:center;justify-content:center;opacity:.5">🖼️</span>')
       +'<button class="btn-icon" data-catphoto="'+esc(c.id)+'" title="Upload picture (→ WebP)">📷</button>'
     +'</div></td>'
-    +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="name" value="'+esc(c.name||'')+'"></td>'
-    +'<td><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="key" value="'+esc(c.key||'')+'"></td>'
-    +'<td style="text-align:center">'+products.filter(function(p){return p.category===c.key;}).length+'</td>'
-    +'<td><label class="toggle"><input type="checkbox" data-cid="'+esc(c.id)+'" data-cfield="visible" '+(c.visible!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
-    +'<td class="col-actions"><button class="btn-icon save-row'+(c._dirty?' dirty':'')+'" data-savecat="'+esc(c.id)+'" title="Confirm / Save category">✓</button><button class="btn-icon danger" data-delcat="'+esc(c.id)+'">🗑</button></td>'
+    +'<td data-label="Name"><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="name" value="'+esc(c.name||'')+'"></td>'
+    +'<td class="cat-coll-cell" data-label="Key"><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="key" value="'+esc(c.key||'')+'"></td>'
+    +'<td class="cat-coll-cell col-prodcount" data-label="Products" style="text-align:center">'+products.filter(function(p){return p.category===c.key;}).length+'</td>'
+    +'<td class="col-active" data-label="Visible"><label class="toggle"><input type="checkbox" data-cid="'+esc(c.id)+'" data-cfield="visible" '+(c.visible!==false?'checked':'')+'><span class="toggle-slider"></span></label></td>'
+    +'<td class="col-actions" data-label="Actions"><button class="btn-icon save-row'+(c._dirty?' dirty':'')+'" data-savecat="'+esc(c.id)+'" title="Confirm / Save category">✓</button><button class="btn-icon danger" data-delcat="'+esc(c.id)+'">🗑</button></td>'
   +'</tr>';}).join('');
 }
 $_('catsBody').addEventListener('input',function(e){
@@ -807,6 +951,11 @@ $_('catsBody').addEventListener('input',function(e){
   if(btn) btn.classList.add('dirty');
 });
 $_('catsBody').addEventListener('click',function(e){
+  // Toggle expand/collapse on category rows when clicking non-interactive area
+  if(!e.target.closest('button, input, select, .toggle')){
+    var row=e.target.closest('tr.cat-row');
+    if(row){ row.classList.toggle('expanded'); return; }
+  }
   var s=e.target.closest('[data-savecat]'), d=e.target.closest('[data-delcat]');
   if(s){var c=categories.find(function(x){return x.id===s.dataset.savecat;});if(c){delete c._dirty;fbSaveCategory(c).then(function(){s.classList.remove('dirty');toast('Category saved','success');syncCatFilters();}).catch(function(){c._dirty=true;s.classList.add('dirty');toast('Save failed','error');});}}
   if(d){if(!confirm('Delete?'))return;var cid=d.dataset.delcat;fbDeleteCategory(cid).catch(function(){});categories=categories.filter(function(x){return x.id!==cid;});renderCats();toast('Category deleted','error');}
@@ -832,15 +981,17 @@ function renderOrders() {
   body.innerHTML=s.map(function(o){
     var oid=esc(o._docId||'');
     var when=(o.placedAt&&o.placedAt.toDate)?o.placedAt.toDate().toLocaleString('ar-DZ'):'';
-    var isNoest=String(o.deliveryCompany||'yalidine')==='noest';
+    var carrier=o.deliveryCompany||null;
+    var CARRIER_META={yalidine:{name:'Yalidine',emoji:'🔴',cls:'yal'},noest:{name:'Noest',emoji:'🔵',cls:'noest'},zrexpress:{name:'ZRExpress',emoji:'🟡',cls:'zr'}};
+    var cm=carrier?CARRIER_META[carrier]:null;
     var dtype=(o.deliveryType==='office'||/مكتب|stop\s*desk|office|bureau/i.test(String(o.delivery||o.deliveryType||'')))?'مكتب (Stop Desk)':'منزل';
     var shipped=!!o.deliveryTracking;
     var noteOn=SETTINGS.noteNameEnabled!==false;
-    var prod='• '+esc(o.product||'')+(o.brand?' · '+esc(o.brand):'')+(o.color?' · '+esc(o.color):'')+(o.size?' · '+esc(o.size):'')+' ×'+(o.qty||1);
+    var prod='• <span class="ord-prodlink" data-prodimg="'+oid+'" title="عرض صورة المنتج">'+esc(o.product||'')+'</span>'+(o.brand?' · '+esc(o.brand):'')+(o.color?' · '+esc(o.color):'')+(o.size?' · '+esc(o.size):'')+' ×'+(o.qty||1);
     var total=(o.total!=null?o.total:(o.price||0));
     var head='<div class="ord-head"><div class="ord-head-l">'
       +'<span class="ord-tag '+(o.fulfilled?'done':'new')+'">'+(o.fulfilled?'✅ تم التنفيذ':'📝 جديد')+'</span> '
-      +'<span class="ord-tag carrier '+(isNoest?'noest':'yal')+'">'+(isNoest?'🔵 Noest':'🔴 Yalidine')+' · '+dtype+'</span> '
+      +(cm?'<span class="ord-tag carrier '+cm.cls+'">'+cm.emoji+' '+cm.name+' · '+dtype+'</span> ':'')
       +'<b class="ord-num">'+esc(o.num||'')+'</b>'
       +'<div class="ord-when">'+esc(when)+'</div></div>'
       +'<div class="ord-head-r"><div class="ord-total">'+(+total).toLocaleString()+' دج</div>'
@@ -851,9 +1002,12 @@ function renderOrders() {
       +'<span>📍 '+esc(o.wilaya||'')+(o.commune?' - '+esc(o.commune):'')+'</span>'
       +'<span>🚚 '+dtype+(o.deliveryFee!=null?' · '+(+o.deliveryFee).toLocaleString()+' دج':'')+'</span></div>';
     var noteBlock=shipped
-      ? '<div class="ord-ship">📦 '+(isNoest?'Noest':'Yalidine')+': <b class="num">'+esc(o.deliveryTracking)+'</b>'
+      ? '<div class="ord-ship">📦 '+(cm?cm.name:'Carrier')+': <b class="num">'+esc(o.deliveryTracking)+'</b>'
           +(o.deliveryLastStatus?' · <span class="num" style="color:var(--gold-light)">'+esc(o.deliveryLastStatus)+'</span>':'')
-          +(o.deliveryLabel?' · <a href="'+esc(o.deliveryLabel)+'" target="_blank" style="color:var(--gold)">🏷️ طباعة الوصل</a>':'')+'</div>'
+          +(o.deliveryLabel
+              ? ' · <a href="'+esc(o.deliveryLabel)+'" target="_blank" style="color:var(--gold)">🏷️ طباعة الوصل</a>'
+              : (carrier==='noest' ? ' · <a href="https://app.noest-dz.com/" target="_blank" title="Noest لا يوفّر رابط وصل عبر الـAPI — افتح لوحة Noest للتحقق وطباعة الوصل" style="color:var(--gold)">🏷️ طباعة الوصل (Noest)</a>'
+                 : (carrier==='zrexpress' ? ' · <a href="https://app.zrexpress.app" target="_blank" style="color:var(--gold)" title="اطبع الوصل من بوابة ZRExpress">🏷️ طباعة الوصل (ZRExpress)</a>' : '')))+'</div>'
           +(o.noteName?'<div class="ord-notename">📝 اسم المنتج على الوصل: <b>'+esc(o.noteName)+'</b></div>':'')
       : (o.deliveryStatus==='Failed'?'<div class="ord-ship" style="background:rgba(225,25,0,.14);color:#FF9A8C">⚠ '+esc(o.deliveryError||'فشل إنشاء الطرد')+'</div>':'')
           +(noteOn?'<div class="ord-noteedit"><label>📝 اسم المنتج على وصل التوصيل <span style="color:var(--danger)">*</span></label>'
@@ -862,34 +1016,62 @@ function renderOrders() {
       +'<button class="btn btn-green btn-sm" data-wa="'+oid+'">💬 واتساب</button>'
       +(shipped
         ? '<button class="btn btn-outline btn-sm" data-track="'+oid+'" title="تحديث حالة التوصيل">🔄 الحالة</button>'
-        : '<button class="btn btn-sm ord-carrier yal'+(isNoest?' dim':'')+'" data-oyal="'+oid+'" title="'+(isNoest?'الزبون اختار Noest':'اختيار الزبون')+'">🔴 طرد Yalidine</button>'
-          +'<button class="btn btn-sm ord-carrier noest'+(isNoest?'':' dim')+'" data-onoest="'+oid+'" title="'+(isNoest?'اختيار الزبون':'الزبون اختار Yalidine')+'">🔵 طرد Noest</button>')
+        : (carrier?'<button class="btn btn-sm ord-carrier '+cm.cls+'" data-ocarrier="'+carrier+'" data-oid="'+oid+'" title="اختيار الزبون">'+cm.emoji+' طرد '+cm.name+'</button>':''))
       +'<button class="btn btn-outline btn-sm" data-fulfill="'+oid+'">'+(o.fulfilled?'↩ تعليم كجديد':'✓ تم التنفيذ')+'</button>'
       +'<button class="btn btn-danger btn-sm" data-delord="'+oid+'">حذف</button></div>';
-    return '<div class="order-card'+(o.fulfilled?' is-done':'')+'">'+head+'<div class="ord-prod">'+prod+'</div>'+meta+noteBlock+actions+'</div>';
+    return '<div class="order-card'+(o.fulfilled?' is-done':'')+(o._expanded?' expanded':'')+'" data-oid="'+oid+'">'
+      +head+meta
+      +'<div class="ord-body"><div class="ord-body-inner"><div class="ord-prod">'+prod+'</div>'+noteBlock+actions+'</div></div>'
+      +'<div class="ord-toggle"><span class="ord-caret">▾</span></div>'
+      +'</div>';
   }).join('');
   updateStats();
 }
 $_('ordersBody').addEventListener('click',function(e){
-  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]'), tr=e.target.closest('[data-track]'), oy=e.target.closest('[data-oyal]'), on=e.target.closest('[data-onoest]');
+  var f=e.target.closest('[data-fulfill]'), w=e.target.closest('[data-wa]'), d=e.target.closest('[data-delord]'), info=e.target.closest('[data-cust]'), tr=e.target.closest('[data-track]'), oc=e.target.closest('[data-ocarrier]');
   if(info){ openCustomer(info.dataset.cust); return; }
-  if(oy){ dispatchCarrier(oy.dataset.oyal,'yalidine',oy); return; }
-  if(on){ dispatchCarrier(on.dataset.onoest,'noest',on); return; }
+  var pi=e.target.closest('[data-prodimg]'); if(pi){ showOrderImage(pi.dataset.prodimg); return; }
+  if(oc){ dispatchCarrier(oc.dataset.oid, oc.dataset.ocarrier, oc); return; }
   // On-demand: fetch this parcel's live status from the carrier via the callable function
   if(tr){
     var o=orders.find(function(x){return x._docId===tr.dataset.track;});
     if(!o||!o.deliveryTracking) return;
     tr.disabled=true; tr.textContent='…';
-    fbFunctions.httpsCallable('trackParcel')({tracking:o.deliveryTracking, orderId:o._docId})
+    fbFunctions.httpsCallable('trackParcel')({tracking:o.deliveryTracking, orderId:o._docId, company:o.deliveryCompany})
       .then(function(res){ var st=res&&res.data&&res.data.lastStatus; if(st){ o.deliveryLastStatus=st; renderOrders(); toast('🚚 '+st,'success'); } else { toast('No status returned','error'); } })
       .catch(function(err){ tr.disabled=false; tr.textContent='🔄 الحالة'; toast('Track failed: '+((err&&err.message)||'error'),'error'); });
     return;
   }
   // Mark done / re-open (toggle). Becoming fulfilled triggers the carrier on the cloud side.
-  if(f){var oid=f.dataset.fulfill;var o=orders.find(function(x){return x._docId===oid;});if(o){var v=!o.fulfilled;o.fulfilled=v;o.status=v?'Fulfilled':'New';fbUpdateOrder(oid,{fulfilled:v,status:v?'Fulfilled':'New'}).then(function(){renderOrders();updateStats();toast(v?'تم التنفيذ — إرسال للناقل…':'أُعيد كجديد','success');if(v)setTimeout(refreshOrders,6000);});}return;}
+  if(f){
+    var oid=f.dataset.fulfill, o=orders.find(function(x){return x._docId===oid;});
+    if(o){
+      var v=!o.fulfilled, patch={fulfilled:v,status:v?'Fulfilled':'New'};
+      // When flipping to fulfilled we must send the note name in the SAME write the cloud
+      // trigger reacts to — otherwise the real product name prints on the delivery label.
+      if(v){
+        var noteOn=SETTINGS.noteNameEnabled!==false;
+        var inp=document.querySelector('.note-inp[data-notefor="'+oid+'"]');
+        var note=inp?inp.value.trim():(o.noteName||'');
+        if(noteOn && !note){ toast('أدخلي اسم المنتج على وصل التوصيل أولاً','error'); if(inp){ inp.style.borderColor='var(--danger)'; inp.focus(); } return; }
+        if(noteOn){ patch.noteName=note; o.noteName=note; }
+      }
+      o.fulfilled=v;o.status=patch.status;
+      fbUpdateOrder(oid,patch).then(function(){renderOrders();updateStats();toast(v?'تم التنفيذ — إرسال للناقل…':'أُعيد كجديد','success');if(v)setTimeout(refreshOrders,6000);});
+    }
+    return;
+  }
   // Reply to the CUSTOMER (their phone), not the store's own number
   if(w){var oid=w.dataset.wa;var o=orders.find(function(x){return x._docId===oid;});if(o){var msg='مرحبا '+(o.customer||'')+'، بخصوص طلبك '+(o.num||'')+' ('+(o.product||'')+'):';window.open('https://wa.me/'+waPhone(o.phone)+'?text='+encodeURIComponent(msg),'_blank');}return;}
   if(d){var oid=d.dataset.delord;if(confirm('حذف هذا الطلب؟')){fbDeleteOrder(oid).catch(function(){});orders=orders.filter(function(x){return x._docId!==oid;});renderOrders();updateStats();toast('تم حذف الطلب','error');}return;}
+  // Anything else on the card (header / customer row / toggle) stretches it open or closed.
+  // Ignore taps on form controls, links and the note field so they keep working.
+  if(e.target.closest('button,a,input,select,textarea,label,.ord-prodlink')) return;
+  var card=e.target.closest('.order-card'); if(!card) return;
+  var willExpand=!card.classList.contains('expanded');
+  card.classList.toggle('expanded',willExpand);
+  // Remember the state so re-renders (dispatch, track, fulfill…) don't snap the card shut.
+  var o=orders.find(function(x){return x._docId===card.dataset.oid;}); if(o) o._expanded=willExpand;
 });
 // Save the "product name on note" inline as the admin edits it
 $_('ordersBody').addEventListener('change',function(e){
@@ -905,7 +1087,7 @@ function dispatchCarrier(oid,company,btn){
   var inp=document.querySelector('.note-inp[data-notefor="'+oid+'"]');
   var note=inp?inp.value.trim():(o.noteName||'');
   if(noteOn && !note){ toast('أدخلي اسم المنتج على وصل التوصيل أولاً','error'); if(inp){ inp.style.borderColor='var(--danger)'; inp.focus(); } return; }
-  var label=company==='noest'?'Noest':'Yalidine';
+  var label=company==='zrexpress'?'ZRExpress':(company==='noest'?'Noest':'Yalidine');
   if(!confirm('إنشاء طرد '+label+' لـ '+(o.customer||o.num)+'؟'+(noteOn?'\nاسم المنتج على الوصل: «'+note+'»':''))) return;
   if(btn){ btn.disabled=true; btn.textContent='⏳ جاري الإنشاء…'; }
   var patch={deliveryCompany:company,fulfilled:true,status:'Fulfilled'};
@@ -972,10 +1154,17 @@ function renderSettings() {
   $_('settingIg').value=SETTINGS.igUrl||'';
   $_('heroImage').value=SETTINGS.heroImage||'';
   $_('featuredImage').value=SETTINGS.featuredImage||'';
+  // Show thumbnail previews when a URL is already set
+  var hp=$_('heroPreview'), fp=$_('featuredPreview');
+  if(SETTINGS.heroImage){ hp.src=SETTINGS.heroImage; hp.style.display=''; }
+  else hp.style.display='none';
+  if(SETTINGS.featuredImage){ fp.src=SETTINGS.featuredImage; fp.style.display=''; }
+  else fp.style.display='none';
   hideSettingsSave();  // fields just (re)loaded — nothing to save yet
   // Carrier on/off switches (default ON when never set)
   $_('yalidineEnabled').checked=SETTINGS.yalidineEnabled!==false;
   $_('noestEnabled').checked=SETTINGS.noestEnabled!==false;
+  $_('zrexpressEnabled').checked=SETTINGS.zrexpressEnabled!==false;
   $_('noteNameEnabled').checked=SETTINGS.noteNameEnabled!==false;
   refreshCarrierStatus();
 }
@@ -984,7 +1173,7 @@ function renderSettings() {
 // use the synced wilaya/fee lists in delivery_data/<carrier> as the proxy: those only get written
 // when a sync with working credentials succeeds. Green = connected & synced, grey = not yet.
 function refreshCarrierStatus() {
-  [['yalidine','yalidineStatus'],['noest','noestStatus']].forEach(function(pair){
+  [['yalidine','yalidineStatus'],['noest','noestStatus'],['zrexpress','zrexpressStatus']].forEach(function(pair){
     var el=$_(pair[1]); if(!el) return;
     db.collection('delivery_data').doc(pair[0]).get().then(function(d){
       var data=d.exists?(d.data()||{}):{};
@@ -997,7 +1186,7 @@ function refreshCarrierStatus() {
 
 // Each carrier toggle persists immediately to settings/general (public read), so the order form
 // can hide carriers the admin turned off.
-[['yalidineEnabled','Yalidine'],['noestEnabled','Noest']].forEach(function(pair){
+[['yalidineEnabled','Yalidine'],['noestEnabled','Noest'],['zrexpressEnabled','ZRExpress']].forEach(function(pair){
   var el=$_(pair[0]); if(!el) return;
   el.addEventListener('change',function(){
     SETTINGS[pair[0]]=el.checked;
@@ -1246,12 +1435,23 @@ $_('saveNoestBtn').addEventListener('click',function(){
     .catch(function(e){ toast('Save failed: '+((e&&e.code)||(e&&e.message)||'error'),'error'); });
 });
 
+// ZRExpress keys → settings/zrexpress doc. Write-only, same pattern as the others.
+$_('saveZrBtn').addEventListener('click',function(){
+  var d={}, tenant=$_('zrTenant').value.trim(), key=$_('zrApiKey').value.trim();
+  if(tenant) d.tenantId=tenant;
+  if(key) d.apiKey=key;
+  if(!Object.keys(d).length){ toast('Enter at least one field to save','error'); return; }
+  db.collection('settings').doc('zrexpress').set(d,{merge:true})
+    .then(function(){ $_('zrApiKey').value=''; toast('ZRExpress keys saved','success'); })
+    .catch(function(e){ toast('Save failed: '+((e&&e.code)||(e&&e.message)||'error'),'error'); });
+});
+
 // Pull both carriers' wilaya/commune/fee lists into delivery_data/* (order form reads these).
 $_('syncCarriersBtn').addEventListener('click',function(){
   var btn=this; btn.disabled=true; var label=btn.textContent; btn.textContent='Syncing…';
   fbFunctions.httpsCallable('syncCarriers')()
     .then(function(res){ var r=(res&&res.data&&res.data.result)||{}; var parts=[];
-      if(r.yalidine) parts.push('Yalidine: '+r.yalidine.wilayas+' wilayas'); if(r.noest) parts.push('Noest: '+r.noest.wilayas+' wilayas');
+      if(r.yalidine) parts.push('Yalidine: '+r.yalidine.wilayas+' wilayas'); if(r.noest) parts.push('Noest: '+r.noest.wilayas+' wilayas'); if(r.zrexpress) parts.push('ZRExpress: '+r.zrexpress.wilayas+' wilayas');
       toast(parts.length?('Synced — '+parts.join(' · ')):'Nothing synced — save carrier keys first','success'); refreshCarrierStatus(); })
     .catch(function(err){ toast('Sync failed: '+((err&&err.message)||'error'),'error'); })
     .then(function(){ btn.disabled=false; btn.textContent=label; });
@@ -1398,6 +1598,33 @@ $_('clearAllBtn').addEventListener('click',function(){
 // MODAL CLOSE
 // ═══════════════════════════════════════════════════════════
 $_('customerClose').addEventListener('click',function(){$_('customerModal').classList.remove('open');});
+// Product image popup: match the order's product (by name) to a loaded product, show its color photo
+function showOrderImage(oid){
+  var o=orders.find(function(x){return x._docId===oid;}); if(!o) return;
+  var nm=function(s){return String(s||'').trim().toLowerCase();};
+  var prod=(products||[]).find(function(p){ return nm(p.name)===nm(o.product) && (!o.brand||nm(p.brand)===nm(o.brand)); })
+        || (products||[]).find(function(p){ return nm(p.name)===nm(o.product); });
+  var vs=prod?(prod.variants||[]):[];
+  var ordColor=nm(o.color), ordHex=String(o.colorHex||'').trim().toLowerCase();
+  // Pick the exact ordered variant: match by colour name, then by hex (orders store both),
+  // preferring a variant that actually has a photo; otherwise fall back to any photo.
+  var pick=function(test){ return vs.find(function(x){return test(x)&&x.photo;})||vs.find(test); };
+  var v = (ordColor&&pick(function(x){return nm(x.color)===ordColor;}))
+       || (ordHex&&pick(function(x){return String(x.hex||'').trim().toLowerCase()===ordHex;}))
+       || vs.find(function(x){return x.photo;}) || vs[0];
+  var img=(v&&v.photo)||null;
+  var swatch=(v&&v.hex)||o.colorHex||'';
+  $_('prodImgTitle').textContent=(o.product||'منتج')+(o.color?' · '+o.color:'');
+  $_('prodImgBody').innerHTML = (img
+      ? '<img src="'+esc(img)+'" alt="'+esc(o.product||'')+'" style="max-width:100%;max-height:60vh;border-radius:12px;border:1px solid var(--border)">'
+      : '<div style="padding:2rem 1rem;color:var(--gray)">لا توجد صورة محفوظة لهذا المنتج</div>')
+    + (o.color?'<div style="display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.85rem;font-size:.85rem;color:var(--white)">'
+        +(swatch?'<span style="width:16px;height:16px;border-radius:50%;border:1px solid var(--border);background:'+esc(swatch)+'"></span>':'')
+        +'<span>'+esc(o.color)+'</span>'+(o.size?'<span style="color:var(--gray)"> · '+esc(o.size)+'</span>':'')+'</div>':'');
+  $_('prodImgModal').classList.add('open');
+}
+$_('prodImgClose').addEventListener('click',function(){$_('prodImgModal').classList.remove('open');});
+$_('prodImgModal').addEventListener('click',function(e){if(e.target===$_('prodImgModal'))$_('prodImgModal').classList.remove('open');});
 $_('importModal').addEventListener('click',function(e){if(e.target===$_('importModal'))$_('importModal').classList.remove('open');});
 $_('customerModal').addEventListener('click',function(e){if(e.target===$_('customerModal'))$_('customerModal').classList.remove('open');});
 
@@ -1417,6 +1644,7 @@ $_('saveCatsBtn').addEventListener('click',saveCats);
 // ═══════════════════════════════════════════════════════════
 Promise.all([fbGetProducts(),fbGetCategories(),fbGetOrders(),fbGetSettings(),fbGetAppearance()]).then(function(r){
   products=normIds(r[0]);categories=normIds(r[1]);orders=r[2];SETTINGS=r[3]||{};APPEARANCE=r[4]||{};
+  sortProductsNewestFirst();
   // Seed defaults if empty
   if(!products.length&&!categories.length){
     var batch=db.batch();

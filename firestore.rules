@@ -2,6 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+
     // Open until this date, then auto-locks. (Same window as before.)
     function open() { return request.time < timestamp.date(2026, 7, 11); }
 
@@ -17,6 +18,13 @@ service cloud.firestore {
     // Noest delivery credentials ({ apiToken, userGuid }): admin UI writes, no client
     // reads — only the Cloud Function (Admin SDK) reads the token. Same pattern as above.
     match /settings/noest {
+      allow write: if open();
+      allow read: if false;
+    }
+
+    // ZRExpress credentials ({ tenantId, apiKey }): admin UI writes, no client reads —
+    // only the Cloud Function (Admin SDK) reads the key. Same write-only pattern as above.
+    match /settings/zrexpress {
       allow write: if open();
       allow read: if false;
     }
