@@ -61,12 +61,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-f
 
 /* INFO */
 .p-brand{font-size:.72rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:.6rem}
-.p-name{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,2.6rem);color:var(--ink);font-weight:700;line-height:1.15;margin-bottom:1rem}
-.p-rating{display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem}
+.p-head{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem 1.25rem;flex-wrap:wrap;margin-bottom:.65rem}
+.p-name{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,2.6rem);color:var(--ink);font-weight:700;line-height:1.15;margin-bottom:0;flex:1 1 auto}
+.p-rating{display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--line)}
 .p-stars{color:var(--gold);font-size:.95rem;letter-spacing:1px}
 .p-rating-tx{font-size:.78rem;color:var(--ink-3)}
-.p-price{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1.75rem;padding-bottom:1.75rem;border-bottom:1px solid var(--line)}
-.p-price .now{font-family:var(--serif);font-size:2.2rem;color:var(--ink);font-weight:700}
+.p-price{display:flex;align-items:baseline;gap:.6rem;flex:0 0 auto;white-space:nowrap}
+.p-price .now{font-family:var(--serif);font-size:2.5rem;color:var(--ink);font-weight:700}
 .p-price .now span{font-size:.9rem;color:var(--ink-3);font-family:var(--sans)}
 .p-price .was{font-size:1.1rem;color:var(--ink-3);text-decoration:line-through}
 .p-price .off{background:var(--sage-soft);color:var(--sage);font-size:.72rem;font-weight:700;padding:.2rem .7rem;border-radius:100px}
@@ -74,11 +75,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-f
 .opt-block{margin-bottom:1.75rem}
 .opt-label{font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:.75rem;display:flex;justify-content:space-between}
 .opt-label .chosen{color:var(--gold);font-weight:600}
-.color-opts{display:flex;gap:.6rem;flex-wrap:wrap}
-.color-opt{width:42px;height:42px;border-radius:12px;border:2px solid var(--line);cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;justify-content:center}
-.color-opt:hover{transform:scale(1.06)}
-.color-opt.on{border-color:var(--ink)}
-.color-opt.on::after{content:'✓';position:absolute;font-size:.9rem;font-weight:700;mix-blend-mode:difference;color:#fff}
 .size-opts{display:flex;gap:.6rem;flex-wrap:wrap}
 .size-opt{min-width:48px;height:48px;padding:0 .85rem;border-radius:12px;border:1.5px solid var(--line);background:var(--bg-2);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s}
 .size-opt:hover{border-color:var(--gold)}
@@ -239,20 +235,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-f
   <!-- INFO -->
   <div class="info">
     <div class="p-brand" id="pBrand">Nike</div>
-    <h1 class="p-name" id="pName">Air Max Classic</h1>
+    <div class="p-head">
+      <h1 class="p-name" id="pName">Air Max Classic</h1>
+      <div class="p-price">
+        <div class="now"><span class="num" id="pPrice">4500</span> <span>دج</span></div>
+        <div class="was" id="pWas" style="display:none"></div>
+        <div class="off" id="pOff" style="display:none"></div>
+      </div>
+    </div>
     <div class="p-rating">
       <span class="p-stars">★★★★★</span>
       <span class="p-rating-tx"><span class="num">4.8</span> · <span id="pReviews"><span class="num">126</span> تقييم</span></span>
-    </div>
-    <div class="p-price">
-      <div class="now"><span class="num" id="pPrice">4500</span> <span>دج</span></div>
-      <div class="was" id="pWas" style="display:none"></div>
-      <div class="off" id="pOff" style="display:none"></div>
-    </div>
-
-    <div class="opt-block">
-      <div class="opt-label">اللون <span class="chosen" id="colorChosen">أبيض</span></div>
-      <div class="color-opts" id="colorOpts"></div>
     </div>
 
     <div class="opt-block">
@@ -482,16 +475,9 @@ function render(){
   const gb=document.getElementById('galBadge');
   if(product.badge){gb.style.display='inline-block';gb.textContent=product.badge;}else{gb.style.display='none';}
 
-  renderColors(); renderSizes(); renderGallery(); renderThumbs(); renderRelated();
+  renderSizes(); renderGallery(); renderThumbs(); renderRelated();
   updateStock(); document.getElementById('qtyVal').textContent=qty;
 }
-
-function renderColors(){
-  document.getElementById('colorOpts').innerHTML=product.colors.map((c,i)=>
-    `<div class="color-opt${i===curColor?' on':''}" style="background:${c.h}" onclick="pickColor(${i})" title="${c.n}"></div>`).join('');
-  document.getElementById('colorChosen').textContent=product.colors[curColor].n;
-}
-function pickColor(i){curColor=i;galIndex=i;renderColors();renderGallery();renderThumbs();}
 
 function renderSizes(){
   document.getElementById('sizeOpts').innerHTML=product.sizes.map((s,i)=>
@@ -509,9 +495,9 @@ function renderGallery(){
 }
 function renderThumbs(){
   document.getElementById('thumbs').innerHTML=product.colors.map((c,i)=>
-    `<div class="thumb${i===galIndex?' active':''}" onclick="galTo(${i})">${c.img?`<img src="${c.img}">`:(c.emoji||'👟')}</div>`).join('');
+    `<div class="thumb${i===galIndex?' active':''}" onclick="galTo(${i})" title="${c.n||''}">${c.img?`<img src="${c.img}" alt="${c.n||''}">`:(c.emoji||'👟')}</div>`).join('');
 }
-function galTo(i){galIndex=i;curColor=i;renderGallery();renderThumbs();renderColors();}
+function galTo(i){galIndex=i;curColor=i;renderGallery();renderThumbs();}
 function galPrev(){galIndex=(galIndex-1+product.colors.length)%product.colors.length;galTo(galIndex);}
 function galNext(){galIndex=(galIndex+1)%product.colors.length;galTo(galIndex);}
 
