@@ -141,6 +141,71 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-f
   .btn-order{flex-basis:100%}
   .rel-grid{grid-template-columns:1fr 1fr;gap:1rem}
 }
+
+/* ───────── CHECKOUT POPUP ───────── */
+.checkout-ov{display:none;position:fixed;inset:0;background:rgba(26,26,24,.55);backdrop-filter:blur(3px);z-index:200;align-items:flex-start;justify-content:center;padding:1.25rem;overflow-y:auto}
+.checkout-ov.open{display:flex}
+.checkout-modal{background:var(--bg);border-radius:20px;max-width:540px;width:100%;margin:auto;box-shadow:var(--shadow-lg);animation:chkPop .3s var(--ease)}
+@keyframes chkPop{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.checkout-head{padding:1.15rem 1.5rem;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);border-radius:20px 20px 0 0;z-index:2}
+.checkout-head h2{font-family:var(--serif);font-size:1.3rem;color:var(--ink);font-weight:700}
+.checkout-head .x{background:var(--bg-2);border:1px solid var(--line);width:34px;height:34px;border-radius:50%;font-size:1.3rem;line-height:1;cursor:pointer;color:var(--ink-2);display:flex;align-items:center;justify-content:center;transition:all .2s}
+.checkout-head .x:hover{color:var(--ink);border-color:var(--gold)}
+.checkout-body{padding:1.5rem}
+.chk-card{margin-bottom:1.5rem}
+.chk-card h3{font-size:.9rem;color:var(--ink);font-weight:700;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.ffield{margin-bottom:1rem}
+.ffield.full{grid-column:1/-1}
+.ffield label{display:block;font-size:.74rem;letter-spacing:.3px;color:var(--ink-2);font-weight:600;margin-bottom:.45rem}
+.ffield label .req{color:#C0392B}
+.finput,.fselect,.ftext{width:100%;background:var(--bg-2);border:1.5px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:.92rem;padding:.75rem .9rem;border-radius:11px;outline:none;transition:border .25s}
+.finput:focus,.fselect:focus,.ftext:focus{border-color:var(--gold)}
+.finput.err,.fselect.err{border-color:#C0392B;background:#FDF0EE}
+.fselect{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A867E' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 1rem center}
+.ftext{resize:vertical;min-height:62px}
+.company-opts,.delivery-opts{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.co-opt{border:1.5px solid var(--line);border-radius:12px;padding:.75rem .9rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.86rem;color:var(--ink);background:var(--bg-2)}
+.co-opt:hover{border-color:var(--gold-light)}
+.co-opt.on{border-color:var(--ink);background:var(--gold-soft)}
+.co-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0}
+.del-opt{border:1.5px solid var(--line);border-radius:12px;padding:.85rem;cursor:pointer;transition:all .2s;background:var(--bg-2);text-align:center}
+.del-opt:hover{border-color:var(--gold-light)}
+.del-opt.on{border-color:var(--gold);background:var(--gold-soft)}
+.del-opt .dt{font-weight:700;font-size:.84rem;color:var(--ink)}
+.del-opt .dp{font-family:var(--serif);font-size:1rem;color:var(--gold);font-weight:700;margin-top:.35rem}
+.chk-sum{background:var(--bg-3);border-radius:14px;padding:1.1rem 1.2rem;margin-bottom:1.5rem}
+.chk-sum .sum-item{display:flex;gap:.85rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--line)}
+.sum-img{width:60px;height:60px;border-radius:12px;background:linear-gradient(160deg,var(--bg-2),var(--bg-3));border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;overflow:hidden}
+.sum-img img{width:100%;height:100%;object-fit:cover}
+.sum-info{flex:1;min-width:0}
+.sum-brand{font-size:.6rem;color:var(--gold);letter-spacing:1.2px;text-transform:uppercase;font-weight:600}
+.sum-name{font-family:var(--serif);font-size:.98rem;color:var(--ink);font-weight:700;margin:.15rem 0}
+.sum-attrs{font-size:.74rem;color:var(--ink-2);display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.sum-attrs .chip{display:inline-flex;align-items:center;gap:.3rem}
+.sum-dot{width:11px;height:11px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+.sum-line{display:flex;justify-content:space-between;font-size:.86rem;color:var(--ink-2);margin-bottom:.5rem}
+.sum-line.total{font-size:1.05rem;color:var(--ink);font-weight:700;padding-top:.6rem;border-top:1px solid var(--line);margin-top:.4rem;margin-bottom:0}
+.sum-line.total .num{color:var(--gold);font-family:var(--serif)}
+.confirm-btn{width:100%;background:var(--ink);color:var(--bg);border:none;padding:1rem;font-family:var(--sans);font-size:.98rem;font-weight:700;border-radius:100px;cursor:pointer;transition:all .3s var(--ease)}
+.confirm-btn:hover{background:var(--gold);transform:translateY(-2px);box-shadow:0 12px 28px rgba(184,146,74,.3)}
+.confirm-btn:disabled{opacity:.6;cursor:default;transform:none;box-shadow:none}
+.wa-btn{width:100%;background:#25D366;color:#fff;border:none;padding:.85rem;font-family:var(--sans);font-size:.88rem;font-weight:600;border-radius:100px;cursor:pointer;margin-top:.7rem;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:transform .2s}
+.wa-btn:hover{transform:translateY(-2px)}
+.secure-note{font-size:.72rem;color:var(--ink-3);text-align:center;margin-top:.9rem;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.chk-success{text-align:center;padding:1.5rem .5rem}
+.chk-success .ic{width:72px;height:72px;border-radius:50%;background:var(--sage-soft);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 1.25rem;color:var(--sage)}
+.chk-success h2{font-family:var(--serif);font-size:1.5rem;color:var(--ink);font-weight:700;margin-bottom:.7rem}
+.chk-success p{font-size:.88rem;color:var(--ink-2);line-height:1.7;margin-bottom:1.25rem}
+.chk-success .oid{background:var(--bg-2);border:1px dashed var(--gold);border-radius:10px;padding:.7rem;font-size:.85rem;color:var(--ink);margin-bottom:1.25rem}
+.chk-success .oid b{color:var(--gold);font-family:var(--serif);font-size:1.1rem}
+@media(max-width:480px){
+  .checkout-ov{padding:0}
+  .checkout-modal{border-radius:0;min-height:100%;max-width:100%}
+  .checkout-head{border-radius:0}
+  .checkout-modal .frow{grid-template-columns:1fr}
+  .checkout-modal .frow-keep{grid-template-columns:1fr 1fr;gap:.6rem}
+}
 </style>
 </head>
 <body>
@@ -229,6 +294,78 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,241,.9);backdrop-f
 <div class="related">
   <div class="related-head">منتجات <em>ذات صلة</em></div>
   <div class="rel-grid" id="relGrid"></div>
+</div>
+
+<!-- CHECKOUT POPUP -->
+<div class="checkout-ov" id="checkoutOv" onclick="if(event.target===this)closeCheckout()">
+  <div class="checkout-modal" role="dialog" aria-modal="true">
+    <div class="checkout-head">
+      <h2>إتمام الطلب</h2>
+      <button class="x" type="button" onclick="closeCheckout()" aria-label="إغلاق">&times;</button>
+    </div>
+    <div class="checkout-body" id="checkoutBody">
+      <div class="chk-sum">
+        <div class="sum-item">
+          <div class="sum-img" id="sumImg">👟</div>
+          <div class="sum-info">
+            <div class="sum-brand" id="sumBrand"></div>
+            <div class="sum-name" id="sumName"></div>
+            <div class="sum-attrs">
+              <span class="chip"><span class="sum-dot" id="sumDot"></span><span id="sumColor"></span></span>
+              <span class="chip">المقاس: <span class="num" id="sumSize"></span></span>
+              <span class="chip">الكمية: <span class="num" id="sumQty">1</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="sum-line"><span>المجموع الفرعي</span><span><span class="num" id="sumSub">0</span> دج</span></div>
+        <div class="sum-line"><span>التوصيل</span><span id="sumDeliveryWrap">—</span></div>
+        <div class="sum-line total"><span>الإجمالي</span><span><span class="num" id="sumTotal">0</span> دج</span></div>
+      </div>
+
+      <div class="chk-card">
+        <h3>👤 معلوماتك</h3>
+        <div class="frow">
+          <div class="ffield"><label>الاسم الكامل <span class="req">*</span></label><input class="finput" id="fname" placeholder="مثال: أحمد بن علي"></div>
+          <div class="ffield"><label>رقم الهاتف <span class="req">*</span></label><input class="finput" id="fphone" type="tel" placeholder="0XXXXXXXXX" style="direction:ltr;text-align:right"></div>
+        </div>
+      </div>
+
+      <div class="chk-card">
+        <h3>🚚 شركة التوصيل</h3>
+        <div class="company-opts" id="companyOpts">
+          <div class="co-opt on" data-co="yalidine" onclick="pickCompany(this)"><span class="co-dot" style="background:#E11900"></span> Yalidine</div>
+          <div class="co-opt" data-co="noest" onclick="pickCompany(this)"><span class="co-dot" style="background:#1A7F4B"></span> Noest</div>
+          <div class="co-opt" data-co="zrexpress" onclick="pickCompany(this)" style="display:none"><span class="co-dot" style="background:#E0A800"></span> ZRExpress</div>
+        </div>
+      </div>
+
+      <div class="chk-card">
+        <h3>📍 عنوان التوصيل</h3>
+        <div class="frow frow-keep">
+          <div class="ffield"><label>الولاية <span class="req">*</span></label><select class="fselect" id="fwilaya" onchange="onWilaya()"><option value="">اختر الولاية</option></select></div>
+          <div class="ffield"><label>البلدية <span class="req">*</span></label><select class="fselect" id="fcommune"><option value="">اختر البلدية</option></select></div>
+        </div>
+        <div class="ffield full" style="margin-bottom:0"><label>العنوان التفصيلي</label><textarea class="ftext" id="faddr" placeholder="الحي، الشارع، رقم المنزل أو نقطة دالة..."></textarea></div>
+      </div>
+
+      <div class="chk-card">
+        <h3>🏠 طريقة التوصيل</h3>
+        <div class="delivery-opts" id="deliveryOpts">
+          <div class="del-opt on" data-type="home" onclick="pickDelivery(this)"><div class="dt">🏠 للمنزل</div><div class="dp"><span class="num" id="homePrice">—</span> دج</div></div>
+          <div class="del-opt" data-type="desk" onclick="pickDelivery(this)"><div class="dt">🏢 مكتب التوصيل</div><div class="dp"><span class="num" id="deskPrice">—</span> دج</div></div>
+        </div>
+      </div>
+
+      <div class="chk-card" style="margin-bottom:1.25rem">
+        <h3>📝 ملاحظة (اختياري)</h3>
+        <textarea class="ftext" id="fnote" placeholder="أي ملاحظة خاصة بطلبك..."></textarea>
+      </div>
+
+      <button class="confirm-btn" type="button" onclick="chkConfirm()">تأكيد الطلب</button>
+      <button class="wa-btn" type="button" onclick="chkWhatsApp()">💬 أو أكمل عبر واتساب</button>
+      <div class="secure-note">🔒 الدفع عند الاستلام · معلوماتك آمنة</div>
+    </div>
+  </div>
 </div>
 
 <a class="wa" href="https://wa.me/213772423191" target="_blank" aria-label="WhatsApp">💬</a>
@@ -389,11 +526,24 @@ function updateStock(){
 
 function toggleFav(b){b.textContent=b.textContent==='♡'?'♥':'♡';b.style.color=b.textContent==='♥'?'var(--gold)':'';}
 
-// go to order page with selections
+// Open the checkout popup with the current selections
 function goToOrder(){
   if(curSize===null){alert('الرجاء اختيار المقاس أولاً');document.getElementById('sizeOpts').scrollIntoView({behavior:'smooth',block:'center'});return;}
-  const params=new URLSearchParams({id:product.id,color:curColor,size:product.sizes[curSize].s,qty:qty});
-  location.href='order.html?'+params.toString();
+  // Re-open with a fresh form if an order was already submitted this session
+  if(window._chkDone){
+    document.getElementById('checkoutBody').innerHTML=CHK_BODY_HTML;
+    chkCompany='yalidine'; chkDelivery='home'; chkPrices={home:null,desk:null};
+    populateWilayas();
+    if(window._generalSettings) applyCarrierVisibility(window._generalSettings);
+    window._chkDone=false;
+  }
+  renderChkSummary();
+  document.getElementById('checkoutOv').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeCheckout(){
+  document.getElementById('checkoutOv').classList.remove('open');
+  document.body.style.overflow='';
 }
 function orderWhatsApp(){
   if(curSize===null){alert('الرجاء اختيار المقاس أولاً');return;}
@@ -419,7 +569,230 @@ function renderRelated(){
   }).join('');
 }
 
+/* ═══════════ CHECKOUT POPUP LOGIC (seller-direct order, ported from order.html) ═══════════ */
+// Sparse commune fallback per wilaya — replaced at runtime by the carrier's real list from Firestore.
+const WILAYAS={
+  'أدرار':['أدرار','رقان','تيميمون','أولف'],
+  'الجزائر':['الجزائر الوسطى','باب الزوار','الحراش','بئر مراد رايس','بئر خادم','حسين داي','الدار البيضاء','زرالدة'],
+  'وهران':['وهران','بئر الجير','السانية','عين الترك','أرزيو','الكرمة'],
+  'قسنطينة':['قسنطينة','الخروب','عين السمارة','حامة بوزيان','زيغود يوسف'],
+  'تقرت':['تقرت','تبسبست','نزلة','الزاوية العابدية','تماسين','المقارين'],
+  'ورقلة':['ورقلة','حاسي مسعود','الرويسات','عين البيضاء','النقوسة'],
+  'سطيف':['سطيف','العلمة','عين ولمان','بوقاعة','عين أرنات'],
+  'عنابة':['عنابة','الحجار','سيدي عمار','البوني','برحال'],
+  'باتنة':['باتنة','بريكة','مروانة','عين التوتة','تازولت'],
+  'بليدة':['بليدة','بوفاريك','الأربعاء','موزاية','وادي العلايق'],
+  'تلمسان':['تلمسان','المنصورة','شتوان','الرمشي','مغنية'],
+  'بجاية':['بجاية','أقبو','صدوق','أميزور','تيشي'],
+};
+// Per-wilaya carrier fees [home, stopdesk] in DZD — embedded fallback, overridden by Firestore (delivery_data/<carrier>).
+const YAL_FEES={"1":[1400,1200],"2":[900,400],"3":[1050,600],"4":[900,400],"5":[900,400],"6":[900,400],"7":[1050,600],"8":[1400,800],"9":[750,350],"10":[900,400],"11":[1600,1200],"12":[1050,600],"13":[900,400],"14":[900,400],"15":[900,400],"16":[500,300],"17":[1050,600],"18":[900,400],"19":[900,400],"20":[900,400],"21":[900,400],"22":[900,400],"23":[900,400],"24":[900,400],"25":[900,400],"26":[900,400],"27":[900,400],"28":[900,400],"29":[900,400],"30":[1050,600],"31":[900,400],"32":[1050,600],"33":[1800,1200],"34":[900,400],"35":[750,350],"36":[900,400],"37":[900,400],"38":[1050,600],"39":[1800,1200],"40":[900,400],"41":[900,400],"42":[750,350],"43":[900,400],"44":[900,400],"45":[1050,600],"46":[900,400],"47":[1050,600],"48":[900,400],"49":[1400,800],"50":[1800,1200],"51":[1050,600],"52":[1400,800],"53":[1600,1200],"54":[1800,1200],"55":[1050,600],"56":[1800,1200],"57":[1050,600],"58":[1050,600]};
+const NOEST_FEES={"1":[1500,700],"2":[950,450],"3":[850,400],"4":[850,400],"5":[850,400],"6":[900,400],"7":[950,450],"8":[1300,650],"9":[800,350],"10":[800,350],"11":[2000,1000],"12":[850,400],"13":[950,450],"14":[950,450],"15":[800,350],"16":[800,350],"17":[950,450],"18":[900,400],"19":[850,400],"20":[950,450],"21":[900,400],"22":[950,450],"23":[800,350],"24":[900,400],"25":[900,400],"26":[800,350],"27":[950,450],"28":[850,400],"29":[950,450],"30":[800,350],"31":[800,350],"32":[1000,500],"33":[1950,950],"34":[850,400],"35":[800,350],"36":[950,450],"37":[1750,850],"38":[950,450],"39":[800,350],"40":[850,400],"41":[900,400],"42":[800,350],"43":[900,400],"44":[950,450],"45":[1100,550],"46":[950,450],"47":[950,450],"48":[950,450],"49":[1200,600],"50":[1800,1200],"51":[950,450],"52":[1450,650],"53":[1650,850],"54":[1800,1200],"55":[700,300],"56":[2200,1600],"57":[850,300],"58":[1000,500]};
+const WILAYA_NAMES={"1":["أدرار","Adrar"],"2":["الشلف","Chlef"],"3":["الأغواط","Laghouat"],"4":["أم البواقي","Oum El Bouaghi"],"5":["باتنة","Batna"],"6":["بجاية","Béjaïa"],"7":["بسكرة","Biskra"],"8":["بشار","Béchar"],"9":["البليدة","Blida"],"10":["البويرة","Bouira"],"11":["تمنراست","Tamanrasset"],"12":["تبسة","Tébessa"],"13":["تلمسان","Tlemcen"],"14":["تيارت","Tiaret"],"15":["تيزي وزو","Tizi Ouzou"],"16":["الجزائر","Alger"],"17":["الجلفة","Djelfa"],"18":["جيجل","Jijel"],"19":["سطيف","Sétif"],"20":["سعيدة","Saïda"],"21":["سكيكدة","Skikda"],"22":["سيدي بلعباس","Sidi Bel Abbès"],"23":["عنابة","Annaba"],"24":["قالمة","Guelma"],"25":["قسنطينة","Constantine"],"26":["المدية","Médéa"],"27":["مستغانم","Mostaganem"],"28":["المسيلة","M'Sila"],"29":["معسكر","Mascara"],"30":["ورقلة","Ouargla"],"31":["وهران","Oran"],"32":["البيض","El Bayadh"],"33":["إليزي","Illizi"],"34":["برج بوعريريج","Bordj Bou Arréridj"],"35":["بومرداس","Boumerdès"],"36":["الطارف","El Tarf"],"37":["تيسمسيلت","Tissemsilt"],"38":["الوادي","El Oued"],"39":["تندوف","Tindouf"],"40":["خنشلة","Khenchela"],"41":["سوق أهراس","Souk Ahras"],"42":["تيبازة","Tipaza"],"43":["ميلة","Mila"],"44":["عين الدفلى","Aïn Defla"],"45":["النعامة","Naâma"],"46":["عين تموشنت","Aïn Témouchent"],"47":["غرداية","Ghardaïa"],"48":["غليزان","Relizane"],"49":["تيميمون","Timimoun"],"50":["برج باجي مختار","Bordj Badji Mokhtar"],"51":["أولاد جلال","Ouled Djellal"],"52":["بني عباس","Béni Abbès"],"53":["عين صالح","In Salah"],"54":["عين قزام","In Guezzam"],"55":["تقرت","Touggourt"],"56":["جانت","Djanet"],"57":["المغير","El M'Ghair"],"58":["المنيعة","El Meniaa"]};
+const DELIVERY_DEFAULT={home:600, desk:350};
+
+let chkCompany='yalidine', chkDelivery='home', chkPrices={home:null, desk:null}, CHK_BODY_HTML='';
+
+function fallbackCarrier(feeTable){
+  const ids=Object.keys(WILAYA_NAMES).map(Number).sort((a,b)=>a-b);
+  const fees={}, communes={};
+  ids.forEach(id=>{ const f=feeTable[String(id)]; if(f) fees[String(id)]={home:f[0],desk:f[1]}; communes[String(id)]=WILAYAS[WILAYA_NAMES[id][0]]||[]; });
+  return { wilayas:ids.map(id=>({id,ar:WILAYA_NAMES[id][0],fr:WILAYA_NAMES[id][1]})), communes, fees };
+}
+let CARRIERS={ yalidine:fallbackCarrier(YAL_FEES), noest:fallbackCarrier(NOEST_FEES), zrexpress:{wilayas:[],communes:{},fees:{}} };
+function carrier(){ return CARRIERS[chkCompany]||CARRIERS.yalidine; }
+function wilayaById(id){ return carrier().wilayas.find(w=>String(w.id)===String(id))||null; }
+
+function populateWilayas(){
+  const ws=document.getElementById('fwilaya'); if(!ws) return;
+  const cur=ws.value;
+  ws.innerHTML='<option value="">اختر الولاية</option>'+carrier().wilayas.map(w=>`<option value="${w.id}">${(w.code!=null?w.code:w.id)} - ${w.ar||w.fr||''}</option>`).join('');
+  ws.value=(cur && wilayaById(cur))?cur:'';
+}
+// Pull each carrier's cached wilaya/commune/fee lists from Firestore; fall back silently.
+function loadCarriers(){
+  if(typeof firebase==='undefined') return;
+  const fs=firebase.firestore();
+  ['yalidine','noest','zrexpress'].forEach(name=>{
+    fs.doc('delivery_data/'+name).get().then(d=>{
+      if(!d.exists) return;
+      const data=d.data()||{};
+      if(Array.isArray(data.wilayas) && data.wilayas.length){
+        CARRIERS[name]={ wilayas:data.wilayas, communes:data.communes||{}, fees:data.fees||{} };
+        if(name===chkCompany){ populateWilayas(); onWilaya(); }
+        if(name==='zrexpress' && window._generalSettings) applyCarrierVisibility(window._generalSettings);
+      }
+    }).catch(err=>console.error('Could not load '+name+' delivery data:',err));
+  });
+}
+// Hide carriers the admin switched off (settings/general). Default ON; never block checkout entirely.
+function applyCarrierVisibility(s){
+  s=s||{};
+  let yOn=s.yalidineEnabled!==false, nOn=s.noestEnabled!==false, zOn=s.zrexpressEnabled!==false;
+  const zReady=!!(CARRIERS.zrexpress && CARRIERS.zrexpress.wilayas && CARRIERS.zrexpress.wilayas.length);
+  zOn=zOn && zReady;
+  if(!yOn && !nOn && !zOn){ yOn=nOn=true; }
+  const states={yalidine:yOn, noest:nOn, zrexpress:zOn};
+  const avail=[];
+  Object.keys(states).forEach(name=>{
+    const el=document.querySelector('#companyOpts .co-opt[data-co="'+name+'"]');
+    if(el) el.style.display=states[name]?'':'none';
+    if(states[name]) avail.push(name);
+  });
+  if(avail.length && avail.indexOf(chkCompany)<0){
+    const sel=document.querySelector('#companyOpts .co-opt[data-co="'+avail[0]+'"]');
+    if(sel) pickCompany(sel);
+  }
+}
+function loadCarrierVisibility(){
+  if(typeof firebase==='undefined') return;
+  firebase.firestore().doc('settings/general').get()
+    .then(d=>{ if(d.exists){ window._generalSettings=d.data(); applyCarrierVisibility(d.data()); } })
+    .catch(()=>{});
+}
+function updateDeliveryPrices(){
+  const id=document.getElementById('fwilaya').value;
+  if(!id){ chkPrices={home:null, desk:null}; }
+  else { const f=carrier().fees[String(id)]; chkPrices = f ? {home:f.home, desk:f.desk} : {home:DELIVERY_DEFAULT.home, desk:DELIVERY_DEFAULT.desk}; }
+  const hp=document.getElementById('homePrice'), dp=document.getElementById('deskPrice');
+  if(hp) hp.textContent=chkPrices.home==null?'—':chkPrices.home.toLocaleString();
+  if(dp) dp.textContent=chkPrices.desk==null?'—':chkPrices.desk.toLocaleString();
+  renderChkSummary();
+}
+function onWilaya(){
+  const id=document.getElementById('fwilaya').value;
+  const cs=document.getElementById('fcommune');
+  const raw=carrier().communes[String(id)]||[];
+  const list=raw.map(c=> typeof c==='string'?{name:c,id:''}:{name:(c&&c.name)||'',id:(c&&c.id)||''});
+  if(id && list.length){
+    cs.innerHTML='<option value="">اختر البلدية</option>'+list.map(c=>`<option value="${c.name}" data-tid="${c.id}">${c.name}</option>`).join('');
+  }else{ cs.innerHTML='<option value="">اختر البلدية</option>'; }
+  updateDeliveryPrices();
+}
+function pickCompany(el){
+  document.querySelectorAll('#companyOpts .co-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  chkCompany=el.dataset.co;
+  populateWilayas();
+  document.getElementById('fcommune').innerHTML='<option value="">اختر البلدية</option>';
+  updateDeliveryPrices();
+}
+function pickDelivery(el){
+  document.querySelectorAll('#deliveryOpts .del-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  chkDelivery=el.dataset.type;
+  renderChkSummary();
+}
+function renderChkSummary(){
+  if(!product) return;
+  const c=product.colors[curColor]||product.colors[0];
+  const sumImg=document.getElementById('sumImg');
+  if(c.img){sumImg.innerHTML='<img src="'+c.img+'">';}else{sumImg.textContent=c.emoji||'👟';}
+  document.getElementById('sumBrand').textContent=product.brand;
+  document.getElementById('sumName').textContent=product.name;
+  document.getElementById('sumColor').textContent=c.n;
+  document.getElementById('sumDot').style.background=c.h;
+  document.getElementById('sumSize').textContent=product.sizes[curSize]?product.sizes[curSize].s:'';
+  document.getElementById('sumQty').textContent=qty;
+  const sub=product.price*qty, del=chkPrices[chkDelivery];
+  document.getElementById('sumSub').textContent=sub.toLocaleString();
+  if(del==null){
+    document.getElementById('sumDeliveryWrap').textContent='يُحدَّد حسب الولاية';
+    document.getElementById('sumTotal').textContent=sub.toLocaleString();
+  }else{
+    document.getElementById('sumDeliveryWrap').innerHTML='<span class="num">'+del.toLocaleString()+'</span> دج';
+    document.getElementById('sumTotal').textContent=(sub+del).toLocaleString();
+  }
+}
+function chkValidate(){
+  let ok=true;
+  const name=document.getElementById('fname'), phone=document.getElementById('fphone');
+  const wilaya=document.getElementById('fwilaya'), commune=document.getElementById('fcommune');
+  [name,phone,wilaya,commune].forEach(f=>{ if(!f.value.trim()){f.classList.add('err');ok=false;}else{f.classList.remove('err');} });
+  if(phone.value && !/^0[567][0-9]{8}$/.test(phone.value.replace(/\s/g,''))){phone.classList.add('err');ok=false;}
+  if(!chkCompany) ok=false;
+  if(!ok) alert('الرجاء ملء جميع الحقول المطلوبة بشكل صحيح (الاسم، هاتف صحيح، الولاية، البلدية)');
+  return ok;
+}
+function chkBuildOrder(){
+  const c=product.colors[curColor]||product.colors[0];
+  const w=wilayaById(document.getElementById('fwilaya').value);
+  const csel=document.getElementById('fcommune');
+  const copt=csel.options[csel.selectedIndex];
+  const districtTid=copt?(copt.getAttribute('data-tid')||''):'';
+  const isZr=chkCompany==='zrexpress';
+  const coName=chkCompany?(isZr?'ZRExpress':(chkCompany==='noest'?'Noest':'Yalidine')):'';
+  const sizeVal=product.sizes[curSize]?product.sizes[curSize].s:'';
+  const sub=product.price*qty, del=chkPrices[chkDelivery]||0;
+  return {
+    oid:'#BM-'+Math.floor(1000+Math.random()*9000),
+    name:document.getElementById('fname').value, phone:document.getElementById('fphone').value,
+    wilaya:w?(w.ar||w.fr||''):'', wilayaFr:w?(w.fr||w.ar||''):'', wilayaId:w?(isZr?(w.code||null):w.id):null,
+    cityTerritoryId:(isZr&&w)?String(w.id):null, districtTerritoryId:isZr?(districtTid||null):null,
+    commune:csel.value, address:document.getElementById('faddr').value, note:document.getElementById('fnote').value,
+    company:chkCompany, deliveryType:chkDelivery,
+    delivery:(coName?coName+' · ':'')+(chkDelivery==='home'?'توصيل للمنزل':'مكتب التوصيل'),
+    product:product.name, brand:product.brand, color:c.n, size:sizeVal, qty:qty,
+    subtotal:sub, deliveryFee:del, total:sub+del
+  };
+}
+function chkConfirm(){
+  if(!chkValidate())return;
+  const o=chkBuildOrder();
+  const c=product.colors[curColor]||product.colors[0];
+  // Save to Firestore so the order appears in the admin panel (schema matches admin renderOrders)
+  if(typeof firebase!=='undefined'){
+    try{
+      firebase.firestore().collection('orders').add({
+        num:o.oid, customer:o.name, phone:o.phone, product:o.product, brand:o.brand,
+        color:o.color, colorHex:(c&&c.h)||'#888888', size:o.size, qty:o.qty,
+        price:o.total, subtotal:o.subtotal, deliveryFee:o.deliveryFee, total:o.total,
+        wilaya:o.wilaya, wilayaFr:o.wilayaFr, wilayaId:o.wilayaId, commune:o.commune,
+        cityTerritoryId:o.cityTerritoryId||null, districtTerritoryId:o.districtTerritoryId||null,
+        address:o.address, note:o.note, delivery:o.delivery,
+        deliveryCompany:o.company, deliveryType:o.deliveryType,
+        status:'New', fulfilled:false, placedAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(err=>console.error('Could not save order to Firestore:',err));
+    }catch(e){ console.error(e); }
+  }
+  try{
+    const orders=JSON.parse(localStorage.getItem('bm_web_orders')||'[]');
+    orders.push({...o,date:new Date().toISOString()});
+    localStorage.setItem('bm_web_orders',JSON.stringify(orders));
+  }catch(e){}
+  window._lastOrder=o; window._chkDone=true;
+  document.getElementById('checkoutBody').innerHTML=
+    '<div class="chk-success"><div class="ic">✓</div>'+
+    '<h2>تم استلام طلبك!</h2>'+
+    '<p>شكراً لثقتك في بازار مرابط. سنتواصل معك قريباً على هاتفك لتأكيد الطلب وموعد التوصيل.</p>'+
+    '<div class="oid">رقم طلبك: <b>'+o.oid+'</b></div>'+
+    '<button class="confirm-btn" type="button" onclick="closeCheckout()">العودة للمتجر</button>'+
+    '<button class="wa-btn" type="button" onclick="chkWhatsApp()">💬 أرسل تفاصيل الطلب على واتساب</button></div>';
+}
+function chkWhatsApp(){
+  if(!window._lastOrder && !chkValidate())return;
+  const o=window._lastOrder||chkBuildOrder();
+  const msg=encodeURIComponent(
+    `🛍️ طلب جديد ${o.oid}\n\n`+
+    `👤 الاسم: ${o.name}\n📞 الهاتف: ${o.phone}\n`+
+    `📍 الولاية: ${o.wilaya} — ${o.commune}\n`+
+    (o.address?`🏠 العنوان: ${o.address}\n`:'')+
+    `🚚 التوصيل: ${o.delivery}\n\n`+
+    `📦 المنتج: ${o.product} — ${o.brand}\n🎨 اللون: ${o.color}\n📏 المقاس: ${o.size}\n🔢 الكمية: ${o.qty}\n\n`+
+    `💰 المجموع: ${o.subtotal} دج\n🚚 التوصيل: ${o.deliveryFee} دج\n✅ الإجمالي: ${o.total} دج`+
+    (o.note?`\n\n📝 ملاحظة: ${o.note}`:'')
+  );
+  window.open('https://wa.me/213772423191?text='+msg,'_blank');
+}
+function initCheckout(){
+  const body=document.getElementById('checkoutBody');
+  if(body) CHK_BODY_HTML=body.innerHTML;  // snapshot for re-opening after a completed order
+  populateWilayas();
+  if(typeof firebase!=='undefined'){ try{ loadCarriers(); loadCarrierVisibility(); }catch(e){} }
+}
+
 loadProduct();
+initCheckout();
 </script>
 </body>
 </html>
