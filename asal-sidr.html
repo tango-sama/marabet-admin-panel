@@ -292,7 +292,9 @@
     .hero-inner{grid-template-columns:1fr;text-align:center;gap:30px;}
     .hero .lead,.hero .sub{margin-left:auto;margin-right:auto;}
     .hero .cta-row{justify-content:center;}
-    .hero-photo-wrap{order:-1;}
+    /* stack text above the product photo on mobile */
+    .hero-text{order:0;}
+    .hero-photo-wrap{order:1;}
     .quality-list{grid-template-columns:1fr;}
     .guarantee-card{flex-direction:column;text-align:center;}
   }
