@@ -384,6 +384,9 @@ a{color:var(--gold)}
     .orders-list{display:flex;flex-direction:column;gap:1rem;max-width:920px}
     .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem}
     .order-card.is-done{opacity:.62}
+    /* honey orders (from the عسل السدر landing page) get a golden card */
+    .order-card.honey{border-color:var(--gold);background:linear-gradient(150deg,rgba(201,168,76,.15),rgba(201,168,76,.03)),var(--card);box-shadow:0 0 0 1px rgba(201,168,76,.35),0 10px 30px rgba(201,168,76,.12)}
+    .ord-tag.honey{background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#1a1208}
     /* Desktop: order cards are always fully shown. Collapse/expand is mobile-only (see media query below). */
     .ord-body{display:grid;grid-template-rows:1fr}
     .ord-body-inner{overflow:hidden;min-height:0}
@@ -1028,6 +1031,8 @@ function renderOrders() {
   var s=[].concat(orders.filter(function(o){return !o.fulfilled;}),orders.filter(function(o){return o.fulfilled;}));
   body.innerHTML=s.map(function(o){
     var oid=esc(o._docId||'');
+    // Orders from the عسل السدر landing page (tagged source, or matched by product name for older ones)
+    var isHoney=(o.source==='asal-sidr')||/عسل\s*السدر/.test(String(o.product||''));
     var when=(o.placedAt&&o.placedAt.toDate)?o.placedAt.toDate().toLocaleString('ar-DZ'):'';
     var carrier=o.deliveryCompany||null;
     var CARRIER_META={yalidine:{name:'Yalidine',emoji:'🔴',cls:'yal'},noest:{name:'Noest',emoji:'🔵',cls:'noest'},zrexpress:{name:'ZRExpress',emoji:'🟡',cls:'zr'}};
@@ -1039,6 +1044,7 @@ function renderOrders() {
     var total=(o.total!=null?o.total:(o.price||0));
     var head='<div class="ord-head"><div class="ord-head-l">'
       +'<span class="ord-tag '+(o.fulfilled?'done':'new')+'">'+(o.fulfilled?'✅ تم التنفيذ':'📝 جديد')+'</span> '
+      +(isHoney?'<span class="ord-tag honey">🍯 عسل السدر</span> ':'')
       +(cm?'<span class="ord-tag carrier '+cm.cls+'">'+cm.emoji+' '+cm.name+' · '+dtype+'</span> ':'')
       +'<b class="ord-num">'+esc(o.num||'')+'</b>'
       +'<div class="ord-when">'+esc(when)+'</div></div>'
@@ -1067,7 +1073,7 @@ function renderOrders() {
         : (carrier?'<button class="btn btn-sm ord-carrier '+cm.cls+'" data-ocarrier="'+carrier+'" data-oid="'+oid+'" title="اختيار الزبون">'+cm.emoji+' طرد '+cm.name+'</button>':''))
       +'<button class="btn btn-outline btn-sm" data-fulfill="'+oid+'">'+(o.fulfilled?'↩ تعليم كجديد':'✓ تم التنفيذ')+'</button>'
       +'<button class="btn btn-danger btn-sm" data-delord="'+oid+'">حذف</button></div>';
-    return '<div class="order-card'+(o.fulfilled?' is-done':'')+(o._expanded?' expanded':'')+'" data-oid="'+oid+'">'
+    return '<div class="order-card'+(isHoney?' honey':'')+(o.fulfilled?' is-done':'')+(o._expanded?' expanded':'')+'" data-oid="'+oid+'">'
       +head+meta
       +'<div class="ord-body"><div class="ord-body-inner"><div class="ord-prod">'+prod+'</div>'+noteBlock+actions+'</div></div>'
       +'<div class="ord-toggle"><span class="ord-caret">▾</span></div>'

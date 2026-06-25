@@ -973,6 +973,7 @@ function confirmOrder(){
       cityTerritoryId:o.cityTerritoryId||null, districtTerritoryId:o.districtTerritoryId||null,
       address:o.address, note:o.note, delivery:o.delivery,
       deliveryCompany:o.company, deliveryType:o.deliveryType,
+      source:'asal-sidr',
       status:'New', fulfilled:false, placedAt:firebase.firestore.FieldValue.serverTimestamp()
     }).catch(err=>console.error('Could not save order to Firestore:',err));
   }
