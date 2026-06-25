@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عسل السدر الطبيعي 100% | جودة استثنائية وإنتاج محدود</title>
+<meta name="description" content="عسل السدر الأصلي المستخرج من رحيق أشجار السدر الطبيعية — نقاء طبيعي 100%، بدون إضافات، فحص مخبري، إنتاج محدود وتوصيل سريع لكل الولايات.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg-darker:#0f0f0f;
+    --bg-dark:#1b1b1b;
+    --bg-card:#171717;
+    --gold:#d4a017;
+    --gold-light:#f1c75b;
+    --honey:#8a4b12;
+    --honey-light:#b06a1f;
+    --cream:#f5efe3;
+    --cream-dim:#bdb29c;
+    --line:rgba(212,160,23,0.18);
+    --glass:rgba(255,255,255,0.045);
+    --maxw:1140px;
+    --green:#25d366;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Tajawal',sans-serif;
+    background:var(--bg-dark);
+    color:var(--cream);
+    overflow-x:hidden;
+    line-height:1.6;
+  }
+  h1,h2,h3,.display{font-family:'Cairo',sans-serif;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;}
+  .wrap{max-width:var(--maxw);margin:0 auto;}
+
+  /* honeycomb texture background */
+  .honeycomb-bg{
+    position:fixed;inset:0;z-index:-1;
+    background-color:var(--bg-dark);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(212,160,23,0.07) 0%, transparent 42%),
+      radial-gradient(circle at 82% 72%, rgba(212,160,23,0.05) 0%, transparent 42%);
+  }
+
+  /* ===== nav ===== */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:60;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 6%;
+    background:rgba(15,15,15,0.82);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .logo{font-family:'Cairo';font-size:22px;font-weight:800;color:var(--gold-light);}
+  nav .nav-cta{
+    background:var(--gold);color:#1a1208;text-decoration:none;
+    padding:10px 24px;border-radius:30px;font-weight:700;font-size:14px;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  nav .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(212,160,23,0.35);}
+
+  /* ===== buttons ===== */
+  .btn-primary{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#1a1208;border:none;
+    padding:16px 40px;font-size:16px;font-weight:800;font-family:'Cairo';
+    border-radius:40px;cursor:pointer;text-decoration:none;display:inline-block;
+    box-shadow:0 10px 30px rgba(212,160,23,0.25);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 38px rgba(212,160,23,0.4);}
+  .btn-secondary{
+    background:transparent;color:var(--cream);
+    border:1px solid rgba(245,239,227,0.32);
+    padding:16px 36px;font-size:16px;font-weight:700;font-family:'Cairo';
+    border-radius:40px;cursor:pointer;text-decoration:none;display:inline-block;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .btn-secondary:hover{border-color:var(--gold);background:rgba(212,160,23,0.08);}
+
+  /* ===== topfold + cinematic video bg (scrubbed) ===== */
+  .topfold,.videofold{position:relative;}
+  .topfold-bg{position:absolute;inset:0;z-index:0;pointer-events:none;}
+  .topfold-bg .sticky{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:var(--bg-darker);}
+  .topfold-bg video{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:center;
+    filter:saturate(1.05) brightness(0.85);
+  }
+  .topfold-bg .overlay{
+    position:absolute;inset:0;
+    background:
+      linear-gradient(180deg, rgba(15,15,15,0.85) 0%, rgba(15,15,15,0.45) 32%, rgba(15,15,15,0.6) 68%, rgba(15,15,15,0.95) 100%),
+      radial-gradient(circle at 50% 35%, rgba(212,160,23,0.12), transparent 60%);
+  }
+  .topfold > section,.videofold > section{position:relative;z-index:1;}
+
+  /* ===== hero ===== */
+  .hero{min-height:100vh;display:flex;align-items:center;padding:120px 6% 60px;position:relative;}
+  .hero-inner{
+    max-width:var(--maxw);margin:0 auto;width:100%;
+    display:grid;grid-template-columns:1.1fr 0.9fr;gap:40px;align-items:center;
+  }
+  .hero-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--glass);border:1px solid var(--line);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    color:var(--gold-light);font-size:13px;font-weight:700;
+    padding:9px 16px;border-radius:30px;margin-bottom:22px;
+  }
+  .hero h1{
+    font-size:clamp(34px,5.4vw,62px);font-weight:900;line-height:1.2;color:var(--cream);
+  }
+  .hero h1 .accent{color:var(--gold-light);}
+  .hero .lead{margin-top:20px;font-size:clamp(15px,2vw,18px);color:var(--cream-dim);max-width:560px;}
+  .hero .sub{margin-top:14px;font-size:15px;color:var(--cream-dim);max-width:560px;opacity:0.92;}
+  .hero .cta-row{margin-top:32px;display:flex;gap:14px;flex-wrap:wrap;}
+  .scarcity{
+    margin-top:24px;display:inline-flex;align-items:center;gap:8px;
+    color:var(--gold-light);font-size:14px;font-weight:700;
+    background:rgba(212,160,23,0.1);border:1px dashed rgba(212,160,23,0.45);
+    padding:10px 16px;border-radius:12px;
+  }
+  .hero-photo-wrap{position:relative;justify-self:center;}
+  .hero-photo{
+    width:340px;max-width:78vw;border-radius:22px;
+    box-shadow:0 26px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,160,23,0.28);
+  }
+  /* honey drip signature */
+  .drip-wrap{position:absolute;top:0;left:0;right:0;height:100px;overflow:hidden;pointer-events:none;}
+  .drip{position:absolute;top:-10px;width:26px;height:20px;background:linear-gradient(180deg,var(--honey-light),var(--gold));border-radius:0 0 50% 50%;}
+
+  /* ===== generic section ===== */
+  section{padding:90px 6%;position:relative;}
+  .section-head{text-align:center;max-width:640px;margin:0 auto 52px;}
+  .section-head .eyebrow{color:var(--gold);font-size:13px;font-weight:800;letter-spacing:1px;}
+  .section-head h2{font-size:clamp(26px,4vw,40px);margin-top:10px;color:var(--cream);}
+  .section-head p{color:var(--cream-dim);margin-top:14px;font-size:16px;}
+
+  /* ===== trust bar ===== */
+  .trust{background:var(--bg-darker);padding:46px 6%;border-block:1px solid var(--line);}
+  .trust-grid{
+    max-width:var(--maxw);margin:0 auto;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;
+  }
+  .trust-item{
+    display:flex;align-items:center;gap:12px;
+    background:var(--glass);border:1px solid var(--line);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border-radius:14px;padding:16px 18px;font-weight:700;font-size:14px;color:var(--cream);
+  }
+  .trust-item .ic{flex:0 0 auto;width:26px;height:26px;color:var(--gold);}
+
+  /* ===== benefits (6 cards) ===== */
+  .benefits-grid{
+    max-width:var(--maxw);margin:0 auto;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;
+  }
+  .b-card{
+    background:linear-gradient(160deg, rgba(212,160,23,0.1), rgba(245,239,227,0.02));
+    border:1px solid var(--line);border-radius:18px;padding:30px 26px;text-align:right;
+    transition:transform .25s ease, border-color .25s ease;
+  }
+  .b-card:hover{transform:translateY(-6px);border-color:rgba(212,160,23,0.5);}
+  .b-card .emoji{font-size:30px;margin-bottom:14px;line-height:1;}
+  .b-card h3{font-size:20px;color:var(--gold-light);margin-bottom:10px;}
+  .b-card p{font-size:15px;color:var(--cream-dim);line-height:1.85;}
+
+  /* ===== story ===== */
+  .story{background:transparent;display:flex;flex-wrap:wrap;align-items:center;gap:46px;}
+  .story-text{flex:1;min-width:300px;}
+  .story-text h2{font-size:clamp(26px,4vw,40px);margin-bottom:18px;}
+  .story-text p{color:var(--cream-dim);line-height:1.95;font-size:16px;margin-bottom:14px;}
+  .story-media{flex:1;min-width:300px;}
+  .story-media img{width:100%;border-radius:20px;box-shadow:0 22px 60px rgba(0,0,0,0.5);object-fit:cover;}
+
+  /* ===== quality (bullets) ===== */
+  .quality-list{
+    max-width:860px;margin:0 auto;
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
+  .quality-list li{
+    list-style:none;display:flex;align-items:center;gap:12px;
+    background:var(--glass);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;font-size:15px;font-weight:600;color:var(--cream);
+  }
+  .quality-list .ic{width:22px;height:22px;color:var(--gold);flex:0 0 auto;}
+
+  /* ===== social proof / counter / testimonials ===== */
+  .counter-band{text-align:center;margin-bottom:54px;}
+  .counter-num{font-family:'Cairo';font-size:clamp(48px,9vw,84px);font-weight:900;color:var(--gold-light);line-height:1;}
+  .counter-label{color:var(--cream-dim);font-size:17px;margin-top:8px;}
+  .reviews{max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;}
+  .review{
+    background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:28px 24px;text-align:right;
+  }
+  .stars{color:var(--gold);letter-spacing:3px;font-size:18px;margin-bottom:14px;}
+  .review p{color:var(--cream);font-size:15px;line-height:1.85;margin-bottom:16px;}
+  .review .name{color:var(--gold-light);font-weight:700;font-size:14px;}
+
+  /* ===== comparison table ===== */
+  .table-wrap{max-width:820px;margin:0 auto;overflow-x:auto;border-radius:18px;border:1px solid var(--line);}
+  table.compare{width:100%;border-collapse:collapse;min-width:480px;background:var(--bg-card);}
+  table.compare th,table.compare td{padding:16px 18px;text-align:center;border-bottom:1px solid rgba(245,239,227,0.07);font-size:15px;}
+  table.compare th{font-family:'Cairo';font-weight:800;font-size:15px;}
+  table.compare th:first-child,table.compare td:first-child{text-align:right;color:var(--cream);font-weight:600;}
+  table.compare thead th{background:rgba(212,160,23,0.1);color:var(--gold-light);}
+  table.compare .col-ours{background:rgba(212,160,23,0.06);color:var(--gold-light);}
+  table.compare tr:last-child td{border-bottom:none;}
+  .yes{color:var(--gold);font-weight:800;}
+  .no{color:#8a8377;font-weight:700;}
+
+  /* ===== FAQ ===== */
+  .faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px;}
+  .faq{background:var(--bg-card);border:1px solid var(--line);border-radius:14px;padding:4px 22px;}
+  .faq summary{
+    cursor:pointer;list-style:none;padding:18px 0;font-family:'Cairo';font-weight:700;font-size:16px;color:var(--cream);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+  }
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary .chev{color:var(--gold);transition:transform .25s ease;flex:0 0 auto;}
+  .faq[open] summary .chev{transform:rotate(180deg);}
+  .faq p{color:var(--cream-dim);font-size:15px;line-height:1.9;padding:0 0 20px;}
+
+  /* ===== offer / price ===== */
+  .offer{background:var(--bg-darker);}
+  .price-card{
+    max-width:460px;margin:0 auto;text-align:center;
+    background:linear-gradient(160deg, rgba(212,160,23,0.14), rgba(245,239,227,0.03));
+    border:1px solid rgba(212,160,23,0.4);border-radius:24px;padding:44px 36px;
+    box-shadow:0 24px 70px rgba(0,0,0,0.45);
+  }
+  .price-card .badge-offer{display:inline-block;background:var(--gold);color:#1a1208;font-weight:800;font-size:13px;padding:6px 16px;border-radius:20px;margin-bottom:18px;}
+  .price-card .old-price{text-decoration:line-through;color:var(--cream-dim);font-size:17px;}
+  .price-card .price{font-size:46px;font-weight:900;font-family:'Cairo';color:var(--gold-light);margin:4px 0 22px;}
+  .price-card ul{list-style:none;text-align:right;margin-bottom:28px;}
+  .price-card li{color:var(--cream);font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .price-card li .ic{width:20px;height:20px;color:var(--gold);flex:0 0 auto;}
+  .offer-trust{margin-top:18px;color:var(--cream-dim);font-size:13px;}
+
+  /* ===== money-back guarantee ===== */
+  .guarantee{text-align:center;}
+  .guarantee-card{
+    max-width:680px;margin:0 auto;display:flex;align-items:center;gap:24px;text-align:right;
+    background:var(--glass);border:1px solid var(--line);border-radius:20px;padding:30px 32px;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .guarantee-card .seal{flex:0 0 auto;width:74px;height:74px;color:var(--gold);}
+  .guarantee-card h3{font-size:22px;color:var(--gold-light);margin-bottom:8px;}
+  .guarantee-card p{color:var(--cream-dim);font-size:15px;line-height:1.8;}
+
+  /* ===== final CTA ===== */
+  .final-cta{text-align:center;background:
+    radial-gradient(circle at 50% 0%, rgba(212,160,23,0.14), transparent 60%), var(--bg-dark);}
+  .final-cta h2{font-size:clamp(28px,4.5vw,46px);max-width:780px;margin:0 auto 18px;color:var(--cream);}
+  .final-cta p{color:var(--cream-dim);font-size:17px;max-width:600px;margin:0 auto 34px;}
+
+  /* ===== footer ===== */
+  footer{background:var(--bg-darker);padding:50px 6% 34px;text-align:center;border-top:1px solid var(--line);}
+  footer .logo{font-family:'Cairo';font-size:22px;font-weight:800;color:var(--gold-light);margin-bottom:14px;}
+  footer .links{display:flex;justify-content:center;gap:24px;margin-bottom:20px;flex-wrap:wrap;}
+  footer .links a{color:var(--cream-dim);text-decoration:none;font-size:14px;}
+  footer .links a:hover{color:var(--gold-light);}
+  footer .copyright{color:var(--cream-dim);font-size:12px;opacity:0.6;}
+
+  /* ===== whatsapp sticky ===== */
+  .wa-float{
+    position:fixed;bottom:22px;left:22px;z-index:80;
+    width:58px;height:58px;border-radius:50%;
+    background:var(--green);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 28px rgba(37,211,102,0.45);
+    transition:transform .2s ease;
+  }
+  .wa-float:hover{transform:scale(1.08);}
+  .wa-float svg{width:32px;height:32px;fill:#fff;}
+
+  /* ===== honey scroll progress ===== */
+  .honey-fill-track{position:fixed;top:0;bottom:0;left:0;width:5px;z-index:55;background:rgba(245,239,227,0.06);}
+  .honey-fill{position:absolute;bottom:0;left:0;right:0;width:100%;height:0%;background:linear-gradient(180deg,var(--gold-light),var(--honey));}
+
+  .reveal{opacity:0;}
+
+  /* ===== responsive ===== */
+  @media (max-width:820px){
+    .hero-inner{grid-template-columns:1fr;text-align:center;gap:30px;}
+    .hero .lead,.hero .sub{margin-left:auto;margin-right:auto;}
+    .hero .cta-row{justify-content:center;}
+    .hero-photo-wrap{order:-1;}
+    .quality-list{grid-template-columns:1fr;}
+    .guarantee-card{flex-direction:column;text-align:center;}
+  }
+  @media (max-width:600px){
+    section{padding:64px 6%;}
+    .btn-primary,.btn-secondary{padding:14px 30px;font-size:15px;}
+  }
+
+  /* respect reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    .reveal{opacity:1 !important;}
+    *{animation-duration:0.001ms !important;transition-duration:0.001ms !important;}
+  }
+
+  /* ===== order modal (delivery info) ===== */
+  .modal{
+    position:fixed;inset:0;z-index:200;display:none;
+    align-items:center;justify-content:center;padding:20px;
+    background:rgba(8,8,8,0.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  }
+  .modal.open{display:flex;}
+  .modal-box{
+    width:100%;max-width:480px;max-height:92vh;overflow-y:auto;
+    background:var(--bg-card);border:1px solid rgba(212,160,23,0.4);border-radius:22px;
+    padding:30px 28px;box-shadow:0 30px 80px rgba(0,0,0,0.6);
+    animation:modalIn .25s ease;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.98);}to{opacity:1;transform:none;}}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;}
+  .modal-head h3{font-size:22px;color:var(--gold-light);}
+  .modal-head p{color:var(--cream-dim);font-size:13px;margin-top:4px;}
+  .modal-close{
+    background:none;border:none;color:var(--cream-dim);font-size:26px;line-height:1;cursor:pointer;
+    width:40px;height:40px;border-radius:50%;flex:0 0 auto;transition:background .2s ease,color .2s ease;
+  }
+  .modal-close:hover{background:rgba(245,239,227,0.08);color:var(--cream);}
+  .field{margin-top:16px;}
+  .field label{display:block;font-size:13px;font-weight:700;color:var(--cream);margin-bottom:7px;}
+  .field label .req{color:var(--gold);}
+  .field input,.field textarea,.field select{
+    width:100%;background:rgba(245,239,227,0.05);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;color:var(--cream);font-family:inherit;font-size:15px;min-height:48px;
+    transition:border-color .2s ease;
+  }
+  .field select{cursor:pointer;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d4a017' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:left 14px center;padding-left:34px;}
+  .field select option{background:#171717;color:var(--cream);}
+  .field textarea{min-height:74px;resize:vertical;}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--gold);}
+  .field input::placeholder,.field textarea::placeholder{color:rgba(189,178,156,0.6);}
+  .field input.err,.field textarea.err,.field select.err{border-color:#ff8f7a;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:480px){.grid2{grid-template-columns:1fr;}}
+
+  /* delivery company + method selectors */
+  .company-opts,.delivery-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media (max-width:480px){.company-opts,.delivery-opts{grid-template-columns:1fr;}}
+  .co-opt{
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;
+    transition:all .2s ease;display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;color:var(--cream);
+    background:rgba(245,239,227,0.04);
+  }
+  .co-opt:hover{border-color:rgba(212,160,23,0.5);}
+  .co-opt.on{border-color:var(--gold);background:rgba(212,160,23,0.12);}
+  .co-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;}
+  .del-opt{
+    border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;
+    transition:all .2s ease;background:rgba(245,239,227,0.04);
+  }
+  .del-opt:hover{border-color:rgba(212,160,23,0.5);}
+  .del-opt.on{border-color:var(--gold);background:rgba(212,160,23,0.12);}
+  .del-opt .dt{font-weight:700;font-size:14px;color:var(--cream);margin-bottom:6px;}
+  .del-opt .dp{font-family:'Cairo';font-size:16px;color:var(--gold-light);font-weight:800;}
+
+  /* order summary */
+  .osum{margin-top:20px;border-top:1px solid var(--line);padding-top:16px;}
+  .osum-line{display:flex;justify-content:space-between;font-size:14px;color:var(--cream-dim);margin-bottom:9px;}
+  .osum-line.total{font-size:17px;color:var(--cream);font-weight:800;font-family:'Cairo';padding-top:12px;border-top:1px solid var(--line);margin-top:6px;}
+  .osum-line.total b{color:var(--gold-light);}
+  .wa-order-btn{
+    width:100%;background:var(--green);color:#fff;border:none;
+    padding:12px;font-family:inherit;font-size:14px;font-weight:700;border-radius:40px;cursor:pointer;
+    margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .2s ease;
+  }
+  .wa-order-btn:hover{transform:translateY(-2px);}
+  .modal-note{text-align:center;color:var(--cream-dim);font-size:12px;margin-top:14px;opacity:0.8;}
+  .success-ic{width:72px;height:72px;border-radius:50%;background:rgba(37,211,102,0.15);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 18px;color:var(--green);}
+  .success-oid{background:rgba(212,160,23,0.08);border:1px dashed var(--gold);border-radius:10px;padding:12px;font-size:15px;margin:18px 0;}
+  .success-oid b{color:var(--gold-light);font-family:'Cairo';}
+</style>
+<noscript><style>.reveal{opacity:1 !important;}</style></noscript>
+</head>
+<body>
+
+<div class="honeycomb-bg"></div>
+<div class="honey-fill-track"><div class="honey-fill" id="honeyFill"></div></div>
+
+<nav>
+  <div class="logo">عسل السدر</div>
+  <a class="nav-cta js-order" href="#order">اطلب الآن</a>
+</nav>
+
+<!-- ===== TOPFOLD: hero over cinematic scrubbed video ===== -->
+<div class="topfold">
+<div class="topfold-bg"><div class="sticky"><video id="bgVideo" muted playsinline preload="auto" src="/bg-honey.mp4"></video><div class="overlay"></div></div></div>
+
+<section class="hero">
+  <div class="drip-wrap" id="dripWrap"></div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <span class="hero-badge reveal">🌿 عسل السدر الطبيعي 100% | إنتاج محدود | جودة استثنائية</span>
+      <h1 class="reveal">طعم الطبيعة النقي... <span class="accent">في كل ملعقة</span></h1>
+      <p class="lead reveal">استمتع بأحد أثمن أنواع العسل في العالم، عسل السدر الأصلي المستخرج من رحيق أشجار السدر الطبيعية، بنكهة غنية وقيمة غذائية عالية وجودة يمكنك تذوقها من أول قطرة.</p>
+      <p class="sub reveal">عسل فاخر يُجمع بعناية من مناطق السدر الطبيعية، ليمنحك مذاقاً استثنائياً وتجربة صحية تثق بها أنت وعائلتك.</p>
+      <div class="cta-row reveal">
+        <a class="btn-primary js-order" href="#order">اطلب الآن</a>
+      </div>
+      <div class="scarcity reveal">⚡ الإنتاج المتوفر لهذا الموسم محدود</div>
+    </div>
+    <div class="hero-photo-wrap reveal">
+      <img class="hero-photo" src="/hero.webp" alt="عبوة عسل السدر الجبلي الأصلي" width="340" height="423" fetchpriority="high" decoding="async">
+    </div>
+  </div>
+</section>
+</div><!-- /topfold -->
+
+<!-- ===== TRUST BAR ===== -->
+<section class="trust">
+  <div class="trust-grid">
+    <div class="trust-item reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> عسل سدر طبيعي 100%</div>
+    <div class="trust-item reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> بدون إضافات أو مواد حافظة</div>
+    <div class="trust-item reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> إنتاج محدود للحفاظ على الجودة</div>
+    <div class="trust-item reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> تعبئة صحية وآمنة</div>
+    <div class="trust-item reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> توصيل سريع إلى جميع الولايات</div>
+  </div>
+</section>
+
+<!-- ===== BENEFITS (6) ===== -->
+<section id="benefits">
+  <div class="section-head">
+    <p class="eyebrow reveal">الفوائد</p>
+    <h2 class="reveal">لماذا يختار الآلاف عسل السدر؟</h2>
+  </div>
+  <div class="benefits-grid">
+    <div class="b-card reveal"><div class="emoji">🌿</div><h3>نقاء طبيعي استثنائي</h3><p>يتم جمعه من رحيق أشجار السدر الطبيعية بعناية للحفاظ على خصائصه الأصلية وطعمه الفريد.</p></div>
+    <div class="b-card reveal"><div class="emoji">🍯</div><h3>مذاق غني لا يُنسى</h3><p>نكهة عميقة وقوام فاخر يجعل كل ملعقة تجربة استثنائية.</p></div>
+    <div class="b-card reveal"><div class="emoji">🛡️</div><h3>جودة يمكنك الوثوق بها</h3><p>كل عبوة تمر بمراحل اختيار دقيقة لضمان أعلى معايير الجودة.</p></div>
+    <div class="b-card reveal"><div class="emoji">❤️</div><h3>خيار طبيعي للعائلة</h3><p>منتج طبيعي يناسب الاستخدام اليومي والاستمتاع بمذاق العسل الأصيل.</p></div>
+    <div class="b-card reveal"><div class="emoji">🌟</div><h3>إنتاج محدود</h3><p>نركز على الجودة قبل الكمية، لذلك يتم إنتاج كميات محدودة بعناية فائقة.</p></div>
+    <div class="b-card reveal"><div class="emoji">🎁</div><h3>هدية فاخرة ومميزة</h3><p>تصميم أنيق وجودة استثنائية تجعل منه هدية مثالية للأصدقاء والعائلة.</p></div>
+  </div>
+</section>
+
+<!-- ===== STORY + QUALITY over animated video background ===== -->
+<div class="videofold">
+<div class="topfold-bg"><div class="sticky"><video id="bgVideo2" muted playsinline preload="metadata" src="/bg-honey.mp4"></video><div class="overlay"></div></div></div>
+
+<!-- ===== STORY ===== -->
+<section class="story" id="story">
+  <div class="story-text reveal">
+    <p class="eyebrow" style="color:var(--gold);font-weight:800;font-size:13px;">القصة</p>
+    <h2>من أشجار السدر إلى منزلك</h2>
+    <p>في المناطق التي تنمو فيها أشجار السدر الطبيعية، يعمل النحالون بخبرة وعناية لجمع هذا العسل الفاخر في موسمه المحدود.</p>
+    <p>نحن لا نبحث عن الإنتاج الضخم، بل عن الجودة الحقيقية التي تمنحك تجربة مختلفة في كل مرة.</p>
+  </div>
+  <div class="story-media reveal">
+    <img src="/hero.webp" alt="عسل السدر الطبيعي من المنبع" width="720" height="894" loading="lazy" decoding="async">
+  </div>
+</section>
+
+<!-- ===== QUALITY ===== -->
+<section id="quality">
+  <div class="section-head">
+    <p class="eyebrow reveal">الجودة</p>
+    <h2 class="reveal">ما الذي يميز عسل السدر الخاص بنا؟</h2>
+  </div>
+  <ul class="quality-list">
+    <li class="reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> لون طبيعي غني</li>
+    <li class="reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> رائحة زهرية مميزة</li>
+    <li class="reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> قوام فاخر ومتوازن</li>
+    <li class="reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> تعبئة صحية وآمنة</li>
+    <li class="reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> اختيار دقيق لأفضل المحاصيل</li>
+    <li class="reveal"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> جودة ثابتة من أول عبوة إلى آخر عبوة</li>
+  </ul>
+</section>
+</div><!-- /videofold -->
+
+<!-- ===== SOCIAL PROOF ===== -->
+<section id="reviews">
+  <div class="counter-band">
+    <div class="counter-num"><span id="counter">0</span>+</div>
+    <div class="counter-label reveal">عميل راضٍ عن جودتنا</div>
+  </div>
+  <div class="section-head">
+    <h2 class="reveal">ماذا يقول عملاؤنا؟</h2>
+  </div>
+  <div class="reviews">
+    <div class="review reveal"><div class="stars">★★★★★</div><p>"أفضل عسل سدر جربته، الطعم غني وواضح الفرق عن المنتجات العادية."</p><div class="name">— أحمد م.</div></div>
+    <div class="review reveal"><div class="stars">★★★★★</div><p>"وصل بسرعة والتغليف ممتاز، سأطلب مرة أخرى بالتأكيد."</p><div class="name">— سارة ل.</div></div>
+    <div class="review reveal"><div class="stars">★★★★★</div><p>"جودة عالية جداً وطعم أصيل."</p><div class="name">— خالد ع.</div></div>
+  </div>
+</section>
+
+<!-- ===== COMPARISON TABLE ===== -->
+<section>
+  <div class="section-head">
+    <p class="eyebrow reveal">المقارنة</p>
+    <h2 class="reveal">عسل السدر مقابل العسل العادي</h2>
+  </div>
+  <div class="table-wrap reveal">
+    <table class="compare">
+      <thead><tr><th>المعيار</th><th class="col-ours">عسل السدر</th><th>العسل العادي</th></tr></thead>
+      <tbody>
+        <tr><td>نقاء طبيعي 100%</td><td class="col-ours"><span class="yes">✓</span></td><td><span class="no">✗</span></td></tr>
+        <tr><td>بدون إضافات أو سكر</td><td class="col-ours"><span class="yes">✓</span></td><td><span class="no">✗</span></td></tr>
+        <tr><td>فحص مخبري للجودة</td><td class="col-ours"><span class="yes">✓</span></td><td><span class="no">✗</span></td></tr>
+        <tr><td>مصدر موثوق ومعروف</td><td class="col-ours"><span class="yes">✓</span></td><td><span class="no">✗</span></td></tr>
+        <tr><td>مذاق غني وقوام فاخر</td><td class="col-ours"><span class="yes">✓</span></td><td><span class="no">✗</span></td></tr>
+        <tr><td>إنتاج محدود بعناية</td><td class="col-ours"><span class="yes">✓</span></td><td><span class="no">✗</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section>
+  <div class="section-head">
+    <p class="eyebrow reveal">الأسئلة الشائعة</p>
+    <h2 class="reveal">كل ما تريد معرفته</h2>
+  </div>
+  <div class="faq-list">
+    <details class="faq reveal"><summary>هل العسل طبيعي 100%؟<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary><p>نعم، عسل السدر لدينا طبيعي 100% مستخرج من رحيق أشجار السدر دون أي إضافات أو سكر مضاف أو مواد حافظة.</p></details>
+    <details class="faq reveal"><summary>كيف أتأكد من الجودة؟<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary><p>يمر العسل بمراحل اختيار وفحص دقيقة تشمل نسبة الرطوبة والنقاء، وتتوفر تفاصيل الفحص عند الطلب.</p></details>
+    <details class="faq reveal"><summary>كم يستغرق التوصيل؟<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary><p>نوفّر توصيلاً سريعاً إلى جميع الولايات، وعادة ما يصل الطلب خلال أيام قليلة من تأكيده.</p></details>
+    <details class="faq reveal"><summary>هل الدفع آمن؟<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary><p>نعم، يمكنك الدفع عند الاستلام بكل أمان وثقة بعد استلام طلبك ومعاينته.</p></details>
+    <details class="faq reveal"><summary>ماذا لو لم يعجبني المنتج؟<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary><p>رضاك أولويتنا؛ نوفّر ضمان جودة المنتج، وفي حال وجود أي مشكلة يمكنك التواصل معنا مباشرة.</p></details>
+  </div>
+</section>
+
+<!-- ===== OFFER ===== -->
+<section class="offer" id="order">
+  <div class="section-head">
+    <p class="eyebrow reveal">عرض خاص</p>
+    <h2 class="reveal">عرض خاص لفترة محدودة</h2>
+    <p class="reveal">احصل على عسل السدر الأصلي الآن واستمتع بالجودة الفاخرة التي يثق بها عملاؤنا.</p>
+  </div>
+  <div class="price-card reveal">
+    <span class="badge-offer">⚡ كمية محدودة</span>
+    <div class="old-price">3200 دج</div>
+    <div class="price">2500 دج</div>
+    <ul>
+      <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> شحن سريع لكل الولايات</li>
+      <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> دفع آمن عند الاستلام</li>
+      <li><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> ضمان جودة المنتج</li>
+    </ul>
+    <a class="btn-primary js-order" style="width:100%;" href="#order">اطلب الآن</a>
+    <div class="offer-trust">الإنتاج المتوفر لهذا الموسم محدود — اطلب قبل النفاد</div>
+  </div>
+</section>
+
+<!-- ===== MONEY-BACK GUARANTEE ===== -->
+<section class="guarantee">
+  <div class="guarantee-card reveal">
+    <svg class="seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 1.8 3 .2.9 2.9 2.1 2.1-1 2.8 1 2.8-2.1 2.1-.9 2.9-3 .2L12 22l-2.4-1.8-3-.2-.9-2.9-2.1-2.1 1-2.8-1-2.8 2.1-2.1.9-2.9 3-.2z"/><path d="M9 12l2 2 4-4"/></svg>
+    <div>
+      <h3>ضمان رضا تام</h3>
+      <p>نثق بجودة منتجنا، لذلك نقدّم لك ضمان جودة المنتج وراحة البال مع كل طلب. رضاك هو أولويتنا الأولى.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FINAL CTA ===== -->
+<section class="final-cta">
+  <h2 class="reveal">لا تفوت فرصة الحصول على عسل السدر الأصلي</h2>
+  <p class="reveal">اطلب الآن واستمتع بمذاق الطبيعة النقي وجودة استثنائية في كل عبوة.</p>
+  <a class="btn-primary reveal js-order" href="#order">اطلب الآن</a>
+</section>
+
+<footer>
+  <div class="logo">عسل السدر</div>
+  <div class="links">
+    <a href="index.html">المتجر</a>
+    <a href="#benefits">الفوائد</a>
+    <a href="#reviews">آراء العملاء</a>
+    <a class="js-order" href="#order">اطلب الآن</a>
+  </div>
+  <div class="copyright">© 2026 بازار مرابط — جميع الحقوق محفوظة</div>
+</footer>
+
+<!-- ===== order / delivery-info modal ===== -->
+<div class="modal" id="orderModal" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h3 id="orderTitle">إتمام الطلب</h3>
+        <p>أدخل معلومات التوصيل وسنتواصل معك لتأكيد الطلب.</p>
+      </div>
+      <button class="modal-close" type="button" aria-label="إغلاق" data-close>&times;</button>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="fname">الاسم الكامل <span class="req">*</span></label>
+        <input id="fname" type="text" autocomplete="name" placeholder="مثال: محمد أحمد">
+      </div>
+      <div class="field">
+        <label for="fphone">رقم الهاتف <span class="req">*</span></label>
+        <input id="fphone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0XXXXXXXXX" style="direction:ltr;text-align:right">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>شركة التوصيل <span class="req">*</span></label>
+      <div class="company-opts" id="companyOpts">
+        <div class="co-opt" data-co="yalidine" onclick="pickCompany(this)"><span class="co-dot" style="background:#E11900"></span> Yalidine — ياليدين</div>
+        <div class="co-opt" data-co="noest" onclick="pickCompany(this)"><span class="co-dot" style="background:#1A7F4B"></span> Noest — نوست</div>
+        <div class="co-opt" data-co="zrexpress" onclick="pickCompany(this)" style="display:none"><span class="co-dot" style="background:#E0A800"></span> ZRExpress — زد آر</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="fwilaya">الولاية <span class="req">*</span></label>
+        <select id="fwilaya" onchange="onWilaya()"><option value="">اختر الولاية</option></select>
+      </div>
+      <div class="field">
+        <label for="fcommune">البلدية <span class="req">*</span></label>
+        <select id="fcommune"><option value="">اختر البلدية</option></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>طريقة التوصيل</label>
+      <div class="delivery-opts" id="deliveryOpts">
+        <div class="del-opt on" data-type="home" onclick="pickDelivery(this)">
+          <div class="dt">🏠 توصيل للمنزل</div>
+          <div class="dp"><span id="homePrice">—</span> دج</div>
+        </div>
+        <div class="del-opt" data-type="desk" onclick="pickDelivery(this)">
+          <div class="dt">🏢 مكتب التوصيل</div>
+          <div class="dp"><span id="deskPrice">—</span> دج</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="faddr">العنوان التفصيلي (اختياري)</label>
+      <textarea id="faddr" placeholder="الحي، الشارع، رقم المنزل أو نقطة دالة..."></textarea>
+    </div>
+    <div class="field">
+      <label for="fqty">الكمية</label>
+      <input id="fqty" type="number" inputmode="numeric" min="1" value="1" oninput="onQty()">
+    </div>
+    <div class="field">
+      <label for="fnote">ملاحظات (اختياري)</label>
+      <textarea id="fnote" placeholder="أي تفاصيل إضافية"></textarea>
+    </div>
+
+    <div class="osum">
+      <div class="osum-line"><span>المجموع الفرعي</span><span><span id="sumSub">2,500</span> دج</span></div>
+      <div class="osum-line"><span>التوصيل</span><span id="sumDeliveryWrap">يُحدَّد حسب الولاية</span></div>
+      <div class="osum-line total"><span>الإجمالي</span><span><b id="sumTotal">2,500</b> دج</span></div>
+    </div>
+
+    <button class="btn-primary" type="button" onclick="confirmOrder()" style="width:100%;margin-top:18px;">تأكيد الطلب</button>
+    <button class="wa-order-btn" type="button" onclick="confirmViaWhatsApp()">💬 أو أكمل عبر واتساب</button>
+    <div class="modal-note">🔒 الدفع عند الاستلام · معلوماتك آمنة</div>
+  </div>
+</div>
+
+<!-- ===== order success ===== -->
+<div class="modal" id="successOv" role="dialog" aria-modal="true">
+  <div class="modal-box" style="text-align:center;max-width:420px;">
+    <div class="success-ic">✓</div>
+    <h3 style="color:var(--gold-light);font-size:24px;margin-bottom:10px;">تم استلام طلبك!</h3>
+    <p style="color:var(--cream-dim);font-size:15px;line-height:1.8;">شكراً لثقتك في بازار مرابط. سنتواصل معك قريباً على هاتفك لتأكيد الطلب وموعد التوصيل.</p>
+    <div class="success-oid">رقم طلبك: <b id="successOid">#BM-1042</b></div>
+    <button class="btn-primary" type="button" style="width:100%;" onclick="closeSuccess()">تم</button>
+    <button class="wa-order-btn" type="button" onclick="confirmViaWhatsApp()">💬 أرسل تفاصيل الطلب على واتساب</button>
+  </div>
+</div>
+
+<!-- WhatsApp sticky -->
+<a class="wa-float" href="https://wa.me/213772423191" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب">
+  <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C9 3 3.5 8.6 3.5 15.5c0 2.4.7 4.6 1.8 6.5L3 29l7.3-2.2c1.8 1 3.9 1.6 6 1.6 6.9 0 12.5-5.6 12.5-12.5S22.9 3 16 3zm0 22.7c-1.9 0-3.7-.5-5.3-1.5l-.4-.2-4.3 1.3 1.3-4.2-.3-.4c-1.1-1.7-1.6-3.6-1.6-5.5C5.6 9.8 10.2 5.2 16 5.2s10.4 4.6 10.4 10.3S21.8 25.7 16 25.7zm5.7-7.7c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.2-.3.2-.6.1c-1.7-.8-2.8-1.5-3.9-3.4-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5l-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-1 1-1.3 2.3-.9 3.7.5 1.7 1.6 3.2 1.8 3.5.2.2 3 4.6 7.3 6.2 2.7 1 3.4.8 4 .8.7-.1 1.8-.7 2-1.5.3-.7.3-1.4.2-1.5z"/></svg>
+</a>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ ignoreMobileResize: true });
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+if (reduceMotion) {
+  // show everything immediately; skip scroll-driven motion
+  gsap.set(".reveal", {opacity:1, y:0});
+  document.getElementById("counter").textContent = "10,000";
+} else {
+  // hero entrance sequence
+  gsap.set(".hero .reveal", {opacity:0, y:24});
+  gsap.timeline()
+    .to(".hero-badge", {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 0.1)
+    .to(".hero h1", {opacity:1, y:0, duration:0.7, ease:"power2.out"}, 0.25)
+    .to(".hero .lead", {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 0.45)
+    .to(".hero .sub", {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 0.6)
+    .to(".hero .cta-row", {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 0.75)
+    .to(".scarcity", {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 0.9)
+    .to(".hero-photo-wrap", {opacity:1, y:0, duration:0.9, ease:"power2.out"}, 0.5);
+
+  // scroll reveals for everything below the hero
+  gsap.utils.toArray("section:not(.hero) .reveal").forEach((el) => {
+    gsap.set(el, {y:40});
+    gsap.to(el, {
+      opacity:1, y:0, duration:0.7, ease:"power2.out",
+      scrollTrigger:{trigger:el, start:"top 85%", toggleActions:"play none none reverse"}
+    });
+  });
+
+  // honey fill progress bar
+  gsap.to("#honeyFill", {height:"100%", ease:"none",
+    scrollTrigger:{trigger:document.body, start:"top top", end:"bottom bottom", scrub:true}});
+
+  // honey drips in the hero grow with scroll
+  const dripWrap = document.getElementById("dripWrap");
+  const drips = [];
+  for(let i=0;i<6;i++){
+    const d = document.createElement("div");
+    d.className="drip"; d.style.left=(8+i*16)+"%"; d.style.height="20px";
+    dripWrap.appendChild(d); drips.push(d);
+  }
+  ScrollTrigger.create({
+    trigger:".topfold", start:"top top", end:"bottom top", scrub:true,
+    onUpdate:(self)=>{
+      drips.forEach((d,i)=>{
+        const local = Math.max(0, Math.min(1, self.progress*1.3 - (i%3)*0.15));
+        d.style.height=(20+local*70)+"px"; d.style.opacity=1-local*0.3;
+      });
+    }
+  });
+
+  // gentle float on the product photo
+  gsap.to(".hero-photo-wrap", {y:-12, duration:2.6, repeat:-1, yoyo:true, ease:"sine.inOut", delay:1.6});
+
+  // count up the satisfied-customers counter when it scrolls into view
+  const counterEl = document.getElementById("counter");
+  const cObj = {v:0};
+  ScrollTrigger.create({
+    trigger:".counter-band", start:"top 80%", once:true,
+    onEnter:()=>gsap.to(cObj,{v:10000, duration:2, ease:"power1.out",
+      onUpdate:()=>counterEl.textContent = Math.round(cObj.v).toLocaleString("en-US")})
+  });
+}
+
+// scroll-scrubbed background video — runs for the hero (topfold) and the story+quality (videofold).
+function setupBgScrub(video, trigger){
+  if (!video) return;
+  const start = () => {
+    video.play().then(()=>video.pause()).catch(()=>{});
+    const proxy = { time: 0 };
+    ScrollTrigger.create({
+      trigger, start:"top top", end:"bottom top",
+      scrub:true, invalidateOnRefresh:true,
+      onUpdate:(self)=>{
+        const dur = video.duration || 0;
+        gsap.to(proxy, {time:self.progress*dur, duration:0.3, ease:"power1.out", overwrite:true,
+          onUpdate:()=>{ if(dur) video.currentTime = proxy.time; }});
+      }
+    });
+    ScrollTrigger.refresh();
+  };
+  if (video.readyState >= 1) start();
+  else video.addEventListener("loadedmetadata", start);
+}
+setupBgScrub(document.getElementById("bgVideo"), ".topfold");
+setupBgScrub(document.getElementById("bgVideo2"), ".videofold");
+
+/* =========================================================================
+   ORDER → bazar merabet admin panel
+   Writes to the SAME Firestore "orders" collection that order.html uses, with
+   the exact schema admin.html reads, so honey orders show up (and can be
+   shipped via Yalidine/Noest) just like normal store orders.
+   ========================================================================= */
+const WA_NUMBER = "213772423191";
+const PRODUCT = { name:"عسل السدر الطبيعي", brand:"بازار مرابط", price:2500 };
+
+const FB_CONFIG = {
+  apiKey:"AIzaSyAiL0J8poOLyQW9PUDUacPuKah0L2JMLeY",authDomain:"mrabet-fb38c.firebaseapp.com",
+  projectId:"mrabet-fb38c",storageBucket:"mrabet-fb38c.firebasestorage.app",
+  messagingSenderId:"195655893976",appId:"1:195655893976:web:2c42fa40c7f27769c5a8ad"
+};
+function initFirebase(){
+  if(typeof firebase==='undefined') return false;
+  try{ firebase.initializeApp(FB_CONFIG); }catch(e){/* already initialized */}
+  return true;
+}
+
+// ---- delivery data (mirrors order.html; overridden at runtime from Firestore) ----
+const YAL_FEES={"1":[1400,1200],"2":[900,400],"3":[1050,600],"4":[900,400],"5":[900,400],"6":[900,400],"7":[1050,600],"8":[1400,800],"9":[750,350],"10":[900,400],"11":[1600,1200],"12":[1050,600],"13":[900,400],"14":[900,400],"15":[900,400],"16":[500,300],"17":[1050,600],"18":[900,400],"19":[900,400],"20":[900,400],"21":[900,400],"22":[900,400],"23":[900,400],"24":[900,400],"25":[900,400],"26":[900,400],"27":[900,400],"28":[900,400],"29":[900,400],"30":[1050,600],"31":[900,400],"32":[1050,600],"33":[1800,1200],"34":[900,400],"35":[750,350],"36":[900,400],"37":[900,400],"38":[1050,600],"39":[1800,1200],"40":[900,400],"41":[900,400],"42":[750,350],"43":[900,400],"44":[900,400],"45":[1050,600],"46":[900,400],"47":[1050,600],"48":[900,400],"49":[1400,800],"50":[1800,1200],"51":[1050,600],"52":[1400,800],"53":[1600,1200],"54":[1800,1200],"55":[1050,600],"56":[1800,1200],"57":[1050,600],"58":[1050,600]};
+const NOEST_FEES={"1":[1500,700],"2":[950,450],"3":[850,400],"4":[850,400],"5":[850,400],"6":[900,400],"7":[950,450],"8":[1300,650],"9":[800,350],"10":[800,350],"11":[2000,1000],"12":[850,400],"13":[950,450],"14":[950,450],"15":[800,350],"16":[800,350],"17":[950,450],"18":[900,400],"19":[850,400],"20":[950,450],"21":[900,400],"22":[950,450],"23":[800,350],"24":[900,400],"25":[900,400],"26":[800,350],"27":[950,450],"28":[850,400],"29":[950,450],"30":[800,350],"31":[800,350],"32":[1000,500],"33":[1950,950],"34":[850,400],"35":[800,350],"36":[950,450],"37":[1750,850],"38":[950,450],"39":[800,350],"40":[850,400],"41":[900,400],"42":[800,350],"43":[900,400],"44":[950,450],"45":[1100,550],"46":[950,450],"47":[950,450],"48":[950,450],"49":[1200,600],"50":[1800,1200],"51":[950,450],"52":[1450,650],"53":[1650,850],"54":[1800,1200],"55":[700,300],"56":[2200,1600],"57":[850,300],"58":[1000,500]};
+const WILAYA_NAMES={"1":["أدرار","Adrar"],"2":["الشلف","Chlef"],"3":["الأغواط","Laghouat"],"4":["أم البواقي","Oum El Bouaghi"],"5":["باتنة","Batna"],"6":["بجاية","Béjaïa"],"7":["بسكرة","Biskra"],"8":["بشار","Béchar"],"9":["البليدة","Blida"],"10":["البويرة","Bouira"],"11":["تمنراست","Tamanrasset"],"12":["تبسة","Tébessa"],"13":["تلمسان","Tlemcen"],"14":["تيارت","Tiaret"],"15":["تيزي وزو","Tizi Ouzou"],"16":["الجزائر","Alger"],"17":["الجلفة","Djelfa"],"18":["جيجل","Jijel"],"19":["سطيف","Sétif"],"20":["سعيدة","Saïda"],"21":["سكيكدة","Skikda"],"22":["سيدي بلعباس","Sidi Bel Abbès"],"23":["عنابة","Annaba"],"24":["قالمة","Guelma"],"25":["قسنطينة","Constantine"],"26":["المدية","Médéa"],"27":["مستغانم","Mostaganem"],"28":["المسيلة","M'Sila"],"29":["معسكر","Mascara"],"30":["ورقلة","Ouargla"],"31":["وهران","Oran"],"32":["البيض","El Bayadh"],"33":["إليزي","Illizi"],"34":["برج بوعريريج","Bordj Bou Arréridj"],"35":["بومرداس","Boumerdès"],"36":["الطارف","El Tarf"],"37":["تيسمسيلت","Tissemsilt"],"38":["الوادي","El Oued"],"39":["تندوف","Tindouf"],"40":["خنشلة","Khenchela"],"41":["سوق أهراس","Souk Ahras"],"42":["تيبازة","Tipaza"],"43":["ميلة","Mila"],"44":["عين الدفلى","Aïn Defla"],"45":["النعامة","Naâma"],"46":["عين تموشنت","Aïn Témouchent"],"47":["غرداية","Ghardaïa"],"48":["غليزان","Relizane"],"49":["تيميمون","Timimoun"],"50":["برج باجي مختار","Bordj Badji Mokhtar"],"51":["أولاد جلال","Ouled Djellal"],"52":["بني عباس","Béni Abbès"],"53":["عين صالح","In Salah"],"54":["عين قزام","In Guezzam"],"55":["تقرت","Touggourt"],"56":["جانت","Djanet"],"57":["المغير","El M'Ghair"],"58":["المنيعة","El Meniaa"]};
+// sparse commune fallback (replaced by real per-carrier lists from Firestore)
+const WILAYAS={
+  'أدرار':['أدرار','رقان','تيميمون','أولف'],
+  'الجزائر':['الجزائر الوسطى','باب الزوار','الحراش','بئر مراد رايس','بئر خادم','حسين داي','الدار البيضاء','زرالدة'],
+  'وهران':['وهران','بئر الجير','السانية','عين الترك','أرزيو','الكرمة'],
+  'قسنطينة':['قسنطينة','الخروب','عين السمارة','حامة بوزيان','زيغود يوسف'],
+  'تقرت':['تقرت','تبسبست','نزلة','الزاوية العابدية','تماسين','المقارين'],
+  'ورقلة':['ورقلة','حاسي مسعود','الرويسات','عين البيضاء','النقوسة'],
+  'سطيف':['سطيف','العلمة','عين ولمان','بوقاعة','عين أرنات'],
+  'عنابة':['عنابة','الحجار','سيدي عمار','البوني','برحال'],
+  'باتنة':['باتنة','بريكة','مروانة','عين التوتة','تازولت'],
+  'بليدة':['بليدة','بوفاريك','الأربعاء','موزاية','وادي العلايق'],
+  'تلمسان':['تلمسان','المنصورة','شتوان','الرمشي','مغنية'],
+  'بجاية':['بجاية','أقبو','صدوق','أميزور','تيشي'],
+};
+const DELIVERY_DEFAULT={home:600, desk:350};
+let DELIVERY_PRICES={home:null, desk:null};
+
+function fallbackCarrier(feeTable){
+  const ids=Object.keys(WILAYA_NAMES).map(Number).sort((a,b)=>a-b);
+  const fees={}, communes={};
+  ids.forEach(id=>{ const f=feeTable[String(id)]; if(f) fees[String(id)]={home:f[0],desk:f[1]}; communes[String(id)]=WILAYAS[WILAYA_NAMES[id][0]]||[]; });
+  return { wilayas:ids.map(id=>({id,ar:WILAYA_NAMES[id][0],fr:WILAYA_NAMES[id][1]})), communes, fees };
+}
+let CARRIERS={ yalidine:fallbackCarrier(YAL_FEES), noest:fallbackCarrier(NOEST_FEES), zrexpress:{wilayas:[],communes:{},fees:{}} };
+let product=PRODUCT, qty=1, delivery='home', company=null;
+
+function carrier(){ return CARRIERS[company]||CARRIERS.yalidine; }
+function wilayaById(id){ return carrier().wilayas.find(w=>String(w.id)===String(id))||null; }
+
+function populateWilayas(){
+  const ws=document.getElementById('fwilaya');
+  const cur=ws.value;
+  ws.innerHTML='<option value="">اختر الولاية</option>'+carrier().wilayas.map(w=>`<option value="${w.id}">${(w.code!=null?w.code:w.id)} - ${w.ar||w.fr||''}</option>`).join('');
+  ws.value=(cur && wilayaById(cur))?cur:'';
+}
+
+function loadCarriers(){
+  if(typeof firebase==='undefined') return;
+  const fs=firebase.firestore();
+  ['yalidine','noest','zrexpress'].forEach(name=>{
+    fs.doc('delivery_data/'+name).get().then(d=>{
+      if(!d.exists) return;
+      const data=d.data()||{};
+      if(Array.isArray(data.wilayas) && data.wilayas.length){
+        CARRIERS[name]={ wilayas:data.wilayas, communes:data.communes||{}, fees:data.fees||{} };
+        if(name===company){ populateWilayas(); onWilaya(); }
+        if(name==='zrexpress' && window._generalSettings) applyCarrierVisibility(window._generalSettings);
+      }
+    }).catch(err=>console.error('Could not load '+name+' delivery data:',err));
+  });
+}
+
+function applyCarrierVisibility(s){
+  s=s||{};
+  let yOn=s.yalidineEnabled!==false, nOn=s.noestEnabled!==false, zOn=s.zrexpressEnabled!==false;
+  const zReady=!!(CARRIERS.zrexpress && CARRIERS.zrexpress.wilayas && CARRIERS.zrexpress.wilayas.length);
+  zOn=zOn && zReady;
+  if(!yOn && !nOn && !zOn){ yOn=nOn=true; }
+  const states={yalidine:yOn, noest:nOn, zrexpress:zOn};
+  const avail=[];
+  Object.keys(states).forEach(name=>{
+    const el=document.querySelector('.co-opt[data-co="'+name+'"]');
+    if(el) el.style.display=states[name]?'':'none';
+    if(states[name]) avail.push(name);
+  });
+  if(avail.length && avail.indexOf(company)<0){
+    const sel=document.querySelector('.co-opt[data-co="'+avail[0]+'"]');
+    if(sel) pickCompany(sel);
+  }
+}
+function loadCarrierVisibility(){
+  if(typeof firebase==='undefined') return;
+  firebase.firestore().doc('settings/general').get()
+    .then(d=>{ if(d.exists){ window._generalSettings=d.data(); applyCarrierVisibility(d.data()); } })
+    .catch(()=>{});
+}
+
+function updateDeliveryPrices(){
+  const id=document.getElementById('fwilaya').value;
+  if(!id){ DELIVERY_PRICES={home:null, desk:null}; }
+  else {
+    const f=carrier().fees[String(id)];
+    DELIVERY_PRICES = f ? {home:f.home, desk:f.desk} : {home:DELIVERY_DEFAULT.home, desk:DELIVERY_DEFAULT.desk};
+  }
+  document.getElementById('homePrice').textContent = DELIVERY_PRICES.home==null?'—':DELIVERY_PRICES.home.toLocaleString();
+  document.getElementById('deskPrice').textContent = DELIVERY_PRICES.desk==null?'—':DELIVERY_PRICES.desk.toLocaleString();
+  renderSummary();
+}
+
+function onWilaya(){
+  const id=document.getElementById('fwilaya').value;
+  const cs=document.getElementById('fcommune');
+  const raw=carrier().communes[String(id)]||[];
+  const list=raw.map(c=> typeof c==='string'?{name:c,id:''}:{name:(c&&c.name)||'',id:(c&&c.id)||''});
+  if(id && list.length){
+    cs.innerHTML='<option value="">اختر البلدية</option>'+list.map(c=>`<option value="${c.name}" data-tid="${c.id}">${c.name}</option>`).join('');
+  }else{
+    cs.innerHTML='<option value="">اختر البلدية</option>';
+  }
+  updateDeliveryPrices();
+}
+
+function pickCompany(el){
+  document.querySelectorAll('.co-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  company=el.dataset.co;
+  document.getElementById('companyOpts').style.outline='';
+  populateWilayas();
+  document.getElementById('fcommune').innerHTML='<option value="">اختر البلدية</option>';
+  updateDeliveryPrices();
+}
+
+function pickDelivery(el){
+  document.querySelectorAll('.del-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  delivery=el.dataset.type;
+  renderSummary();
+}
+
+function onQty(){
+  qty=Math.max(1, Number(document.getElementById('fqty').value)||1);
+  renderSummary();
+}
+
+function renderSummary(){
+  const sub=product.price*qty;
+  const del=DELIVERY_PRICES[delivery];
+  document.getElementById('sumSub').textContent=sub.toLocaleString();
+  if(del==null){
+    document.getElementById('sumDeliveryWrap').textContent='يُحدَّد حسب الولاية';
+    document.getElementById('sumTotal').textContent=sub.toLocaleString();
+  }else{
+    document.getElementById('sumDeliveryWrap').innerHTML='<span id="sumDelivery">'+del.toLocaleString()+'</span> دج';
+    document.getElementById('sumTotal').textContent=(sub+del).toLocaleString();
+  }
+}
+
+function validate(){
+  let ok=true;
+  const name=document.getElementById('fname'), phone=document.getElementById('fphone');
+  const wilaya=document.getElementById('fwilaya'), commune=document.getElementById('fcommune');
+  [name,phone,wilaya,commune].forEach(f=>{
+    if(!f.value.trim()){f.classList.add('err');ok=false;}else{f.classList.remove('err');}
+  });
+  if(phone.value && !/^0[567][0-9]{8}$/.test(phone.value.replace(/\s/g,''))){phone.classList.add('err');ok=false;}
+  if(!company){ ok=false; document.getElementById('companyOpts').style.outline='1px solid #ff8f7a'; }
+  if(!ok) alert('الرجاء ملء جميع الحقول المطلوبة بشكل صحيح (شركة التوصيل، الاسم، رقم هاتف صحيح، الولاية، البلدية)');
+  return ok;
+}
+
+function buildOrder(){
+  const w=wilayaById(document.getElementById('fwilaya').value);
+  const csel=document.getElementById('fcommune');
+  const copt=csel.options[csel.selectedIndex];
+  const districtTid=copt?(copt.getAttribute('data-tid')||''):'';
+  const isZr=company==='zrexpress';
+  const coName=company?(isZr?'ZRExpress':(company==='noest'?'Noest':'Yalidine')):'';
+  const sub=product.price*qty, del=DELIVERY_PRICES[delivery]||0;
+  return {
+    oid:'#BM-'+Math.floor(1000+Math.random()*9000),
+    name:document.getElementById('fname').value.trim(),
+    phone:document.getElementById('fphone').value.trim(),
+    wilaya:w?(w.ar||w.fr||''):'', wilayaFr:w?(w.fr||w.ar||''):'', wilayaId:w?(isZr?(w.code||null):w.id):null,
+    cityTerritoryId:(isZr&&w)?String(w.id):null,
+    districtTerritoryId:isZr?(districtTid||null):null,
+    commune:csel.value,
+    address:document.getElementById('faddr').value.trim(),
+    note:document.getElementById('fnote').value.trim(),
+    company, deliveryType:delivery,
+    delivery:(coName?coName+' · ':'')+(delivery==='home'?'توصيل للمنزل':'مكتب التوصيل'),
+    product:product.name, brand:product.brand, color:'', size:'', qty,
+    subtotal:sub, deliveryFee:del, total:sub+del
+  };
+}
+
+function confirmOrder(){
+  if(!validate())return;
+  const o=buildOrder();
+  // Save to Firestore so the order shows up in the admin panel (schema matches admin renderOrders)
+  if(initFirebase()){
+    firebase.firestore().collection('orders').add({
+      num:o.oid, customer:o.name, phone:o.phone, product:o.product, brand:o.brand,
+      color:o.color, colorHex:'#d4a017', size:o.size, qty:o.qty,
+      price:o.total, subtotal:o.subtotal, deliveryFee:o.deliveryFee, total:o.total,
+      wilaya:o.wilaya, wilayaFr:o.wilayaFr, wilayaId:o.wilayaId, commune:o.commune,
+      cityTerritoryId:o.cityTerritoryId||null, districtTerritoryId:o.districtTerritoryId||null,
+      address:o.address, note:o.note, delivery:o.delivery,
+      deliveryCompany:o.company, deliveryType:o.deliveryType,
+      status:'New', fulfilled:false, placedAt:firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(err=>console.error('Could not save order to Firestore:',err));
+  }
+  // keep a local copy as a fallback
+  try{
+    const orders=JSON.parse(localStorage.getItem('bm_web_orders')||'[]');
+    orders.push({...o,date:new Date().toISOString()});
+    localStorage.setItem('bm_web_orders',JSON.stringify(orders));
+  }catch(e){}
+  closeModal();
+  document.getElementById('successOid').textContent=o.oid;
+  document.getElementById('successOv').classList.add('open');
+  document.body.style.overflow='hidden';
+  window._lastOrder=o;
+}
+
+function confirmViaWhatsApp(){
+  if(!window._lastOrder && !validate())return;
+  const o=window._lastOrder||buildOrder();
+  const msg=encodeURIComponent(
+    `🍯 طلب جديد ${o.oid}\n\n`+
+    `👤 الاسم: ${o.name}\n📞 الهاتف: ${o.phone}\n`+
+    `📍 الولاية: ${o.wilaya} — ${o.commune}\n`+
+    (o.address?`🏠 العنوان: ${o.address}\n`:'')+
+    `🚚 التوصيل: ${o.delivery}\n\n`+
+    `📦 المنتج: ${o.product}\n🔢 الكمية: ${o.qty}\n\n`+
+    `💰 المنتجات: ${o.subtotal} دج\n🚚 التوصيل: ${o.deliveryFee} دج\n✅ الإجمالي: ${o.total} دج`+
+    (o.note?`\n\n📝 ملاحظة: ${o.note}`:'')
+  );
+  window.open('https://wa.me/'+WA_NUMBER+'?text='+msg,'_blank','noopener');
+}
+
+// ===== modal open/close =====
+const modal = document.getElementById("orderModal");
+let lastFocus = null;
+
+function openModal(e){
+  if (e) e.preventDefault();
+  lastFocus = document.activeElement;
+  modal.classList.add("open");
+  document.body.style.overflow = "hidden";
+  const first = modal.querySelector("input");
+  if (first) setTimeout(()=>first.focus(), 50);
+}
+function closeModal(){
+  modal.classList.remove("open");
+  document.body.style.overflow = "";
+  if (lastFocus) lastFocus.focus();
+}
+function closeSuccess(){
+  document.getElementById("successOv").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+document.querySelectorAll(".js-order").forEach(btn => btn.addEventListener("click", openModal));
+modal.addEventListener("click", (e)=>{ if (e.target === modal || e.target.hasAttribute("data-close")) closeModal(); });
+document.getElementById("successOv").addEventListener("click", (e)=>{ if (e.target.id === "successOv") closeSuccess(); });
+document.addEventListener("keydown", (e)=>{
+  if (e.key === "Escape"){
+    if (modal.classList.contains("open")) closeModal();
+    if (document.getElementById("successOv").classList.contains("open")) closeSuccess();
+  }
+});
+
+// ===== boot order form =====
+(function bmInit(){
+  populateWilayas();
+  renderSummary();
+  if(initFirebase()){ loadCarriers(); loadCarrierVisibility(); }
+})();
+</script>
+</body>
+</html>

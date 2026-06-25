@@ -11,7 +11,8 @@ export default defineConfig({
         collection: resolve(__dirname, 'collection.html'),
         product: resolve(__dirname, 'product.html'),
         order: resolve(__dirname, 'order.html'),
-        admin: resolve(__dirname, 'admin.html')
+        admin: resolve(__dirname, 'admin.html'),
+        asalSidr: resolve(__dirname, 'asal-sidr.html')
       }
     }
   },
