@@ -1189,25 +1189,39 @@ function dispatchCarrier(oid,company,btn){
 // error.detail / error.errors[] message that the functions already parse out.
 function zrCall(name,data){ return fbFunctions.httpsCallable(name)(data).then(function(r){return r.data;}); }
 
-// Print a FRESH label (URLs expire, so never reuse). Try fetch→print; if the blob blocks CORS,
-// fall back to just opening the label in a new tab.
-function printLabelUrl(url){
-  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(html){
-    var w=window.open('','_blank'); if(!w){ window.open(url,'_blank'); return; }
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(function(){ try{ w.print(); }catch(e){} },500);
-  }).catch(function(){ window.open(url,'_blank'); });
+// Print the label HTML as A4. The HTML comes from the Cloud Function (fetched server-side), so
+// there's no browser CORS issue; we inject @page{size:A4} so it prints on a full A4 sheet.
+function printHtmlA4(html, fallbackUrl){
+  var w=window.open('','_blank','width=900,height=1200');
+  if(!w){ if(fallbackUrl) window.open(fallbackUrl,'_blank'); else toast('فعّل النوافذ المنبثقة للطباعة','error'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  function apply(){
+    try{
+      var st=w.document.createElement('style');
+      st.textContent='@page{size:A4 portrait;margin:8mm}@media print{html,body{width:210mm;margin:0}}';
+      (w.document.head||w.document.documentElement).appendChild(st);
+    }catch(e){}
+    w.focus(); setTimeout(function(){ try{ w.print(); }catch(e){} },300);
+  }
+  if(w.document.readyState==='complete') setTimeout(apply,350); else { w.onload=apply; setTimeout(apply,900); }
 }
+// Fallback when the function couldn't return the HTML — just open the (fresh) label URL.
+function printLabelUrl(url){ if(!window.open(url,'_blank')) toast('فعّل النوافذ المنبثقة لعرض الوصل','error'); }
+
 function zrPrintLabel(oid){
-  var o=orders.find(function(x){return x._docId===oid;});
-  if(!o||!o.deliveryTracking){ toast('لا يوجد رقم تتبّع لهذا الطرد بعد','error'); return; }
-  toast('جاري تحضير الوصل…','success');
-  zrCall('zrPrintLabel',{trackingNumbers:[o.deliveryTracking]}).then(function(d){
-    var url=(d&&d.parcelLabelFiles&&d.parcelLabelFiles[0]&&d.parcelLabelFiles[0].fileUrl)||(d&&d.fileUrl)||null;
-    var failed=(d&&d.failedTrackingNumbers)||[];
-    if(!url){ toast('تعذّر إنشاء الوصل'+(failed.length?(' — فشل: '+failed.join(', ')):''),'error'); return; }
-    printLabelUrl(url);
-  }).catch(function(err){ toast('فشل طباعة الوصل: '+((err&&err.message)||'error'),'error'); });
+  var o=orders.find(function(x){return x._docId===oid;}); if(!o) return;
+  if(!o.deliveryParcelId && !o.deliveryTracking){ toast('لا يوجد طرد ZRExpress لهذا الطلب','error'); return; }
+  toast('جاري تحضير الوصل (A4)…','success');
+  // Pass parcelId so the function can resolve a real tracking number if we only have the UUID.
+  zrCall('zrPrintLabel',{trackingNumbers:o.deliveryTracking?[o.deliveryTracking]:[], parcelId:o.deliveryParcelId, orderId:oid, format:'A4'})
+    .then(function(d){
+      var url=(d&&d.parcelLabelFiles&&d.parcelLabelFiles[0]&&d.parcelLabelFiles[0].fileUrl)||(d&&d.fileUrl)||null;
+      var failed=(d&&d.failedTrackingNumbers)||[];
+      if(d&&d.html){ printHtmlA4(d.html, url); return; }
+      if(url){ printLabelUrl(url); return; }
+      toast('تعذّر إنشاء الوصل'+(failed.length?(' — فشل: '+failed.join(', ')):''),'error');
+    })
+    .catch(function(err){ toast('فشل طباعة الوصل: '+((err&&err.message)||'error'),'error'); });
 }
 
 function zrDeleteParcel(oid){

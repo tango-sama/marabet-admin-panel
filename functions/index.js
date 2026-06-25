@@ -789,20 +789,45 @@ exports.syncCarriers = onCall({timeoutSeconds: 120}, async () => {
  * Returns the raw ZR body: individual → {parcelLabelFiles:[{trackingNumber,fileUrl}], failedTrackingNumbers},
  * bulk → {fileUrl, failedTrackingNumbers}.
  */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 exports.zrPrintLabel = onCall(async (req) => {
   const c = await zrCreds();
   let tns = (req.data && req.data.trackingNumbers) || [];
   if (!Array.isArray(tns)) tns = [tns];
   tns = tns.map((t) => String(t || "").trim()).filter(Boolean);
-  if (!tns.length) throw new HttpsError("invalid-argument", "trackingNumbers is required");
-  const bulk = tns.length > 1 || (req.data && req.data.bulk === true);
+  const parcelId = String((req.data && req.data.parcelId) || "").trim();
+  const orderId = String((req.data && req.data.orderId) || "").trim();
+
+  // A label needs the ZR tracking number (e.g. "ZR-ALG-..."), NOT the parcel UUID. If all we
+  // were given is a UUID (or nothing), resolve the real tracking number from the parcel first —
+  // this is the usual cause of "label failed" right after a parcel is created.
+  if ((!tns.length || tns.every((t) => UUID_RE.test(t))) && parcelId) {
+    const row = await zrFindParcel(c, {parcelId});
+    if (row && row.trackingNumber) {
+      tns = [row.trackingNumber];
+      if (orderId) await db.doc("orders/" + orderId).update({deliveryTracking: row.trackingNumber}).catch(() => {});
+    }
+  }
+  tns = tns.filter((t) => t && !UUID_RE.test(t));
+  if (!tns.length) {
+    throw new HttpsError("failed-precondition", "لا يوجد رقم تتبّع ZRExpress لهذا الطرد بعد — حدّث الحالة (🔄) ثم أعد المحاولة.");
+  }
+
+  // A4 = the multiple-labels endpoint, which returns ONE A4 sheet (individual = thermal labels).
+  const wantA4 = String((req.data && req.data.format) || "A4").toUpperCase() === "A4";
+  const bulk = tns.length > 1 || wantA4 || (req.data && req.data.bulk === true);
   const path = bulk ? "/parcels/labels/multiple" : "/parcels/labels/individual";
   const {res, body} = await zrFetch(ZR_BASE + path, {
     method: "POST", headers: zrLabelHeaders(c),
     body: JSON.stringify({trackingNumbers: tns.slice(0, bulk ? 250 : 50)}),
   });
   if (!res.ok) throw new HttpsError("unavailable", "ZRExpress label: " + zrErrMsg(body, res.status));
-  return body || {};
+  const out = body || {};
+  out.trackingUsed = tns;
+  // Fetch the label HTML server-side (no browser CORS) so the admin can print it reliably as A4.
+  const url = (out.parcelLabelFiles && out.parcelLabelFiles[0] && out.parcelLabelFiles[0].fileUrl) || out.fileUrl || null;
+  if (url) { try { const r = await fetch(url); if (r.ok) out.html = await r.text(); } catch (e) { /* client falls back to opening the url */ } }
+  return out;
 });
 
 /**
