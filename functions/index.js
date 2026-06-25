@@ -518,6 +518,27 @@ async function zrFetch(url, opts) {
 function zrStock(s) {
   return (s === "local" || s === "warehouse" || s === "none") ? s : "none";
 }
+function zrSnippet(body) {
+  try { return (typeof body === "string" ? body : JSON.stringify(body) || "").slice(0, 600); } catch (e) { return ""; }
+}
+// Label endpoints' auth differs per ZR tenant: the spec says Authorization: Bearer, but some
+// tenants only accept X-Api-Key (like every other endpoint). Try Bearer first, then fall back
+// through X-Api-Key / both on a 401/403 so label printing works regardless of tenant config.
+async function zrLabelFetch(c, path, payload) {
+  const variants = [
+    {label: "bearer", headers: {"X-Tenant": c.tenantId, "Authorization": "Bearer " + c.apiKey, "Content-Type": "application/json"}},
+    {label: "apikey", headers: {"X-Tenant": c.tenantId, "X-Api-Key": c.apiKey, "Content-Type": "application/json"}},
+    {label: "both", headers: {"X-Tenant": c.tenantId, "X-Api-Key": c.apiKey, "Authorization": "Bearer " + c.apiKey, "Content-Type": "application/json"}},
+  ];
+  let last = {res: {ok: false, status: 0}, body: null, authUsed: null};
+  for (const v of variants) {
+    const {res, body} = await zrFetch(ZR_BASE + path, {method: "POST", headers: v.headers, body: JSON.stringify(payload)});
+    if (res.ok) return {res, body, authUsed: v.label};
+    last = {res, body, authUsed: v.label};
+    if (res.status !== 401 && res.status !== 403) break; // non-auth error → another header won't help
+  }
+  return last;
+}
 // Pull a single parcel row by id (or trackingNumber) from /parcels/search.
 async function zrFindParcel(c, {parcelId, tracking}) {
   const filters = [];
@@ -528,7 +549,10 @@ async function zrFindParcel(c, {parcelId, tracking}) {
     body: JSON.stringify({pageNumber: 1, pageSize: 1, includeProducts: true,
       advancedFilter: {logic: "and", filters}}),
   });
-  if (!res.ok) throw new HttpsError("unavailable", "ZRExpress search: " + zrErrMsg(body, res.status));
+  if (!res.ok) {
+    logger.error("ZR search failed", {status: res.status, body: zrSnippet(body), parcelId, tracking});
+    throw new HttpsError("unavailable", `ZRExpress search HTTP ${res.status}: ${zrErrMsg(body, res.status)}`);
+  }
   return ((body && (body.items || body.data || body.results)) || [])[0] || null;
 }
 
@@ -817,11 +841,13 @@ exports.zrPrintLabel = onCall(async (req) => {
   const wantA4 = String((req.data && req.data.format) || "A4").toUpperCase() === "A4";
   const bulk = tns.length > 1 || wantA4 || (req.data && req.data.bulk === true);
   const path = bulk ? "/parcels/labels/multiple" : "/parcels/labels/individual";
-  const {res, body} = await zrFetch(ZR_BASE + path, {
-    method: "POST", headers: zrLabelHeaders(c),
-    body: JSON.stringify({trackingNumbers: tns.slice(0, bulk ? 250 : 50)}),
-  });
-  if (!res.ok) throw new HttpsError("unavailable", "ZRExpress label: " + zrErrMsg(body, res.status));
+  logger.info("zrPrintLabel calling", {path, tns});
+  const {res, body, authUsed} = await zrLabelFetch(c, path, {trackingNumbers: tns.slice(0, bulk ? 250 : 50)});
+  if (!res.ok) {
+    logger.error("ZR label failed", {status: res.status, path, tns, authTried: authUsed, body: zrSnippet(body)});
+    throw new HttpsError("unavailable", `ZRExpress label HTTP ${res.status}: ${zrErrMsg(body, res.status)}`);
+  }
+  logger.info("zrPrintLabel ok", {authUsed, path});
   const out = body || {};
   out.trackingUsed = tns;
   // Fetch the label HTML server-side (no browser CORS) so the admin can print it reliably as A4.
