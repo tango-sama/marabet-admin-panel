@@ -474,6 +474,64 @@ function randomUuid() {
   });
 }
 
+// ─── ZRExpress shared helpers (used by createZrExpressDelivery + the zr* callables) ───
+// Credentials live in settings/zrexpress (write-only for clients) → only the Admin SDK reads them.
+async function zrCreds() {
+  const cred = (await db.doc("settings/zrexpress").get()).data() || {};
+  const tenantId = String(cred.tenantId || "").trim();
+  const apiKey = String(cred.apiKey || "").trim();
+  if (!tenantId || !apiKey) {
+    throw new HttpsError("failed-precondition", "ZRExpress keys not set in Settings → Delivery (ZRExpress)");
+  }
+  return {tenantId, apiKey};
+}
+// Standard endpoints authenticate with X-Api-Key.
+function zrHeaders(c) {
+  return {"X-Tenant": c.tenantId, "X-Api-Key": c.apiKey, "Content-Type": "application/json"};
+}
+// Label endpoints authenticate with Authorization: Bearer — NOT X-Api-Key (per ZR spec).
+function zrLabelHeaders(c) {
+  return {"X-Tenant": c.tenantId, "Authorization": "Bearer " + c.apiKey, "Content-Type": "application/json"};
+}
+// Parse a ZR error body into a readable message (error.detail / error.errors[] / title / raw).
+function zrErrMsg(body, status) {
+  if (!body) return `HTTP ${status}`;
+  if (typeof body === "string") return body || `HTTP ${status}`;
+  if (body.detail) return String(body.detail);
+  if (body.errors) {
+    if (Array.isArray(body.errors)) {
+      return body.errors.map((e) => (e && (e.message || e.description)) || JSON.stringify(e)).join("; ");
+    }
+    try { return Object.values(body.errors).reduce((a, b) => a.concat(b), []).join("; "); } catch (e) { /* fall through */ }
+    return JSON.stringify(body.errors);
+  }
+  return String(body.title || `HTTP ${status}`);
+}
+// fetch + parse JSON-or-text in one go.
+async function zrFetch(url, opts) {
+  const res = await fetch(url, opts);
+  const text = await res.text();
+  let body; try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+  return {res, body};
+}
+// Normalise a clientstockType to the only values ZR accepts.
+function zrStock(s) {
+  return (s === "local" || s === "warehouse" || s === "none") ? s : "none";
+}
+// Pull a single parcel row by id (or trackingNumber) from /parcels/search.
+async function zrFindParcel(c, {parcelId, tracking}) {
+  const filters = [];
+  if (parcelId) filters.push({field: "id", operator: "eq", value: parcelId});
+  else if (tracking) filters.push({field: "trackingNumber", operator: "eq", value: tracking});
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/search", {
+    method: "POST", headers: zrHeaders(c),
+    body: JSON.stringify({pageNumber: 1, pageSize: 1, includeProducts: true,
+      advancedFilter: {logic: "and", filters}}),
+  });
+  if (!res.ok) throw new HttpsError("unavailable", "ZRExpress search: " + zrErrMsg(body, res.status));
+  return ((body && (body.items || body.data || body.results)) || [])[0] || null;
+}
+
 /**
  * createZrExpressDelivery: called from the createDeliveryOnFulfill trigger when the
  * customer chose ZRExpress. Credentials live in settings/zrexpress = { tenantId, apiKey }
@@ -569,26 +627,20 @@ async function createZrExpressDelivery(after, ref, orderId) {
         const row = ((sBody && (sBody.data || sBody.items || sBody.results)) || [])[0] || {};
         tracking = row.trackingNumber || null;
       } catch (e) { /* tracking will fill in via webhook/sync later */ }
-      // Try to fetch a printable label from ZRExpress.
-      let labelUrl = null;
-      try {
-        const lRes = await fetch(ZR_BASE + "/parcels/" + parcelId + "/label", {headers});
-        if (lRes.ok) {
-          const lData = await lRes.json();
-          labelUrl = (lData && (lData.label || lData.url || lData.link || lData.printUrl)) || null;
-          if (!labelUrl && typeof lData === "string") labelUrl = lData;
-        }
-      } catch (e) { /* label is optional — don't fail the whole delivery */ }
+      // Labels are NOT fetched/stored here: ZR label URLs are short-lived (expiring Azure
+      // SAS links) and require Authorization: Bearer auth — the admin generates a FRESH one
+      // on demand via the zrPrintLabel callable.
       await ref.update({
         deliveryProvider: "ZRExpress",
         deliveryParcelId: parcelId,
         deliveryTracking: tracking || parcelId,
-        deliveryLabel: labelUrl,
+        deliveryLabel: null,
+        deliveryLocked: false,
         deliveryStatus: "Created",
         deliveryError: null,
         deliveryAt: FieldValue.serverTimestamp(),
       });
-      logger.info(`ZRExpress parcel created for ${payload.externalId}: ${tracking || parcelId}${labelUrl ? " (label fetched)" : ""}`);
+      logger.info(`ZRExpress parcel created for ${payload.externalId}: ${tracking || parcelId}`);
     } else {
       const msg = (body && (body.detail || (body.errors && JSON.stringify(body.errors)) || body.title)) ||
           (typeof body === "string" ? body : `HTTP ${res.status}`);
@@ -724,4 +776,192 @@ exports.syncCarriers = onCall({timeoutSeconds: 120}, async () => {
     throw new HttpsError("internal", String((e && e.message) || e));
   }
   return {ok: true, result: out};
+});
+
+// ═══════════════════════════ ZRExpress parcel operations (callable) ═══════════════════════════
+// All of these run server-side because the ZR credentials are write-only for clients. The admin
+// UI calls them with httpsCallable(). Each reads error.detail / error.errors[] for a clear message.
+
+/**
+ * zrPrintLabel: generate a FRESH printable label. Label URLs are short-lived, so we never store
+ * them — the admin calls this each time it prints. One tracking number → individual label;
+ * many → a single bulk PDF/HTML. Uses Authorization: Bearer (NOT X-Api-Key).
+ * Returns the raw ZR body: individual → {parcelLabelFiles:[{trackingNumber,fileUrl}], failedTrackingNumbers},
+ * bulk → {fileUrl, failedTrackingNumbers}.
+ */
+exports.zrPrintLabel = onCall(async (req) => {
+  const c = await zrCreds();
+  let tns = (req.data && req.data.trackingNumbers) || [];
+  if (!Array.isArray(tns)) tns = [tns];
+  tns = tns.map((t) => String(t || "").trim()).filter(Boolean);
+  if (!tns.length) throw new HttpsError("invalid-argument", "trackingNumbers is required");
+  const bulk = tns.length > 1 || (req.data && req.data.bulk === true);
+  const path = bulk ? "/parcels/labels/multiple" : "/parcels/labels/individual";
+  const {res, body} = await zrFetch(ZR_BASE + path, {
+    method: "POST", headers: zrLabelHeaders(c),
+    body: JSON.stringify({trackingNumbers: tns.slice(0, bulk ? 250 : 50)}),
+  });
+  if (!res.ok) throw new HttpsError("unavailable", "ZRExpress label: " + zrErrMsg(body, res.status));
+  return body || {};
+});
+
+/**
+ * zrDeleteParcel: delete a parcel at ZR (only allowed while it isn't locked). On success the order
+ * is reset to "New" + unfulfilled so it can be re-dispatched.
+ */
+exports.zrDeleteParcel = onCall(async (req) => {
+  const c = await zrCreds();
+  const parcelId = String((req.data && req.data.parcelId) || "").trim();
+  const orderId = String((req.data && req.data.orderId) || "").trim();
+  if (!parcelId) throw new HttpsError("invalid-argument", "parcelId is required");
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/" + parcelId, {method: "DELETE", headers: zrHeaders(c)});
+  if (res.status !== 204 && !res.ok) throw new HttpsError("failed-precondition", "ZRExpress delete: " + zrErrMsg(body, res.status));
+  if (orderId) {
+    await db.doc("orders/" + orderId).update({
+      deliveryStatus: "Deleted",
+      deliveryParcelId: FieldValue.delete(),
+      deliveryTracking: FieldValue.delete(),
+      deliveryLabel: FieldValue.delete(),
+      deliveryProvider: FieldValue.delete(),
+      deliveryLocked: FieldValue.delete(),
+      deliveryError: null,
+      fulfilled: false,
+      status: "New",
+    }).catch(() => {});
+  }
+  return {ok: true};
+});
+
+/** zrUpdateAmount: PATCH /parcels/{id}/amount — COD amount, clamped to 0..150000. */
+exports.zrUpdateAmount = onCall(async (req) => {
+  const c = await zrCreds();
+  const parcelId = String((req.data && req.data.parcelId) || "").trim();
+  if (!parcelId) throw new HttpsError("invalid-argument", "parcelId is required");
+  const amount = clampAmount(req.data && req.data.amount);
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/" + parcelId + "/amount", {
+    method: "PATCH", headers: zrHeaders(c), body: JSON.stringify({parcelId, amount}),
+  });
+  if (!res.ok) throw new HttpsError("failed-precondition", "ZRExpress amount: " + zrErrMsg(body, res.status));
+  const orderId = String((req.data && req.data.orderId) || "").trim();
+  if (orderId) await db.doc("orders/" + orderId).update({total: amount}).catch(() => {});
+  return body || {ok: true};
+});
+
+/** zrUpdateCustomer: PATCH /parcels/{id}/customer — name + phone (international format). */
+exports.zrUpdateCustomer = onCall(async (req) => {
+  const c = await zrCreds();
+  const parcelId = String((req.data && req.data.parcelId) || "").trim();
+  const name = String((req.data && req.data.name) || "").trim();
+  if (!parcelId) throw new HttpsError("invalid-argument", "parcelId is required");
+  if (!name) throw new HttpsError("invalid-argument", "name is required");
+  const phone = zrPhone((req.data && req.data.phone) || "");
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/" + parcelId + "/customer", {
+    method: "PATCH", headers: zrHeaders(c), body: JSON.stringify({parcelId, name, phone}),
+  });
+  if (!res.ok) throw new HttpsError("failed-precondition", "ZRExpress customer: " + zrErrMsg(body, res.status));
+  const orderId = String((req.data && req.data.orderId) || "").trim();
+  if (orderId) await db.doc("orders/" + orderId).update({customer: name, phone: String((req.data && req.data.phone) || "").trim()}).catch(() => {});
+  return body || {ok: true};
+});
+
+/** zrUpdateAddress: PATCH /parcels/{id}/deliveryAddress — note the capitalised DeliveryAddress key. */
+exports.zrUpdateAddress = onCall(async (req) => {
+  const c = await zrCreds();
+  const d = req.data || {};
+  const parcelId = String(d.parcelId || "").trim();
+  const cityTerritoryId = String(d.cityTerritoryId || "").trim();
+  const districtTerritoryId = String(d.districtTerritoryId || "").trim();
+  if (!parcelId) throw new HttpsError("invalid-argument", "parcelId is required");
+  if (!cityTerritoryId || !districtTerritoryId) throw new HttpsError("invalid-argument", "cityTerritoryId and districtTerritoryId are required");
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/" + parcelId + "/deliveryAddress", {
+    method: "PATCH", headers: zrHeaders(c),
+    body: JSON.stringify({parcelId, DeliveryAddress: {cityTerritoryId, districtTerritoryId, street: String(d.street || "").slice(0, 200)}}),
+  });
+  if (!res.ok) throw new HttpsError("failed-precondition", "ZRExpress address: " + zrErrMsg(body, res.status));
+  const orderId = String(d.orderId || "").trim();
+  if (orderId) {
+    await db.doc("orders/" + orderId).update({
+      cityTerritoryId, districtTerritoryId,
+      wilaya: d.wilayaName || undefined, commune: d.communeName || undefined,
+      address: String(d.street || "").slice(0, 200),
+    }).catch(() => {});
+  }
+  return body || {ok: true};
+});
+
+/**
+ * zrUpdateProducts: PATCH /parcels/{id}/products — full product list + description + amount.
+ * The whole list is sent because ZR DELETES any product not included.
+ */
+exports.zrUpdateProducts = onCall(async (req) => {
+  const c = await zrCreds();
+  const d = req.data || {};
+  const parcelId = String(d.parcelId || "").trim();
+  if (!parcelId) throw new HttpsError("invalid-argument", "parcelId is required");
+  const orderedProducts = (Array.isArray(d.orderedProducts) ? d.orderedProducts : []).map((p) => {
+    const row = {
+      productName: (String((p && p.productName) || "").trim() || "منتج").slice(0, 200),
+      unitPrice: clampAmount(p && p.unitPrice),
+      quantity: Math.max(1, Number(p && p.quantity) || 1),
+      stockType: zrStock(p && p.stockType),
+    };
+    if (p && p.length != null) row.length = Number(p.length) || 0;
+    if (p && p.width != null) row.width = Number(p.width) || 0;
+    if (p && p.height != null) row.height = Number(p.height) || 0;
+    return row;
+  });
+  if (!orderedProducts.length) throw new HttpsError("invalid-argument", "at least one product is required");
+  let description = String(d.description || "").slice(0, 250);
+  if (description.length < 2) description = "منتجات";
+  const amount = clampAmount(d.amount);
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/" + parcelId + "/products", {
+    method: "PATCH", headers: zrHeaders(c),
+    body: JSON.stringify({parcelId, description, amount, orderedProducts}),
+  });
+  if (!res.ok) throw new HttpsError("failed-precondition", "ZRExpress products: " + zrErrMsg(body, res.status));
+  return body || {ok: true};
+});
+
+/** zrUpdateState: PATCH /parcels/{id}/state — returns the trackingNumber; we persist it. */
+exports.zrUpdateState = onCall(async (req) => {
+  const c = await zrCreds();
+  const d = req.data || {};
+  const parcelId = String(d.parcelId || "").trim();
+  const newStateId = String(d.newStateId || "").trim();
+  if (!parcelId || !newStateId) throw new HttpsError("invalid-argument", "parcelId and newStateId are required");
+  const {res, body} = await zrFetch(ZR_BASE + "/parcels/" + parcelId + "/state", {
+    method: "PATCH", headers: zrHeaders(c),
+    body: JSON.stringify({parcelId, newStateId, comment: String(d.comment || "")}),
+  });
+  if (!res.ok) throw new HttpsError("failed-precondition", "ZRExpress state: " + zrErrMsg(body, res.status));
+  const orderId = String(d.orderId || "").trim();
+  if (orderId && body) {
+    const patch = {};
+    if (body.trackingNumber) patch.deliveryTracking = body.trackingNumber;
+    if (body.newStateName) patch.deliveryLastStatus = body.newStateName;
+    if (Object.keys(patch).length) await db.doc("orders/" + orderId).update(patch).catch(() => {});
+  }
+  return body || {ok: true};
+});
+
+/**
+ * zrGetParcel: read one parcel (by parcelId or tracking) so the admin can show current values and,
+ * crucially, state.isLocked — which gates editing/deleting. Caches the lock flag on the order.
+ */
+exports.zrGetParcel = onCall(async (req) => {
+  const c = await zrCreds();
+  const d = req.data || {};
+  const parcelId = String(d.parcelId || "").trim();
+  const tracking = String(d.tracking || "").trim();
+  if (!parcelId && !tracking) throw new HttpsError("invalid-argument", "parcelId or tracking is required");
+  const row = await zrFindParcel(c, {parcelId, tracking});
+  if (!row) throw new HttpsError("not-found", "Parcel not found at ZRExpress");
+  const orderId = String(d.orderId || "").trim();
+  if (orderId) {
+    await db.doc("orders/" + orderId).update({
+      deliveryLocked: !!(row.state && row.state.isLocked),
+      deliveryLastStatus: (row.state && row.state.name) || null,
+    }).catch(() => {});
+  }
+  return row;
 });

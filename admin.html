@@ -171,6 +171,14 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .modal{background:var(--card);border:1px solid var(--border);border-radius:8px;width:520px;max-width:92vw;max-height:90vh;overflow-y:auto;padding:1.75rem;position:relative}
 .modal-title{font-size:1.05rem;font-weight:600;color:var(--gold);margin-bottom:1.25rem;font-family:'Amiri',serif}
 .modal-close{position:absolute;top:1rem;right:1rem;background:var(--card2);border:1px solid var(--border);color:var(--gray);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
+/* ZRExpress parcel editor */
+.zr-sec{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:.9rem 1rem;margin-bottom:.85rem;display:flex;flex-direction:column;gap:.55rem}
+.zr-sec-h{font-size:.78rem;font-weight:600;color:var(--gold-light)}
+.zr-prow{display:grid;grid-template-columns:1fr 84px 64px 110px 32px;gap:.4rem;align-items:center}
+.zr-prow .btn{padding:.35rem;min-width:32px}
+@media(max-width:560px){.zr-prow{grid-template-columns:1fr 1fr;}.zr-prow .zr-pstock{grid-column:1/-1}}
+.zr-hint{font-size:.68rem;color:var(--gray);line-height:1.5}
+.zr-lock{background:rgba(229,57,53,.14);border:1px solid rgba(229,57,53,.35);color:#FF9A8C;border-radius:8px;padding:.7rem .9rem;margin-bottom:.85rem;font-size:.8rem}
 .upload-zone{border:2px dashed var(--border);border-radius:6px;padding:2rem;text-align:center;cursor:pointer;position:relative}
 .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
 textarea.json-input{width:100%;min-height:140px;background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:monospace;font-size:.75rem;padding:.75rem;border-radius:4px;outline:none;resize:vertical;margin-top:.75rem}
@@ -619,6 +627,9 @@ a{color:var(--gold)}
 <!-- PRODUCT IMAGE POPUP (from an order) -->
 <div class="modal-overlay" id="prodImgModal"><div class="modal" style="max-width:440px;text-align:center"><div class="modal-title" id="prodImgTitle">Product</div><div id="prodImgBody"></div><button class="modal-close" id="prodImgClose">✕</button></div></div>
 
+<!-- ZREXPRESS PARCEL EDITOR -->
+<div class="modal-overlay" id="zrEditModal"><div class="modal"><div class="modal-title">✏️ تعديل طرد ZRExpress</div><div id="zrEditBody"></div><button class="modal-close" id="zrEditClose">✕</button></div></div>
+
 <!-- IMPORT MODAL -->
 <div class="modal-overlay" id="importModal"><div class="modal"><div class="modal-title">Import Data</div><div class="upload-zone" id="jsonDrop"><div>Drop JSON file or click</div><input type="file" id="jsonFile" accept=".json"></div><textarea class="json-input" id="jsonPaste" placeholder="Or paste JSON here..."></textarea><div style="margin-top:1rem;display:flex;gap:.5rem"><button class="btn btn-gold" id="doImport">Import</button><button class="btn btn-outline" id="importCancel">Cancel</button></div></div></div>
 
@@ -1061,15 +1072,23 @@ function renderOrders() {
           +(o.deliveryLabel
               ? ' · <a href="'+esc(o.deliveryLabel)+'" target="_blank" style="color:var(--gold)">🏷️ طباعة الوصل</a>'
               : (carrier==='noest' ? ' · <a href="https://app.noest-dz.com/" target="_blank" title="Noest لا يوفّر رابط وصل عبر الـAPI — افتح لوحة Noest للتحقق وطباعة الوصل" style="color:var(--gold)">🏷️ طباعة الوصل (Noest)</a>'
-                 : (carrier==='zrexpress' ? ' · <a href="https://app.zrexpress.app" target="_blank" style="color:var(--gold)" title="اطبع الوصل من بوابة ZRExpress">🏷️ طباعة الوصل (ZRExpress)</a>' : '')))+'</div>'
+                 : ''))+'</div>'
           +(o.noteName?'<div class="ord-notename">📝 اسم المنتج على الوصل: <b>'+esc(o.noteName)+'</b></div>':'')
       : (o.deliveryStatus==='Failed'?'<div class="ord-ship" style="background:rgba(225,25,0,.14);color:#FF9A8C">⚠ '+esc(o.deliveryError||'فشل إنشاء الطرد')+'</div>':'')
           +(noteOn?'<div class="ord-noteedit"><label>📝 اسم المنتج على وصل التوصيل <span style="color:var(--danger)">*</span></label>'
           +'<input class="settings-input note-inp" data-notefor="'+oid+'" value="'+esc(o.noteName||'')+'" placeholder="مثال: منتج تجميل — لن يظهر الاسم الحقيقي"></div>':'');
+    // ZRExpress parcels can be edited/deleted/printed from the admin (unless the parcel is locked).
+    var isZr=(carrier==='zrexpress'), zrLocked=!!o.deliveryLocked;
+    var zrLockTip=' disabled title="🔒 الطرد مقفل في هذه المرحلة — لا يمكن التعديل أو الحذف"';
+    var zrOps=(shipped && isZr)
+      ? '<button class="btn btn-outline btn-sm" data-zrlabel="'+oid+'">🏷️ طباعة الوصل</button>'
+        +'<button class="btn btn-outline btn-sm" data-zredit="'+oid+'"'+(zrLocked?zrLockTip:'')+'>✏️ تعديل الطرد</button>'
+        +'<button class="btn btn-danger btn-sm" data-zrdel="'+oid+'"'+(zrLocked?zrLockTip:'')+'>🗑️ حذف الطرد</button>'
+      : '';
     var actions='<div class="ord-actions">'
       +'<button class="btn btn-green btn-sm" data-wa="'+oid+'">💬 واتساب</button>'
       +(shipped
-        ? '<button class="btn btn-outline btn-sm" data-track="'+oid+'" title="تحديث حالة التوصيل">🔄 الحالة</button>'
+        ? '<button class="btn btn-outline btn-sm" data-track="'+oid+'" title="تحديث حالة التوصيل">🔄 الحالة</button>'+zrOps
         : (carrier?'<button class="btn btn-sm ord-carrier '+cm.cls+'" data-ocarrier="'+carrier+'" data-oid="'+oid+'" title="اختيار الزبون">'+cm.emoji+' طرد '+cm.name+'</button>':''))
       +'<button class="btn btn-outline btn-sm" data-fulfill="'+oid+'">'+(o.fulfilled?'↩ تعليم كجديد':'✓ تم التنفيذ')+'</button>'
       +'<button class="btn btn-danger btn-sm" data-delord="'+oid+'">حذف</button></div>';
@@ -1086,6 +1105,9 @@ $_('ordersBody').addEventListener('click',function(e){
   if(info){ openCustomer(info.dataset.cust); return; }
   var pi=e.target.closest('[data-prodimg]'); if(pi){ showOrderImage(pi.dataset.prodimg); return; }
   if(oc){ dispatchCarrier(oc.dataset.oid, oc.dataset.ocarrier, oc); return; }
+  var zl=e.target.closest('[data-zrlabel]'); if(zl){ zrPrintLabel(zl.dataset.zrlabel); return; }
+  var ze=e.target.closest('[data-zredit]'); if(ze){ openZrEdit(ze.dataset.zredit); return; }
+  var zd=e.target.closest('[data-zrdel]'); if(zd){ zrDeleteParcel(zd.dataset.zrdel); return; }
   // On-demand: fetch this parcel's live status from the carrier via the callable function
   if(tr){
     var o=orders.find(function(x){return x._docId===tr.dataset.track;});
@@ -1160,6 +1182,203 @@ function dispatchCarrier(oid,company,btn){
   fbUpdateOrder(oid,patch)
     .then(function(){ renderOrders(); updateStats(); toast('🚚 جاري إنشاء طرد '+label+'…','success'); setTimeout(refreshOrders,6000); })
     .catch(function(err){ if(btn){ btn.disabled=false; } toast('فشل: '+((err&&err.message)||'error'),'error'); });
+}
+
+// ═══════════════════════ ZRExpress parcel operations (admin) ═══════════════════════
+// All ZR calls go through Cloud Functions (creds are server-side). Errors surface the API's
+// error.detail / error.errors[] message that the functions already parse out.
+function zrCall(name,data){ return fbFunctions.httpsCallable(name)(data).then(function(r){return r.data;}); }
+
+// Print a FRESH label (URLs expire, so never reuse). Try fetch→print; if the blob blocks CORS,
+// fall back to just opening the label in a new tab.
+function printLabelUrl(url){
+  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(html){
+    var w=window.open('','_blank'); if(!w){ window.open(url,'_blank'); return; }
+    w.document.write(html); w.document.close(); w.focus();
+    setTimeout(function(){ try{ w.print(); }catch(e){} },500);
+  }).catch(function(){ window.open(url,'_blank'); });
+}
+function zrPrintLabel(oid){
+  var o=orders.find(function(x){return x._docId===oid;});
+  if(!o||!o.deliveryTracking){ toast('لا يوجد رقم تتبّع لهذا الطرد بعد','error'); return; }
+  toast('جاري تحضير الوصل…','success');
+  zrCall('zrPrintLabel',{trackingNumbers:[o.deliveryTracking]}).then(function(d){
+    var url=(d&&d.parcelLabelFiles&&d.parcelLabelFiles[0]&&d.parcelLabelFiles[0].fileUrl)||(d&&d.fileUrl)||null;
+    var failed=(d&&d.failedTrackingNumbers)||[];
+    if(!url){ toast('تعذّر إنشاء الوصل'+(failed.length?(' — فشل: '+failed.join(', ')):''),'error'); return; }
+    printLabelUrl(url);
+  }).catch(function(err){ toast('فشل طباعة الوصل: '+((err&&err.message)||'error'),'error'); });
+}
+
+function zrDeleteParcel(oid){
+  var o=orders.find(function(x){return x._docId===oid;}); if(!o) return;
+  if(o.deliveryLocked){ toast('🔒 الطرد مقفل — لا يمكن حذفه','error'); return; }
+  if(!confirm('حذف الطرد من ZRExpress؟\nسيعود الطلب إلى «جديد» ويمكن إعادة إرساله.')) return;
+  zrCall('zrDeleteParcel',{parcelId:o.deliveryParcelId, orderId:oid})
+    .then(function(){ toast('تم حذف الطرد','success'); refreshOrders(); })
+    .catch(function(err){ toast('فشل الحذف: '+((err&&err.message)||'error'),'error'); });
+}
+
+// Cache the ZR territory list (wilaya/commune UUIDs) for the address editor.
+var ZR_TERR=null;
+function loadZrTerritories(){
+  if(ZR_TERR) return Promise.resolve(ZR_TERR);
+  return db.collection('delivery_data').doc('zrexpress').get().then(function(d){
+    ZR_TERR=d.exists?(d.data()||{}):{wilayas:[],communes:{}};
+    if(!ZR_TERR.wilayas) ZR_TERR.wilayas=[]; if(!ZR_TERR.communes) ZR_TERR.communes={};
+    return ZR_TERR;
+  });
+}
+
+// Open the full ZR parcel editor. Fetches the live parcel first (current values + lock state).
+function openZrEdit(oid){
+  var o=orders.find(function(x){return x._docId===oid;}); if(!o){ return; }
+  if(!o.deliveryParcelId){ toast('لا يوجد طرد ZRExpress لهذا الطلب','error'); return; }
+  $_('zrEditBody').innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--gray)">… جاري تحميل بيانات الطرد</div>';
+  $_('zrEditModal').classList.add('open');
+  Promise.all([
+    loadZrTerritories(),
+    zrCall('zrGetParcel',{parcelId:o.deliveryParcelId, orderId:oid}).catch(function(){return null;}),
+  ]).then(function(arr){
+    var p=arr[1]||{};
+    // merge live + locally-stored values (live wins where present)
+    var cust=p.customer||{}, ph=(cust.phone&&(cust.phone.number1||cust.phone))||o.phone||'';
+    var prods=(Array.isArray(p.orderedProducts)&&p.orderedProducts.length?p.orderedProducts:null)
+      || [{productName:o.product||'منتج', unitPrice:(o.subtotal||o.total||0), quantity:o.qty||1, stockType:'none'}];
+    var locked=!!(p.state&&p.state.isLocked)|| !!o.deliveryLocked;
+    o.deliveryLocked=locked; // keep list buttons in sync
+    renderZrEdit(oid, {
+      num:o.num, parcelId:o.deliveryParcelId,
+      name:(cust.name||o.customer||''), phone:ph,
+      amount:(p.amount!=null?p.amount:(o.total!=null?o.total:o.price))||0,
+      description:(p.description||''),
+      cityTerritoryId:(o.cityTerritoryId||''), districtTerritoryId:(o.districtTerritoryId||''),
+      street:(o.address||''),
+      products:prods, locked:locked, stateName:(p.state&&p.state.name)||o.deliveryLastStatus||'',
+    });
+  });
+}
+
+function zrProdRow(p){
+  p=p||{};
+  return '<div class="zr-prow">'
+    +'<input class="settings-input zr-pname" placeholder="اسم المنتج" value="'+esc(p.productName||'')+'">'
+    +'<input class="settings-input zr-pprice" type="number" min="0" placeholder="السعر" value="'+(p.unitPrice!=null?p.unitPrice:'')+'">'
+    +'<input class="settings-input zr-pqty" type="number" min="1" placeholder="الكمية" value="'+(p.quantity||1)+'">'
+    +'<select class="settings-input zr-pstock">'
+      +'<option value="none"'+(p.stockType==='none'||!p.stockType?' selected':'')+'>بدون مخزون</option>'
+      +'<option value="local"'+(p.stockType==='local'?' selected':'')+'>محلي</option>'
+      +'<option value="warehouse"'+(p.stockType==='warehouse'?' selected':'')+'>مستودع</option>'
+    +'</select>'
+    +'<button class="btn btn-danger btn-sm zr-prow-del" type="button" title="حذف">✕</button>'
+  +'</div>';
+}
+
+function renderZrEdit(oid, d){
+  var wOpts='<option value="">اختر الولاية</option>'+(ZR_TERR.wilayas||[]).map(function(w){
+    return '<option value="'+esc(w.id)+'"'+(String(w.id)===String(d.cityTerritoryId)?' selected':'')+'>'+esc((w.code!=null?w.code+' - ':'')+(w.ar||w.fr||''))+'</option>';
+  }).join('');
+  var lockBanner=d.locked?'<div class="zr-lock">🔒 هذا الطرد مقفل في مرحلته الحالية'+(d.stateName?' ('+esc(d.stateName)+')':'')+' — لا يمكن تعديله أو حذفه.</div>':'';
+  var dis=d.locked?' disabled':'';
+  var html=lockBanner
+    +'<input type="hidden" id="zrEdOid" value="'+esc(oid)+'"><input type="hidden" id="zrEdPid" value="'+esc(d.parcelId)+'">'
+    // customer
+    +'<div class="zr-sec"><div class="zr-sec-h">👤 الزبون</div>'
+      +'<input class="settings-input" id="zrEdName" placeholder="الاسم الكامل" value="'+esc(d.name)+'"'+dis+'>'
+      +'<input class="settings-input" id="zrEdPhone" placeholder="0XXXXXXXXX" value="'+esc(d.phone)+'" style="direction:ltr;text-align:right"'+dis+'>'
+      +'<button class="btn btn-gold btn-sm" id="zrEdSaveCust" type="button"'+dis+'>💾 حفظ الزبون</button></div>'
+    // amount
+    +'<div class="zr-sec"><div class="zr-sec-h">💰 المبلغ (COD) — حد أقصى 150,000 دج</div>'
+      +'<input class="settings-input" id="zrEdAmount" type="number" min="0" max="150000" value="'+(+d.amount||0)+'"'+dis+'>'
+      +'<button class="btn btn-gold btn-sm" id="zrEdSaveAmount" type="button"'+dis+'>💾 حفظ المبلغ</button></div>'
+    // address
+    +'<div class="zr-sec"><div class="zr-sec-h">📍 العنوان</div>'
+      +'<select class="settings-input" id="zrEdWilaya"'+dis+'>'+wOpts+'</select>'
+      +'<select class="settings-input" id="zrEdCommune"'+dis+'><option value="">اختر البلدية</option></select>'
+      +'<input class="settings-input" id="zrEdStreet" placeholder="الشارع / تفاصيل العنوان" value="'+esc(d.street)+'"'+dis+'>'
+      +'<button class="btn btn-gold btn-sm" id="zrEdSaveAddr" type="button"'+dis+'>💾 حفظ العنوان</button></div>'
+    // products
+    +'<div class="zr-sec"><div class="zr-sec-h">📦 المنتجات والوصف</div>'
+      +'<input class="settings-input" id="zrEdDesc" placeholder="الوصف (2-250 حرف)" value="'+esc(d.description)+'"'+dis+'>'
+      +'<div id="zrEdProds">'+d.products.map(zrProdRow).join('')+'</div>'
+      +'<button class="btn btn-outline btn-sm" id="zrEdAddRow" type="button"'+dis+'>+ إضافة منتج</button>'
+      +'<div class="zr-hint">عند الحفظ تُرسَل القائمة كاملة (أي منتج محذوف من هنا يُحذف من الطرد). يُستخدم مبلغ COD أعلاه.</div>'
+      +'<button class="btn btn-gold btn-sm" id="zrEdSaveProds" type="button"'+dis+'>💾 حفظ المنتجات</button></div>';
+  $_('zrEditBody').innerHTML=html;
+
+  // populate communes for the pre-selected wilaya, then wire change
+  function fillCommunes(){
+    var wid=$_('zrEdWilaya').value;
+    var list=(ZR_TERR.communes&&ZR_TERR.communes[wid])||[];
+    $_('zrEdCommune').innerHTML='<option value="">اختر البلدية</option>'+list.map(function(c){
+      return '<option value="'+esc(c.id)+'"'+(String(c.id)===String(d.districtTerritoryId)?' selected':'')+'>'+esc(c.name||'')+'</option>';
+    }).join('');
+  }
+  fillCommunes();
+  if(!d.locked){
+    $_('zrEdWilaya').addEventListener('change',function(){ d.districtTerritoryId=''; fillCommunes(); });
+    $_('zrEdAddRow').addEventListener('click',function(){ $_('zrEdProds').insertAdjacentHTML('beforeend', zrProdRow({})); });
+    $_('zrEdProds').addEventListener('click',function(e){ var x=e.target.closest('.zr-prow-del'); if(x){ x.closest('.zr-prow').remove(); } });
+    $_('zrEdSaveCust').addEventListener('click', zrSaveCustomer);
+    $_('zrEdSaveAmount').addEventListener('click', zrSaveAmount);
+    $_('zrEdSaveAddr').addEventListener('click', zrSaveAddress);
+    $_('zrEdSaveProds').addEventListener('click', zrSaveProducts);
+  }
+}
+
+function zrBusy(btn,on,txt){ if(!btn) return; btn.disabled=on; if(on){ btn.dataset.t=btn.textContent; btn.textContent='⏳ …'; } else { btn.textContent=btn.dataset.t||txt||'💾'; } }
+function zrPid(){ return $_('zrEdPid').value; }
+function zrOid(){ return $_('zrEdOid').value; }
+
+function zrSaveCustomer(e){
+  var btn=e.target, name=$_('zrEdName').value.trim(), phone=$_('zrEdPhone').value.trim();
+  if(!name){ toast('الاسم مطلوب','error'); return; }
+  zrBusy(btn,true);
+  zrCall('zrUpdateCustomer',{parcelId:zrPid(), orderId:zrOid(), name:name, phone:phone})
+    .then(function(){ toast('تم حفظ بيانات الزبون','success'); refreshOrders(); })
+    .catch(function(err){ toast('فشل: '+((err&&err.message)||'error'),'error'); })
+    .finally(function(){ zrBusy(btn,false,'💾 حفظ الزبون'); });
+}
+function zrSaveAmount(e){
+  var btn=e.target, amount=Number($_('zrEdAmount').value)||0;
+  if(amount<0||amount>150000){ toast('المبلغ يجب أن يكون بين 0 و 150,000 دج','error'); return; }
+  zrBusy(btn,true);
+  zrCall('zrUpdateAmount',{parcelId:zrPid(), orderId:zrOid(), amount:amount})
+    .then(function(){ toast('تم حفظ المبلغ','success'); refreshOrders(); })
+    .catch(function(err){ toast('فشل: '+((err&&err.message)||'error'),'error'); })
+    .finally(function(){ zrBusy(btn,false,'💾 حفظ المبلغ'); });
+}
+function zrSaveAddress(e){
+  var btn=e.target, city=$_('zrEdWilaya').value, dist=$_('zrEdCommune').value;
+  if(!city||!dist){ toast('اختر الولاية والبلدية','error'); return; }
+  var wName=($_('zrEdWilaya').selectedOptions[0]||{}).text||'';
+  var cName=($_('zrEdCommune').selectedOptions[0]||{}).text||'';
+  zrBusy(btn,true);
+  zrCall('zrUpdateAddress',{parcelId:zrPid(), orderId:zrOid(), cityTerritoryId:city, districtTerritoryId:dist,
+    street:$_('zrEdStreet').value.trim(), wilayaName:wName.replace(/^\d+\s*-\s*/,''), communeName:cName})
+    .then(function(){ toast('تم حفظ العنوان','success'); refreshOrders(); })
+    .catch(function(err){ toast('فشل: '+((err&&err.message)||'error'),'error'); })
+    .finally(function(){ zrBusy(btn,false,'💾 حفظ العنوان'); });
+}
+function zrSaveProducts(e){
+  var btn=e.target;
+  var rows=[].slice.call($_('zrEdProds').querySelectorAll('.zr-prow')).map(function(r){
+    return {
+      productName:r.querySelector('.zr-pname').value.trim(),
+      unitPrice:Number(r.querySelector('.zr-pprice').value)||0,
+      quantity:Number(r.querySelector('.zr-pqty').value)||1,
+      stockType:r.querySelector('.zr-pstock').value,
+    };
+  }).filter(function(p){ return p.productName; });
+  if(!rows.length){ toast('أضف منتجاً واحداً على الأقل','error'); return; }
+  var desc=$_('zrEdDesc').value.trim();
+  if(desc.length>250){ toast('الوصف أطول من 250 حرفاً','error'); return; }
+  var amount=Number($_('zrEdAmount').value)||0;
+  zrBusy(btn,true);
+  zrCall('zrUpdateProducts',{parcelId:zrPid(), orderId:zrOid(), description:desc, amount:amount, orderedProducts:rows})
+    .then(function(){ toast('تم حفظ المنتجات','success'); refreshOrders(); })
+    .catch(function(err){ toast('فشل: '+((err&&err.message)||'error'),'error'); })
+    .finally(function(){ zrBusy(btn,false,'💾 حفظ المنتجات'); });
 }
 
 // Normalize an Algerian phone to wa.me international format (0xxxxxxxxx → 213xxxxxxxxx)
@@ -1662,6 +1881,8 @@ $_('clearAllBtn').addEventListener('click',function(){
 // MODAL CLOSE
 // ═══════════════════════════════════════════════════════════
 $_('customerClose').addEventListener('click',function(){$_('customerModal').classList.remove('open');});
+$_('zrEditClose').addEventListener('click',function(){$_('zrEditModal').classList.remove('open');});
+$_('zrEditModal').addEventListener('click',function(e){if(e.target===$_('zrEditModal'))$_('zrEditModal').classList.remove('open');});
 // Product image popup: match the order's product (by name) to a loaded product, show its color photo
 function showOrderImage(oid){
   var o=orders.find(function(x){return x._docId===oid;}); if(!o) return;
