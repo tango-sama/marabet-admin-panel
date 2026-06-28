@@ -85,6 +85,8 @@ table.sheet{width:100%;border-collapse:collapse;min-width:900px}
 .cell-input,.cell-select{background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.82rem;padding:.4rem .5rem;border-radius:4px;width:100%;outline:none;transition:all .12s}
 .cell-input:hover,.cell-select:hover{border-color:var(--border);background:var(--card2)}
 .cell-input:focus,.cell-select:focus{border-color:var(--gold);background:var(--card2)}
+.col-check{width:34px;text-align:center}
+.col-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--gold);vertical-align:middle;margin:0}
 .col-num{width:36px;text-align:center;color:var(--gray);font-size:.72rem}
 .col-photo{width:64px;position:relative}
 .col-active{width:52px;text-align:center}
@@ -364,10 +366,10 @@ a{color:var(--gold)}
     <!-- PRODUCTS PAGE -->
     <div class="page active" id="page-products">
       <div class="toolbar">
-        <div class="toolbar-left"><select class="filter-select" id="catFilter"></select><select class="filter-select" id="statusFilter"><option value="all">All</option><option value="active">Active</option><option value="hidden">Hidden</option></select><span class="count-badge" id="countBadge"></span></div>
+        <div class="toolbar-left"><select class="filter-select" id="catFilter"></select><select class="filter-select" id="statusFilter"><option value="all">All</option><option value="active">Active</option><option value="hidden">Hidden</option></select><span class="count-badge" id="countBadge"></span><button class="btn btn-outline btn-sm" id="selectAllBtn">☑ Select All</button><button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display:none">🗑 Delete <span id="selCount">0</span></button></div>
         <div class="toolbar-right"><button class="btn btn-outline btn-sm" id="exportBtn">📤 Export</button><button class="btn btn-outline btn-sm" id="importBtn">📥 Import</button><button class="btn btn-outline btn-sm" id="addRowBtn">+ Row</button><button class="btn btn-outline btn-sm" id="add5Btn">+ 5 Rows</button><button class="btn btn-green btn-sm" id="saveAllBtn">💾 Save All</button></div>
       </div>
-      <div class="sheet-wrap"><table class="sheet"><thead><tr><th class="col-num">#</th><th class="col-photo">Photo</th><th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Sizes</th><th>Colors</th><th>Active</th><th class="col-actions">Actions</th></tr></thead><tbody id="sheetBody"></tbody></table></div>
+      <div class="sheet-wrap"><table class="sheet"><thead><tr><th class="col-check"><input type="checkbox" id="selectAllChk" title="Select all"></th><th class="col-num">#</th><th class="col-photo">Photo</th><th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Sizes</th><th>Colors</th><th>Active</th><th class="col-actions">Actions</th></tr></thead><tbody id="sheetBody"></tbody></table></div>
     </div>
 
     <!-- CATEGORIES PAGE -->
@@ -688,6 +690,10 @@ function convertToWebP(file) {
 // ═══════════════════════════════════════════════════════════
 var products=[], categories=[], orders=[], SETTINGS={}, APPEARANCE={}, currentPageName='products';
 var drawerProduct=null, drawerSlots=[];
+// Product multi-select state. selectedProductIds holds the checked product ids; _visibleIds
+// is the id list currently shown in the sheet (after filters) — Select All / Delete Selected
+// operate only on what's visible, and selection is pruned to it on every render.
+var selectedProductIds=new Set(), _visibleIds=[];
 // Preset colors — the picked swatch's name becomes the variant name (editable below).
 var PRESETS=[
   {n:'White',h:'#FFFFFF',dark:1},{n:'Cream',h:'#FFF8E7',dark:1},{n:'Beige',h:'#D4B896',dark:1},
@@ -818,7 +824,13 @@ function renderSheet() {
   if(statF==='hidden') list=list.filter(function(p){return p.active===false;});
   $_('countBadge').textContent=list.length+' products';
 
-  if(!list.length) { body.innerHTML='<tr><td colspan="10"><div class="empty"><div class="empty-icon">📦</div><div>No products yet</div></div></td></tr>'; updateStats(); return; }
+  // Track what's visible and drop selections for rows the filters just hid, so Select All /
+  // Delete Selected only ever act on rows the user can actually see.
+  _visibleIds=list.map(function(p){return p.id;});
+  var visSet={}; _visibleIds.forEach(function(id){visSet[id]=1;});
+  selectedProductIds.forEach(function(id){ if(!visSet[id]) selectedProductIds.delete(id); });
+
+  if(!list.length) { body.innerHTML='<tr><td colspan="11"><div class="empty"><div class="empty-icon">📦</div><div>No products yet</div></div></td></tr>'; updateSelectionUI(); updateStats(); return; }
 
   body.innerHTML=list.map(function(p,idx){
     var varsHtml=(p.variants||[]).map(function(v){return '<span class="variant-chip"><span class="dot" style="background:'+(v.hex||'#888')+'"></span>'+esc(v.color)+'</span>';}).join('');
@@ -827,6 +839,7 @@ function renderSheet() {
       ? '<div class="photo-strip" data-edit-photo="'+esc(p.id)+'">'+variantPhotos.map(function(v){return '<img src="'+v.photo+'" alt="'+esc(v.color||'')+'" title="'+esc(v.color||'')+'">';}).join('')+'</div>'
       : '<div class="photo-cell" data-edit-photo="'+esc(p.id)+'">📷</div>';
     return '<tr class="prod-row">'
+      +'<td class="col-check" data-label="Select"><input type="checkbox" class="row-check" data-pid="'+esc(p.id)+'"'+(selectedProductIds.has(p.id)?' checked':'')+'></td>'
       +'<td class="col-num" data-label="#">'+(idx+1)+'</td>'
       +'<td class="col-photo" data-label="Photo">'+photoHtml+'</td>'
       +'<td class="coll-cell" data-label="Name"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="name" value="'+esc(p.name||'')+'"></td>'
@@ -839,11 +852,13 @@ function renderSheet() {
       +'<td class="col-actions" data-label="Actions"><button class="btn-icon save-row'+(p._dirty?' dirty':'')+'" data-save="'+esc(p.id)+'" title="Confirm / Save row">✓</button><button class="btn-icon danger" data-del="'+esc(p.id)+'" title="Delete product">🗑</button></td>'
     +'</tr>';
   }).join('');
+  updateSelectionUI();
   updateStats();
 }
 
 // Inline edit: mark dirty on change
 $_('sheetBody').addEventListener('input',function(e){
+  if(e.target.classList.contains('row-check')) return; // selection checkbox, not a product field
   var pid=e.target.dataset.pid; if(!pid) return;
   var p=products.find(function(x){return x.id===pid;}); if(!p) return;
   var f=e.target.dataset.field;
@@ -889,6 +904,14 @@ function animateRowToggle(row){
 
 // Sheet clicks: save row, delete, edit photo, expand/collapse product row
 $_('sheetBody').addEventListener('click',function(e){
+  // Row selection checkbox: update the set from its (already-toggled) state and bail out
+  var rowCheck=e.target.closest('.row-check');
+  if(rowCheck){
+    var rid=rowCheck.dataset.pid;
+    if(rowCheck.checked) selectedProductIds.add(rid); else selectedProductIds.delete(rid);
+    updateSelectionUI();
+    return;
+  }
   // Toggle expand/collapse on product rows when clicking non-interactive area
   if(!e.target.closest('button, input, select, .photo-cell, .toggle')){
     var row=e.target.closest('tr.prod-row');
@@ -974,6 +997,50 @@ function saveAll() {
   var skipped=products.length-valid.length;
   Promise.all(valid.map(function(p){return saveOneProduct(p);})).then(function(){ renderSheet(); });
   toast('Saved '+valid.length+' product'+(valid.length!==1?'s':'')+(skipped?' · '+skipped+' skipped (incomplete)':''), skipped?'error':'success');
+}
+
+// ── Multi-select: Select All / Delete Selected ──────────────────────────────
+// Reflect the current selection in the toolbar + header checkbox. Counts are taken
+// against _visibleIds so a partial selection shows the master box as indeterminate.
+function updateSelectionUI() {
+  var total=_visibleIds.length, sel=0;
+  _visibleIds.forEach(function(id){ if(selectedProductIds.has(id)) sel++; });
+  var master=$_('selectAllChk');
+  if(master){ master.checked=sel>0&&sel===total; master.indeterminate=sel>0&&sel<total; }
+  var saBtn=$_('selectAllBtn');
+  if(saBtn) saBtn.textContent=(total>0&&sel===total)?'☐ Clear':'☑ Select All';
+  var delBtn=$_('deleteSelectedBtn');
+  if(delBtn) delBtn.style.display=sel>0?'':'none';
+  var c=$_('selCount'); if(c) c.textContent=sel;
+}
+
+// Select or clear every currently-visible row. Updates the live checkboxes in place
+// (no full re-render needed) then refreshes the toolbar state.
+function setAllSelected(on) {
+  _visibleIds.forEach(function(id){ if(on) selectedProductIds.add(id); else selectedProductIds.delete(id); });
+  $_('sheetBody').querySelectorAll('.row-check').forEach(function(cb){ cb.checked=on; });
+  updateSelectionUI();
+}
+
+function deleteSelectedProducts() {
+  var ids=_visibleIds.filter(function(id){ return selectedProductIds.has(id); });
+  if(!ids.length) return;
+  if(!confirm('⚠️ Delete '+ids.length+' selected product'+(ids.length!==1?'s':'')+'?\n\nThis permanently removes them, their photos and color variants from the store. This action cannot be undone.')) return;
+  var delBtn=$_('deleteSelectedBtn'); if(delBtn) delBtn.disabled=true;
+  // Delete from Firestore first; only drop rows that actually deleted so a rules-blocked
+  // delete doesn't vanish locally and reappear on reload (same contract as single delete).
+  Promise.all(ids.map(function(id){
+    return fbDeleteProduct(id).then(function(){ return {id:id,ok:true}; })
+      .catch(function(err){ console.error('Delete failed:',id,err); return {id:id,ok:false}; });
+  })).then(function(results){
+    var okSet={}, okCount=0;
+    results.forEach(function(r){ if(r.ok){ okSet[r.id]=1; okCount++; selectedProductIds.delete(r.id); } });
+    products=products.filter(function(p){ return !okSet[p.id]; });
+    if(delBtn) delBtn.disabled=false;
+    renderSheet();
+    var failed=results.length-okCount;
+    toast(failed?('Deleted '+okCount+' · '+failed+' failed'):('Deleted '+okCount+' product'+(okCount!==1?'s':'')), 'error');
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1935,6 +2002,13 @@ $_('statusFilter').addEventListener('change',function(){renderSheet();});
 $_('addRowBtn').addEventListener('click',function(){addBlankRows(1);});
 $_('add5Btn').addEventListener('click',function(){addBlankRows(5);});
 $_('saveAllBtn').addEventListener('click',saveAll);
+// Select All button toggles between selecting every visible row and clearing the selection.
+$_('selectAllBtn').addEventListener('click',function(){
+  var allSelected=_visibleIds.length>0&&_visibleIds.every(function(id){return selectedProductIds.has(id);});
+  setAllSelected(!allSelected);
+});
+$_('selectAllChk').addEventListener('change',function(){ setAllSelected(this.checked); });
+$_('deleteSelectedBtn').addEventListener('click',deleteSelectedProducts);
 $_('addCatBtn').addEventListener('click',addCatRow);
 $_('saveCatsBtn').addEventListener('click',saveCats);
 
