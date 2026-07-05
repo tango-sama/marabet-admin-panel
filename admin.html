@@ -18,8 +18,10 @@
   --success:#4CAF50;--danger:#E53935;--warning:#FF9800;
   --border:rgba(201,168,76,0.18);--font:'Cairo',sans-serif;
 }
-html,body{height:100%}
-body{background:var(--black);color:var(--white);font-family:var(--font);display:flex}
+html{height:100%}
+/* body must grow with content — a fixed 100% height caps every position:sticky descendant
+   to the first viewport (that's why the old sticky topbar vanished after a screen of scrolling) */
+body{min-height:100%;background:var(--black);color:var(--white);font-family:var(--font);display:flex}
 
 .sidebar{width:220px;min-height:100vh;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:10;overflow-y:auto;overflow-x:hidden;transition:width .22s,min-width .22s}
 .sidebar.collapsed{width:0;min-width:0;border-right:none}
@@ -40,7 +42,8 @@ body{background:var(--black);color:var(--white);font-family:var(--font);display:
 
 .main{margin-left:220px;flex:1;min-height:100vh;display:flex;flex-direction:column;transition:margin-left .22s}
 .main.expanded{margin-left:0}
-.topbar{min-height:58px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.5rem;position:sticky;top:0;z-index:5;gap:1rem}
+/* Topbar scrolls away with the page — the sticky toolbar + header row take its place */
+.topbar{min-height:58px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.5rem;gap:1rem}
 .topbar-title{font-size:1rem;font-weight:600;color:var(--white);margin-left:2.2rem}
 .content{padding:1.5rem;flex:1}
 
@@ -72,14 +75,43 @@ body{background:var(--black);color:var(--white);font-family:var(--font);display:
 .stat-icon{position:absolute;right:1rem;top:1rem;font-size:1.4rem;opacity:.15}
 
 .toolbar{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap}
+/* Sheet toolbars pin to the very top once the topbar has scrolled away.
+   The box-shadow paints an opaque copy 100vw to the right so rows can't peek
+   past the toolbar's edge when the table is wider than the window. */
+#page-products .toolbar,#page-categories .toolbar{position:sticky;top:0;z-index:5;background:var(--black);box-shadow:100vw 0 0 var(--black);padding:.6rem 0;margin-top:-.6rem;margin-bottom:0;padding-bottom:1rem}
+.pager{display:flex;justify-content:center;align-items:center;gap:.35rem;margin:1rem 0;flex-wrap:wrap}
+.pager-btn{background:var(--card);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.8rem;padding:.35rem .75rem;border-radius:6px;cursor:pointer;transition:all .15s;min-width:36px}
+.pager-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.pager-btn.active{background:var(--gold);color:var(--black);border-color:var(--gold);font-weight:700}
+.pager-btn:disabled{opacity:.4;cursor:default}
+.pager-ellipsis{color:var(--gray);padding:0 .15rem;font-size:.8rem}
 .toolbar-left{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 .toolbar-right{margin-left:auto;display:flex;gap:.5rem;align-items:center}
 .filter-select{background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.8rem;padding:.4rem .8rem;border-radius:4px;outline:none;cursor:pointer}
 .count-badge{font-size:.75rem;color:var(--gray)}
 
-.sheet-wrap{background:var(--card);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow-x:auto}
-table.sheet{width:100%;border-collapse:collapse;min-width:900px}
-.sheet th{background:var(--card2);font-size:.68rem;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;padding:.6rem .7rem;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+/* No overflow-x clip here — a scroll container would trap the sticky header row inside itself.
+   Once columns are user-sized wider than the window, the wrap grows and the page scrolls sideways. */
+.sheet-wrap{background:var(--card);border:1px solid var(--border);border-radius:6px 6px 0 0}
+.sheet-wrap:has(> table.col-resized){width:max-content;min-width:100%}
+/* When the user widens columns past the window, grow the page box too so the
+   sticky toolbar spans the whole table width */
+.page:has(table.col-resized){width:max-content;min-width:100%}
+/* separate, not collapse — Chrome can't make th's of a border-collapsed table sticky */
+table.sheet{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
+/* Header row sticks right below the toolbar; --tbarH is measured by JS since the toolbar can wrap */
+#page-products .sheet th,#page-categories .sheet th{position:sticky;top:var(--tbarH,49px);z-index:3}
+.sheet th{background:var(--card2);font-size:.68rem;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;padding:.6rem .7rem;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;position:relative}
+/* Drag handle on each header cell — drag to resize the column, double-click to reset all.
+   The handle straddles the column boundary (7px each side) so it's easy to grab. */
+.col-resizer{position:absolute;top:0;right:-7px;width:14px;height:100%;cursor:col-resize;z-index:2;touch-action:none;user-select:none;-webkit-user-select:none}
+.col-resizer::after{content:'';position:absolute;top:18%;bottom:18%;right:6px;width:2px;border-radius:2px;background:transparent;transition:background .15s}
+.col-resizer:hover::after,.col-resizer.dragging::after{background:var(--gold)}
+body.resizing-col{cursor:col-resize;user-select:none;-webkit-user-select:none}
+/* Once columns are user-sized, let the photo strip use the column's full width
+   (the 150px cap below only makes sense for the automatic layout) */
+table.col-resized .prod-row .col-photo{max-width:none}
+table.col-resized .prod-row .photo-strip{max-width:none}
 .sheet td{padding:.35rem .5rem;border-bottom:1px solid rgba(201,168,76,.07);vertical-align:middle}
 .sheet tr:hover td{background:rgba(255,255,255,.02)}
 .cell-input,.cell-select{background:var(--card2);border:1px solid var(--border);color:var(--white);font-family:var(--font);font-size:.82rem;padding:.4rem .5rem;border-radius:4px;width:100%;outline:none;transition:all .12s}
@@ -232,8 +264,10 @@ a{color:var(--gold)}
   /* "+ 5 Rows" is bulk entry — hide it on phones, "+ Row" is enough */
   #add5Btn{display:none}
   /* Wide product/category sheets turn into stacked cards instead of a 900px scroll */
-  .sheet-wrap{background:transparent;border:none;border-radius:0;overflow-x:visible;-webkit-overflow-scrolling:touch}
-  table.sheet{min-width:0}
+  /* Toolbar wraps to several rows on phones — pinning it would eat half the screen */
+  #page-products .toolbar,#page-categories .toolbar{position:static;margin-top:0;padding:0 0 1rem;margin-bottom:0}
+  .sheet-wrap{background:transparent;border:none;border-radius:0;overflow-x:visible;-webkit-overflow-scrolling:touch;width:auto;min-width:0}
+  table.sheet{min-width:0;width:100%!important;table-layout:auto!important} /* ignore desktop column-resize inline styles */
   .sheet thead{display:none}
   .sheet tbody,.sheet tr,.sheet td{display:block;width:100%}
   .sheet tr{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:.85rem;padding:.2rem .15rem;overflow:hidden}
@@ -366,10 +400,11 @@ a{color:var(--gold)}
     <!-- PRODUCTS PAGE -->
     <div class="page active" id="page-products">
       <div class="toolbar">
-        <div class="toolbar-left"><select class="filter-select" id="catFilter"></select><select class="filter-select" id="statusFilter"><option value="all">All</option><option value="active">Active</option><option value="hidden">Hidden</option></select><span class="count-badge" id="countBadge"></span><button class="btn btn-outline btn-sm" id="selectAllBtn">☑ Select All</button><button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display:none">🗑 Delete <span id="selCount">0</span></button></div>
+        <div class="toolbar-left"><select class="filter-select" id="catFilter"></select><select class="filter-select" id="statusFilter"><option value="all">All</option><option value="active">Active</option><option value="hidden">Hidden</option></select><span class="count-badge" id="countBadge"></span><button class="btn btn-outline btn-sm" id="selectAllBtn">☑ Select All</button><button class="btn btn-gold btn-sm" id="mergeSelectedBtn" style="display:none" title="Combine selected products into the first one (all photo variants kept)">🔗 Merge <span id="mergeCount">0</span></button><button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display:none">🗑 Delete <span id="selCount">0</span></button></div>
         <div class="toolbar-right"><button class="btn btn-outline btn-sm" id="exportBtn">📤 Export</button><button class="btn btn-outline btn-sm" id="importBtn">📥 Import</button><button class="btn btn-outline btn-sm" id="addRowBtn">+ Row</button><button class="btn btn-outline btn-sm" id="add5Btn">+ 5 Rows</button><button class="btn btn-green btn-sm" id="saveAllBtn">💾 Save All</button></div>
       </div>
       <div class="sheet-wrap"><table class="sheet"><thead><tr><th class="col-check"><input type="checkbox" id="selectAllChk" title="Select all"></th><th class="col-num">#</th><th class="col-photo">Photo</th><th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Sizes</th><th>Colors</th><th>Active</th><th class="col-actions">Actions</th></tr></thead><tbody id="sheetBody"></tbody></table></div>
+      <div class="pager" id="prodPager"></div>
     </div>
 
     <!-- CATEGORIES PAGE -->
@@ -694,6 +729,8 @@ var drawerProduct=null, drawerSlots=[];
 // is the id list currently shown in the sheet (after filters) — Select All / Delete Selected
 // operate only on what's visible, and selection is pruned to it on every render.
 var selectedProductIds=new Set(), _visibleIds=[];
+// Products sheet pagination: 25 rows per page so the DOM stays small on big catalogs
+var PROD_PER_PAGE=25, prodPage=1;
 // Preset colors — the picked swatch's name becomes the variant name (editable below).
 var PRESETS=[
   {n:'White',h:'#FFFFFF',dark:1},{n:'Cream',h:'#FFF8E7',dark:1},{n:'Beige',h:'#D4B896',dark:1},
@@ -784,6 +821,7 @@ function showPage(name) {
   $_('pageTitle').textContent=(name==='design'?'Website Design':name.charAt(0).toUpperCase()+name.slice(1));
   if(name==='products') renderSheet();
   if(name==='categories') renderCats();
+  if(typeof syncToolbarH==='function') syncToolbarH(); // page just became visible — measure its toolbar
   if(name==='orders') refreshOrders();
   if(name==='settings') renderSettings();
   if(name==='design') renderDesign();
@@ -824,23 +862,31 @@ function renderSheet() {
   if(statF==='hidden') list=list.filter(function(p){return p.active===false;});
   $_('countBadge').textContent=list.length+' products';
 
-  // Track what's visible and drop selections for rows the filters just hid, so Select All /
+  // Paginate: only the current page's 25 rows go into the DOM
+  var totalPages=Math.max(1,Math.ceil(list.length/PROD_PER_PAGE));
+  if(prodPage>totalPages) prodPage=totalPages;
+  if(prodPage<1) prodPage=1;
+  var pageStart=(prodPage-1)*PROD_PER_PAGE;
+  var pageList=list.slice(pageStart,pageStart+PROD_PER_PAGE);
+  renderProdPager(totalPages);
+
+  // Track what's visible and drop selections for rows the filters/page just hid, so Select All /
   // Delete Selected only ever act on rows the user can actually see.
-  _visibleIds=list.map(function(p){return p.id;});
+  _visibleIds=pageList.map(function(p){return p.id;});
   var visSet={}; _visibleIds.forEach(function(id){visSet[id]=1;});
   selectedProductIds.forEach(function(id){ if(!visSet[id]) selectedProductIds.delete(id); });
 
-  if(!list.length) { body.innerHTML='<tr><td colspan="11"><div class="empty"><div class="empty-icon">📦</div><div>No products yet</div></div></td></tr>'; updateSelectionUI(); updateStats(); return; }
+  if(!pageList.length) { body.innerHTML='<tr><td colspan="11"><div class="empty"><div class="empty-icon">📦</div><div>No products yet</div></div></td></tr>'; updateSelectionUI(); updateStats(); return; }
 
-  body.innerHTML=list.map(function(p,idx){
+  body.innerHTML=pageList.map(function(p,idx){
     var varsHtml=(p.variants||[]).map(function(v){return '<span class="variant-chip"><span class="dot" style="background:'+(v.hex||'#888')+'"></span>'+esc(v.color)+'</span>';}).join('');
     var variantPhotos=(p.variants||[]).filter(function(v){return v.photo;});
     var photoHtml=variantPhotos.length
-      ? '<div class="photo-strip" data-edit-photo="'+esc(p.id)+'">'+variantPhotos.map(function(v){return '<img src="'+v.photo+'" alt="'+esc(v.color||'')+'" title="'+esc(v.color||'')+'">';}).join('')+'</div>'
+      ? '<div class="photo-strip" data-edit-photo="'+esc(p.id)+'">'+variantPhotos.map(function(v){return '<img src="'+v.photo+'" alt="'+esc(v.color||'')+'" title="'+esc(v.color||'')+'" loading="lazy" decoding="async" width="44" height="44">';}).join('')+'</div>'
       : '<div class="photo-cell" data-edit-photo="'+esc(p.id)+'">📷</div>';
     return '<tr class="prod-row">'
       +'<td class="col-check" data-label="Select"><input type="checkbox" class="row-check" data-pid="'+esc(p.id)+'"'+(selectedProductIds.has(p.id)?' checked':'')+'></td>'
-      +'<td class="col-num" data-label="#">'+(idx+1)+'</td>'
+      +'<td class="col-num" data-label="#">'+(pageStart+idx+1)+'</td>'
       +'<td class="col-photo" data-label="Photo">'+photoHtml+'</td>'
       +'<td class="coll-cell" data-label="Name"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="name" value="'+esc(p.name||'')+'"></td>'
       +'<td class="coll-cell" data-label="Brand"><input class="cell-input" data-pid="'+esc(p.id)+'" data-field="brand" value="'+esc(p.brand||'')+'"></td>'
@@ -855,6 +901,120 @@ function renderSheet() {
   updateSelectionUI();
   updateStats();
 }
+
+// Page buttons: Prev/Next plus a window of numbers around the current page (first/last always shown)
+function renderProdPager(totalPages) {
+  var el=$_('prodPager'); if(!el) return;
+  if(totalPages<=1) { el.innerHTML=''; return; }
+  function btn(n){ return '<button class="pager-btn'+(n===prodPage?' active':'')+'" data-page="'+n+'">'+n+'</button>'; }
+  var html='<button class="pager-btn" data-page="prev"'+(prodPage<=1?' disabled':'')+'>‹ Prev</button>';
+  var shown={}, nums=[1,totalPages,prodPage-1,prodPage,prodPage+1].filter(function(n){return n>=1&&n<=totalPages;}).sort(function(a,b){return a-b;});
+  var last=0;
+  nums.forEach(function(n){
+    if(shown[n]) return; shown[n]=1;
+    if(last&&n-last>1) html+='<span class="pager-ellipsis">…</span>';
+    html+=btn(n); last=n;
+  });
+  html+='<button class="pager-btn" data-page="next"'+(prodPage>=totalPages?' disabled':'')+'>Next ›</button>';
+  el.innerHTML=html;
+}
+
+$_('prodPager').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-page]'); if(!b||b.disabled) return;
+  var t=b.dataset.page;
+  if(t==='prev') prodPage--; else if(t==='next') prodPage++; else prodPage=parseInt(t,10)||1;
+  renderSheet();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+// ─── Resizable columns: drag a header edge to resize, double-click it to reset.
+// Widths persist in localStorage. tbody re-renders freely — handles live in the
+// static thead, and table-layout:fixed makes th widths govern the whole column.
+function makeColsResizable(table, storeKey) {
+  if(!table) return;
+  var ths=Array.prototype.slice.call(table.querySelectorAll('thead th'));
+  // Per-column floor: the photo column must always fit at least one 44px thumbnail,
+  // otherwise the pictures collapse into invisible slivers (and persist that way).
+  function minFor(th){ return th.classList.contains('col-photo')?64:40; }
+
+  function freeze() { // switch from auto layout to explicit px widths once
+    if(table.style.tableLayout==='fixed') return;
+    ths.forEach(function(t){ t.style.width=Math.max(minFor(t),t.offsetWidth)+'px'; });
+    table.style.width=table.offsetWidth+'px';
+    table.style.minWidth='0';
+    table.style.tableLayout='fixed';
+    table.classList.add('col-resized');
+  }
+  function persist() {
+    try{ localStorage.setItem(storeKey, JSON.stringify(ths.map(function(t){return parseInt(t.style.width,10)||0;}))); }catch(e){}
+  }
+  function reset() {
+    ths.forEach(function(t){ t.style.width=''; });
+    table.style.tableLayout=''; table.style.width=''; table.style.minWidth='';
+    table.classList.remove('col-resized');
+    try{ localStorage.removeItem(storeKey); }catch(e){}
+  }
+
+  // Re-apply saved widths from a previous session (desktop only — mobile uses card layout)
+  var saved=null;
+  try{ saved=JSON.parse(localStorage.getItem(storeKey)); }catch(e){}
+  if(saved && saved.length===ths.length && window.matchMedia('(min-width:769px)').matches) {
+    var sum=0;
+    ths.forEach(function(t,i){ var w=Math.max(minFor(t),saved[i]||0); t.style.width=w+'px'; sum+=w; });
+    table.style.width=sum+'px'; table.style.minWidth='0'; table.style.tableLayout='fixed';
+    table.classList.add('col-resized');
+  }
+
+  ths.forEach(function(th){
+    var h=document.createElement('div');
+    h.className='col-resizer'; h.title='Drag to resize · double-click to reset columns';
+    th.appendChild(h);
+    h.addEventListener('dblclick',function(e){ e.preventDefault(); reset(); });
+    h.addEventListener('pointerdown',function(e){
+      if(e.button!==0 && e.pointerType==='mouse') return;
+      e.preventDefault(); e.stopPropagation();
+      freeze();
+      var startX=e.clientX, startW=th.offsetWidth, startTableW=parseInt(table.style.width,10)||table.offsetWidth;
+      h.classList.add('dragging'); document.body.classList.add('resizing-col');
+      try{ h.setPointerCapture(e.pointerId); }catch(err){}
+      function move(ev){
+        var delta=Math.max(minFor(th)-startW, ev.clientX-startX);
+        th.style.width=(startW+delta)+'px';
+        table.style.width=(startTableW+delta)+'px';
+      }
+      function up(){
+        h.classList.remove('dragging'); document.body.classList.remove('resizing-col');
+        h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up);
+        persist();
+      }
+      h.addEventListener('pointermove',move);
+      h.addEventListener('pointerup',up);
+      h.addEventListener('pointercancel',up);
+    });
+  });
+}
+makeColsResizable(document.querySelector('#page-products table.sheet'),'mb_colw_products');
+makeColsResizable(document.querySelector('#page-categories table.sheet'),'mb_colw_categories');
+
+// The header row sticks at top = toolbar height. Measure it (the toolbar can wrap on narrow
+// windows) and expose it as --tbarH on each sheet page. Hidden pages measure 0 — skip them.
+function syncToolbarH() {
+  ['page-products','page-categories'].forEach(function(id){
+    var pg=$_(id); if(!pg) return;
+    var tb=pg.querySelector('.toolbar');
+    if(tb && tb.offsetHeight) pg.style.setProperty('--tbarH', tb.offsetHeight+'px');
+  });
+}
+window.addEventListener('resize',syncToolbarH);
+window.addEventListener('load',syncToolbarH); // re-measure once fonts are in
+if(window.ResizeObserver){ // catches late font swaps / toolbar wrapping without a window resize
+  var _tbRO=new ResizeObserver(syncToolbarH);
+  ['page-products','page-categories'].forEach(function(id){
+    var pg=$_(id), tb=pg&&pg.querySelector('.toolbar');
+    if(tb) _tbRO.observe(tb);
+  });
+}
+syncToolbarH();
 
 // Inline edit: mark dirty on change
 $_('sheetBody').addEventListener('input',function(e){
@@ -956,6 +1116,7 @@ function addBlankRows(n) {
   // Start clean: the ✓ save button stays hidden until the user types something into the row.
   // New rows go to the TOP so the newest product is first; createdAt keeps that order after a reload.
   for(var i=0;i<n;i++) products.unshift({id:uid(),name:'',brand:'',category:'sports',price:0,sizes:'',active:true,variants:[],createdAt:Date.now()});
+  prodPage=1; // new rows land at the top of page 1 — show them
   renderSheet();
 }
 
@@ -1012,6 +1173,10 @@ function updateSelectionUI() {
   var delBtn=$_('deleteSelectedBtn');
   if(delBtn) delBtn.style.display=sel>0?'':'none';
   var c=$_('selCount'); if(c) c.textContent=sel;
+  // Merge needs at least 2 rows selected (combine N products into the first one).
+  var mergeBtn=$_('mergeSelectedBtn');
+  if(mergeBtn) mergeBtn.style.display=sel>1?'':'none';
+  var mc=$_('mergeCount'); if(mc) mc.textContent=sel;
 }
 
 // Select or clear every currently-visible row. Updates the live checkboxes in place
@@ -1043,6 +1208,62 @@ function deleteSelectedProducts() {
   });
 }
 
+// ── Multi-select: Merge ─────────────────────────────────────────────────────
+// Combine every selected product into the FIRST selected one (in the order shown):
+// concatenate all their photo/color variants onto it (deduped by photo URL), keep the
+// first product's name/price/brand/category/etc, then delete the rest. Admin can rename
+// or reprice the merged product afterwards.
+function mergeSelectedProducts() {
+  var ids=_visibleIds.filter(function(id){ return selectedProductIds.has(id); });
+  if(ids.length<2){ toast('Select at least 2 products to merge','error'); return; }
+  var target=products.find(function(p){ return p.id===ids[0]; });
+  if(!target) return;
+  var others=ids.slice(1).map(function(id){ return products.find(function(p){ return p.id===id; }); }).filter(Boolean);
+
+  // Build the combined variant list in selection order, dropping exact-duplicate photos.
+  var seen={}, merged=[];
+  ids.forEach(function(id){
+    var p=products.find(function(x){ return x.id===id; });
+    ((p&&p.variants)||[]).forEach(function(v){
+      var key=v.photo||('#empty'+merged.length);      // keep photoless variants, each unique
+      if(seen[key]) return;
+      seen[key]=1;
+      merged.push({color:v.color||'', hex:v.hex||'#888', photo:v.photo||null});
+    });
+  });
+
+  var name=(target.name||'').trim()||'the first product';
+  if(!confirm('🔗 Merge '+ids.length+' products into "'+name+'"?\n\n'
+    +'All '+merged.length+' photo/color variants will be combined onto this product; the other '
+    +others.length+' will be permanently deleted.\n\nThe first product’s name & price are kept — you can edit them afterwards.')) return;
+
+  var mergeBtn=$_('mergeSelectedBtn'); if(mergeBtn) mergeBtn.disabled=true;
+
+  // 1) Write the combined variants onto the target. 2) Only after that succeeds delete the
+  //    others — and only drop a row locally once its delete actually returns (same contract as
+  //    Delete Selected), so a rules-blocked delete can't vanish here and reappear on reload.
+  fbSaveProduct({_docId:target.id, variants:merged}, {merge:true}).then(function(){
+    target.variants=merged;
+    return Promise.all(others.map(function(p){
+      return fbDeleteProduct(p.id).then(function(){ return {id:p.id,ok:true}; })
+        .catch(function(err){ console.error('Merge delete failed:',p.id,err); return {id:p.id,ok:false}; });
+    }));
+  }).then(function(results){
+    var okSet={}, okCount=0;
+    results.forEach(function(r){ if(r.ok){ okSet[r.id]=1; okCount++; } });
+    products=products.filter(function(p){ return !okSet[p.id]; });
+    selectedProductIds.clear();
+    if(mergeBtn) mergeBtn.disabled=false;
+    renderSheet();
+    var failed=others.length-okCount;
+    toast(failed?('Merged · '+failed+' delete'+(failed!==1?'s':'')+' failed'):('Merged '+ids.length+' products → '+merged.length+' variants'), failed?'error':'success');
+  }).catch(function(err){
+    if(mergeBtn) mergeBtn.disabled=false;
+    console.error('Merge failed:',err);
+    toast('Merge failed: '+((err&&err.code)||(err&&err.message)||'check Firestore rules'),'error');
+  });
+}
+
 // ═══════════════════════════════════════════════════════════
 // CATEGORIES
 // ═══════════════════════════════════════════════════════════
@@ -1052,7 +1273,7 @@ function renderCats() {
   body.innerHTML=categories.map(function(c,i){return '<tr class="cat-row">'
     +'<td class="col-num" data-label="#">'+(i+1)+'</td>'
     +'<td data-label="Picture"><div style="display:flex;align-items:center;gap:.4rem">'
-      +(c.photo?'<img src="'+esc(c.photo)+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">':'<span style="width:40px;height:40px;border-radius:8px;background:var(--card-2,#2a2a2a);display:inline-flex;align-items:center;justify-content:center;opacity:.5">🖼️</span>')
+      +(c.photo?'<img src="'+esc(c.photo)+'" loading="lazy" decoding="async" width="40" height="40" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">':'<span style="width:40px;height:40px;border-radius:8px;background:var(--card-2,#2a2a2a);display:inline-flex;align-items:center;justify-content:center;opacity:.5">🖼️</span>')
       +'<button class="btn-icon" data-catphoto="'+esc(c.id)+'" title="Upload picture (→ WebP)">📷</button>'
     +'</div></td>'
     +'<td data-label="Name"><input class="cell-input" data-cid="'+esc(c.id)+'" data-cfield="name" value="'+esc(c.name||'')+'"></td>'
@@ -1997,8 +2218,8 @@ $_('customerModal').addEventListener('click',function(e){if(e.target===$_('custo
 // ═══════════════════════════════════════════════════════════
 // TOOLBAR EVENTS
 // ═══════════════════════════════════════════════════════════
-$_('catFilter').addEventListener('change',function(){renderSheet();});
-$_('statusFilter').addEventListener('change',function(){renderSheet();});
+$_('catFilter').addEventListener('change',function(){prodPage=1;renderSheet();});
+$_('statusFilter').addEventListener('change',function(){prodPage=1;renderSheet();});
 $_('addRowBtn').addEventListener('click',function(){addBlankRows(1);});
 $_('add5Btn').addEventListener('click',function(){addBlankRows(5);});
 $_('saveAllBtn').addEventListener('click',saveAll);
@@ -2009,6 +2230,7 @@ $_('selectAllBtn').addEventListener('click',function(){
 });
 $_('selectAllChk').addEventListener('change',function(){ setAllSelected(this.checked); });
 $_('deleteSelectedBtn').addEventListener('click',deleteSelectedProducts);
+$_('mergeSelectedBtn').addEventListener('click',mergeSelectedProducts);
 $_('addCatBtn').addEventListener('click',addCatRow);
 $_('saveCatsBtn').addEventListener('click',saveCats);
 
