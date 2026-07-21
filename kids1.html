@@ -1,4 +1,4 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -148,6 +148,7 @@ p{margin:0;}
   box-shadow:var(--shadow-soft);
   display:flex;align-items:center;gap:10px;
   min-height:24px;
+  color: var(--ink);
 }
 .bubble::after{
   content:'';position:absolute;top:16px;right:-11px;width:0;height:0;
@@ -463,7 +464,7 @@ p{margin:0;}
 
 <script>
 /* =====================================================================
-   مغامرة مملكة الأعداد المفقودة -- Game Engine
+   مغامرة مملكة الأعداد المفقودة — Game Engine
    ===================================================================== */
 
 /* ---------- Character & Stage Data ---------- */
@@ -1174,7 +1175,7 @@ function renderStage(stageNum){
 }
 function stillOnStage(n){ return currentView.screen==='stage' && currentView.stage===n; }
 
-/* ================= STAGE 1 -- حقل توتو (العدّ) ================= */
+/* ================= STAGE 1 — حقل توتو (العدّ) ================= */
 function renderStage1(){
   const targets = [3,5,8];
   let roundIndex = 0;
@@ -1265,7 +1266,7 @@ function renderStage1(){
   paintRound();
 }
 
-/* ================= STAGE 2 -- حقيبة بيكسل (التجميع) ================= */
+/* ================= STAGE 2 — حقيبة بيكسل (التجميع) ================= */
 function renderStage2(){
   const roundsCfg = [ {total:15, guided:true}, {total:13, guided:false} ];
   let ri = 0;
@@ -1378,7 +1379,7 @@ function renderStage2(){
   paintRound();
 }
 
-/* ================= STAGE 3 -- جسر عشرو (التمييز البصري) ================= */
+/* ================= STAGE 3 — جسر عشرو (التمييز البصري) ================= */
 function renderStage3(){
   const roundsCfg = [ {boxes:2, apples:2}, {boxes:3, apples:3}, {boxes:4, apples:4} ];
   let ri = 0;
@@ -1469,7 +1470,7 @@ function renderStage3(){
   paintRound();
 }
 
-/* ================= STAGE 4 & 5 -- shared "house" engine (build / analyze) ================= */
+/* ================= STAGE 4 & 5 — shared "house" engine (build / analyze) ================= */
 function renderStage4(){ renderHouseChallenge(4, 'build', [12,17,24], [11,13,15], 'stage-bg--castle', '🏗️'); }
 function renderStage5(){ renderHouseChallenge(5, 'analyze', [14,19,22], [11,13,15], 'stage-bg--cave', '💎'); }
 
@@ -1600,7 +1601,7 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
   if(mode==='build'){ paintDemo(); } else { paintRound(); }
 }
 
-/* ================= STAGE 6 -- برج مبعثر (التحدي الشامل) ================= */
+/* ================= STAGE 6 — برج مبعثر (التحدي الشامل) ================= */
 function stationDotsHTML(currentIdx, total){
   let out = '<div class="station-dots">';
   for(let i=0;i<total;i++){
@@ -1785,7 +1786,7 @@ function renderStage6(){
     refreshS6Board();
     document.getElementById('s6ConfirmBtn').onclick = function(){
       const tens = document.querySelectorAll('#s6HouseTens .drag-item').length;
-      const units = document.querySelectorAll('#s6HouseUnits .drag-item').length;
+      const units = document.querySelectorAll('#s6HouseUnits .drag-item').speechSynthesis ? 0 : document.querySelectorAll('#s6HouseUnits .drag-item').length;
       const correctTens = Math.floor(st.target/10);
       const correctUnits = st.target%10;
       const houseTens = document.getElementById('s6HouseTens');
@@ -1836,3 +1837,5 @@ boot();
 </script>
 </body>
 </html>
+
+
