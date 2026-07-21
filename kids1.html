@@ -48,8 +48,8 @@ body{
   -webkit-tap-highlight-color:transparent;
 }
 button{font-family:inherit;}
-h1,h2,h3{font-family:var(--font-display);margin:0;color:var(--ink);}
-p{margin:0;color:var(--ink);}
+h1,h2,h3{font-family:var(--font-display);margin:0;}
+p{margin:0;}
 
 #app{
   max-width:760px;
@@ -116,12 +116,12 @@ p{margin:0;color:var(--ink);}
   color:var(--ink);
 }
 .btn:active{transform:scale(.94);}
-.btn-primary{background:linear-gradient(180deg,var(--saffron),var(--saffron-deep)); color: var(--ink);}
-.btn-secondary{background:linear-gradient(180deg,#fff,var(--parchment-deep)); color: var(--ink);}
+.btn-primary{background:linear-gradient(180deg,var(--saffron),var(--saffron-deep));}
+.btn-secondary{background:linear-gradient(180deg,#fff,var(--parchment-deep));}
 .btn-meadow{background:linear-gradient(180deg,#a3d081,var(--meadow-deep));color:#1d3312;}
 .btn-lg{font-size:1.25rem;padding:18px 38px;}
 .btn-block{width:100%;}
-.btn-round{border-radius:50%;width:58px;height:58px;padding:0;background:rgba(255,255,255,.85);font-size:1.35rem;box-shadow:var(--shadow-soft); color: var(--ink);}
+.btn-round{border-radius:50%;width:58px;height:58px;padding:0;background:rgba(255,255,255,.85);font-size:1.35rem;box-shadow:var(--shadow-soft);}
 .btn[disabled]{opacity:.4;cursor:not-allowed;transform:none;}
 .btn-ghost{background:transparent;box-shadow:none;color:var(--white-soft);text-decoration:underline;}
 .btn-ghost-dark{background:transparent;box-shadow:none;color:var(--ink-soft);text-decoration:underline;min-height:auto;padding:8px 14px;font-size:.85rem;}
@@ -148,7 +148,6 @@ p{margin:0;color:var(--ink);}
   box-shadow:var(--shadow-soft);
   display:flex;align-items:center;gap:10px;
   min-height:24px;
-  color: var(--ink);
 }
 .bubble::after{
   content:'';position:absolute;top:16px;right:-11px;width:0;height:0;
@@ -160,32 +159,12 @@ p{margin:0;color:var(--ink);}
   border-top:7px solid transparent;border-bottom:7px solid transparent;
   border-left:9px solid #fff;
 }
-.bubble-text{flex:1; color: var(--ink);}
+.bubble-text{flex:1;}
 .bubble-speak{
-  flex-shrink:0;
-  width:56px;
-  height:56px;
-  border-radius:50%;
-  border:3px solid var(--saffron-deep);
-  background:radial-gradient(circle at 30% 30%, #fff, var(--parchment-deep));
-  cursor:pointer;
-  font-size:1.5rem;
-  color:var(--ink);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 4px 14px rgba(242,169,59,0.45);
-  animation:speaker-pulse 1.6s ease-in-out infinite;
-  transition:transform .15s ease, background .15s ease;
+  flex-shrink:0;width:36px;height:36px;border-radius:50%;border:none;
+  background:var(--parchment-deep);cursor:pointer;font-size:1rem;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
 }
-.bubble-speak:active{
-  transform:scale(0.9);
-}
-@keyframes speaker-pulse{
-  0%, 100%{ transform: scale(1); box-shadow: 0 0 0 0 rgba(242,169,59,0.6); }
-  50%{ transform: scale(1.12); box-shadow: 0 0 0 10px rgba(242,169,59,0); }
-}
-
 .hint-bubble{
   margin:0 16px 10px;padding:10px 14px;background:rgba(155,135,196,.16);
   border:2px dashed var(--dusk);border-radius:var(--radius-sm);
@@ -204,7 +183,6 @@ p{margin:0;color:var(--ink);}
     linear-gradient(180deg,#1c1032 0%, var(--ink) 45%, var(--dusk-deep) 100%);
   color:var(--white-soft);
 }
-.splash-screen h1, .splash-screen p{color:var(--white-soft);}
 .splash-glyph{position:absolute;font-family:var(--font-display);font-weight:800;color:rgba(255,255,255,.16);
   animation:drift linear infinite;user-select:none;pointer-events:none;}
 @keyframes drift{
@@ -220,7 +198,7 @@ p{margin:0;color:var(--ink);}
   animation:float 4s ease-in-out infinite;
 }
 .splash-title{font-family:var(--font-display);font-weight:800;font-size:clamp(1.4rem,6vw,2rem);color:var(--saffron);}
-.splash-line{font-size:1.05rem;font-weight:700;max-width:36ch;line-height:1.7;color:var(--white-soft);}
+.splash-line{font-size:1.05rem;font-weight:700;max-width:36ch;line-height:1.7;}
 .pulse-btn{animation:pulse 1.7s ease-in-out infinite;}
 @keyframes pulse{
   0%,100%{transform:scale(1);}
@@ -230,7 +208,6 @@ p{margin:0;color:var(--ink);}
 /* ============ AVATAR PICKER ============ */
 .avatar-screen{flex:1;display:flex;flex-direction:column;gap:18px;padding:24px 18px;align-items:center;justify-content:center;
   background:linear-gradient(180deg,var(--dusk-deep),var(--ink));color:var(--white-soft);text-align:center;}
-.avatar-screen h2, .avatar-screen p, .avatar-screen span{color:var(--white-soft);}
 .avatar-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;width:100%;max-width:360px;}
 .avatar-card{
   background:rgba(255,255,255,.08);border:3px solid transparent;border-radius:var(--radius-md);
@@ -238,7 +215,7 @@ p{margin:0;color:var(--ink);}
   transition:transform .15s ease, border-color .15s ease, background .15s ease;
 }
 .avatar-card .emoji{font-size:2.6rem;}
-.avatar-card span{font-weight:700;font-size:.9rem;color:var(--white-soft);}
+.avatar-card span{font-weight:700;font-size:.9rem;}
 .avatar-card.selected{border-color:var(--saffron);background:rgba(242,169,59,.18);transform:scale(1.04);}
 .name-input{
   width:100%;max-width:320px;padding:14px 16px;border-radius:999px;border:none;
@@ -271,18 +248,18 @@ p{margin:0;color:var(--ink);}
 .hub-node.done{border-color:var(--meadow-deep);}
 .hub-node-label{
   position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;
-  font-size:.72rem;font-weight:700;background:rgba(255,255,255,.85);padding:2px 8px;border-radius:8px;white-space:nowrap;color:var(--ink);
+  font-size:.72rem;font-weight:700;background:rgba(255,255,255,.85);padding:2px 8px;border-radius:8px;white-space:nowrap;
 }
 .hub-badge{position:absolute;bottom:-4px;left:-4px;font-size:1.15rem;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));}
 
 /* ============ STAGE TEMPLATE ============ */
 .stage-screen{flex:1;display:flex;flex-direction:column;min-height:0;}
-.stage-bg--field{background:linear-gradient(180deg,#cdeaf5 0%,#d9edb0 35%,#a9cf76 100%); color:var(--ink);}
+.stage-bg--field{background:linear-gradient(180deg,#cdeaf5 0%,#d9edb0 35%,#a9cf76 100%);}
 .stage-bg--bag{background:linear-gradient(180deg,#2d1b4e 0%,#4a3572 55%,#6f5aa0 100%);color:var(--white-soft);}
-.stage-bg--bridge{background:linear-gradient(180deg,#8fd7ef 0%,#bfe6d8 60%,#e4d9b0 100%); color:var(--ink);}
+.stage-bg--bridge{background:linear-gradient(180deg,#8fd7ef 0%,#bfe6d8 60%,#e4d9b0 100%);}
 .stage-bg--castle{background:linear-gradient(180deg,#3f2a63 0%,#6f5aa0 55%,#f2a93b 100%);color:var(--white-soft);}
 .stage-bg--cave{background:linear-gradient(180deg,#160c28 0%,#2d1b4e 55%,#3f2a63 100%);color:var(--white-soft);}
-.stage-bg--tower{transition:background 1s ease; color:var(--white-soft);}
+.stage-bg--tower{transition:background 1s ease;}
 
 .play-zone{
   flex:1;position:relative;margin:6px 14px;border-radius:var(--radius-lg);
@@ -327,10 +304,9 @@ p{margin:0;color:var(--ink);}
 
 /* Collector / sack shelf (stage 2) */
 .collector-zone{
-  min-width:120px;min-height:120px;max-width:90%;border-radius:30px;border:4px dashed var(--saffron);
-  background:rgba(242,169,59,.14);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:16px;
+  width:120px;height:120px;border-radius:50%;border:4px dashed var(--saffron);
+  background:rgba(242,169,59,.14);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px;padding:8px;
   position:relative;
-  transition:all 0.3s ease;
 }
 .collector-label{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);font-size:.8rem;font-weight:700;white-space:nowrap;color:var(--white-soft);}
 .sack-shelf{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:70px;}
@@ -342,7 +318,6 @@ p{margin:0;color:var(--ink);}
   flex:1;min-width:130px;min-height:150px;border-radius:var(--radius-lg);
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;padding:14px 8px;
   border:4px solid; font-weight:800;font-family:var(--font-display);
-  color: var(--ink);
 }
 .gate-tens{background:rgba(242,169,59,.22);border-color:var(--saffron-deep);}
 .gate-units{background:rgba(224,105,63,.18);border-color:var(--terracotta-deep);}
@@ -357,9 +332,9 @@ p{margin:0;color:var(--ink);}
 }
 .house::before{content:'';position:absolute;top:-22px;left:50%;transform:translateX(-50%) rotate(45deg);
   width:34px;height:34px;border-radius:6px;}
-.house-tens{background:rgba(242,169,59,.24);border-color:var(--saffron-deep); color:var(--white-soft);}
+.house-tens{background:rgba(242,169,59,.24);border-color:var(--saffron-deep);}
 .house-tens::before{background:var(--saffron-deep);}
-.house-units{background:rgba(111,198,232,.24);border-color:var(--sky-deep); color:var(--white-soft);}
+.house-units{background:rgba(111,198,232,.24);border-color:var(--sky-deep);}
 .house-units::before{background:var(--sky-deep);}
 .house-slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:64px;align-items:center;}
 .house-title{font-family:var(--font-display);font-weight:800;font-size:.95rem;}
@@ -393,7 +368,6 @@ p{margin:0;color:var(--ink);}
 .mappiece-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
   background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.12), transparent 60%), linear-gradient(180deg,#1c1032,var(--ink));
   color:var(--white-soft);padding:30px 20px;text-align:center;}
-.mappiece-screen h2, .mappiece-screen p{color:var(--white-soft);}
 .puzzle-piece{font-size:5rem;animation:piece-fall .7s cubic-bezier(.3,.9,.4,1.2) both;filter:drop-shadow(0 10px 16px rgba(0,0,0,.5));}
 @keyframes piece-fall{
   from{transform:translateY(-120px) rotate(-25deg);opacity:0;}
@@ -407,7 +381,6 @@ p{margin:0;color:var(--ink);}
 .celebration-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
   padding:26px 20px;text-align:center;color:var(--white-soft);
   background:radial-gradient(circle at 50% 20%,#5c3f96,var(--ink) 70%);overflow:hidden;position:relative;}
-.celebration-screen h2, .celebration-screen p{color:var(--white-soft);}
 .chest{font-size:5.5rem;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5));animation:chest-bounce 1.4s ease;}
 @keyframes chest-bounce{
   0%{transform:scale(.4) translateY(40px);opacity:0;}
@@ -422,21 +395,20 @@ p{margin:0;color:var(--ink);}
 .cast-row{display:flex;gap:10px;font-size:2rem;justify-content:center;flex-wrap:wrap;}
 
 /* Report */
-.report-screen{flex:1;display:flex;flex-direction:column;padding:16px;gap:12px;background:var(--parchment);overflow-y:auto; color:var(--ink);}
+.report-screen{flex:1;display:flex;flex-direction:column;padding:16px;gap:12px;background:var(--parchment);overflow-y:auto;}
 .report-tabs{display:flex;gap:8px;}
 .report-tab{flex:1;padding:12px;border-radius:999px;border:3px solid var(--ink);background:#fff;font-family:var(--font-display);
-  font-weight:700;cursor:pointer;text-align:center; color:var(--ink);}
-.report-tab.active{background:var(--saffron); color:var(--ink);}
+  font-weight:700;cursor:pointer;text-align:center;}
+.report-tab.active{background:var(--saffron);}
 .certificate{
   border:4px double var(--saffron-deep);border-radius:var(--radius-md);padding:22px;text-align:center;
-  background:var(--white-soft);display:flex;flex-direction:column;gap:10px;align-items:center; color:var(--ink);
+  background:var(--white-soft);display:flex;flex-direction:column;gap:10px;align-items:center;
 }
-.certificate h2, .certificate h3, .certificate p{color:var(--ink);}
-.report-table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-soft); color:var(--ink);}
-.report-table th,.report-table td{padding:12px 10px;text-align:center;font-size:.92rem;border-bottom:1px solid var(--parchment-deep); color:var(--ink);}
+.report-table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-soft);}
+.report-table th,.report-table td{padding:12px 10px;text-align:center;font-size:.92rem;border-bottom:1px solid var(--parchment-deep);}
 .report-table th{background:var(--ink);color:var(--white-soft);font-family:var(--font-display);}
-.report-table td:first-child{text-align:right;font-weight:700; color:var(--ink);}
-.recommend-box{background:rgba(155,135,196,.15);border:2px dashed var(--dusk);border-radius:var(--radius-md);padding:14px;font-weight:700;text-align:center; color:var(--ink);}
+.report-table td:first-child{text-align:right;font-weight:700;}
+.recommend-box{background:rgba(155,135,196,.15);border:2px dashed var(--dusk);border-radius:var(--radius-md);padding:14px;font-weight:700;text-align:center;}
 
 /* ============ FEEDBACK ANIMATIONS ============ */
 @keyframes pop-in{
@@ -470,7 +442,7 @@ p{margin:0;color:var(--ink);}
 .confirm-box{
   background:var(--parchment);border-radius:var(--radius-lg);padding:24px;max-width:320px;
   text-align:center;box-shadow:var(--shadow-deep);display:flex;flex-direction:column;gap:16px;
-  border:3px solid var(--saffron-deep); color:var(--ink);
+  border:3px solid var(--saffron-deep);
 }
 .confirm-message{font-weight:700;font-size:1.05rem;color:var(--ink);line-height:1.6;}
 .confirm-actions{display:flex;gap:10px;justify-content:center;}
@@ -714,7 +686,7 @@ function charRowHTML(charKey, text, speakId){
   const c = CHAR[charKey] || {name:'', emoji:'❔'};
   return '<div class="char-row">'+
     '<div class="char-avatar">'+c.emoji+'</div>'+
-    '<div class="bubble"><span class="bubble-text" style="color:var(--ink);">'+text+'</span>'+
+    '<div class="bubble"><span class="bubble-text">'+text+'</span>'+
     '<button class="bubble-speak" id="'+speakId+'" aria-label="اسمع">🔊</button></div>'+
     '</div>';
 }
@@ -726,13 +698,12 @@ function hintBubbleHTML(text){
   return '<div class="hint-bubble">🤖 '+text+'</div>';
 }
 let __hintTimer = null;
-function showHint(containerId, text, duration){
-  duration = duration || 5500;
+function showHint(containerId, text){
   const c = document.getElementById(containerId);
   if(!c) return;
   c.innerHTML = hintBubbleHTML(text);
   clearTimeout(__hintTimer);
-  __hintTimer = setTimeout(function(){ if(c) c.innerHTML=''; }, duration);
+  __hintTimer = setTimeout(function(){ if(c) c.innerHTML=''; }, 3400);
 }
 function stageShellOpen(stageNum, bgClass){
   return '<div class="screen stage-screen '+bgClass+'" id="stageScreenRoot" data-stage="'+stageNum+'">';
@@ -915,11 +886,6 @@ function renderSplash(){
   }
   html += '</div>';
   setApp(html);
-  const welcomeText = hasSavedProgress && state.started && state.heroName 
-    ? 'أهلاً بعودتك يا '+state.heroName+'! هل تريد إكمال مغامرتك؟' 
-    : 'بطلي الصغير! تناثرت أرقام مملكتي بأكملها! هل تقبل أن تكون بطل الأعداد وتساعدنا؟';
-  speak(welcomeText);
-
   const startBtn = document.getElementById('startBtn');
   if(startBtn) startBtn.onclick = function(){ ensureAudio(); sfxWhoosh(); goTo({screen:'avatar'}); };
   const continueBtn = document.getElementById('continueBtn');
@@ -943,8 +909,6 @@ function renderAvatarPicker(){
   html += '<button class="btn btn-primary btn-lg" id="avatarConfirmBtn">هيا بنا! 🚀</button>';
   html += '</div>';
   setApp(html);
-  speak('اختر بطلك');
-
   const cards = document.querySelectorAll('.avatar-card');
   cards.forEach(function(card){
     card.onclick = function(){
@@ -973,11 +937,10 @@ function renderIntro(){
   html += '<div class="char-avatar" style="width:90px;height:90px;font-size:3rem;">'+heroEmoji+'</div>';
   html += '<div class="char-avatar" style="width:90px;height:90px;font-size:3rem;">'+CHAR.pixel.emoji+'</div>';
   html += '</div>';
-  html += '<div class="bubble" style="max-width:340px;"><span class="bubble-text" style="color:var(--ink);">'+text+'</span><button class="bubble-speak" id="introSpeakBtn" aria-label="اسمع">🔊</button></div>';
+  html += '<div class="bubble" style="max-width:340px;"><span class="bubble-text" id="introText">'+text+'</span><button class="bubble-speak" id="introSpeakBtn">🔊</button></div>';
   html += '<button class="btn btn-primary btn-lg" id="introNextBtn">لنبدأ المغامرة ▶️</button>';
   html += '</div>';
   setApp(html);
-  speak(text);
   wireSpeak('introSpeakBtn', text);
   document.getElementById('introNextBtn').onclick = function(){
     sfxWhoosh();
@@ -1015,14 +978,12 @@ function renderHub(){
   if(state.stagesCompleted.every(Boolean)){
     html += '<div style="text-align:center;padding:10px 0 4px;"><button class="btn btn-primary btn-lg" id="toReportBtn">شاهد إنجازاتي 🏅</button></div>';
   } else {
-    html += '<p class="locked-note" style="color:var(--ink);">أكمل كل مرحلة لفتح التي تليها 🗝️</p>';
+    html += '<p class="locked-note">أكمل كل مرحلة لفتح التي تليها 🗝️</p>';
   }
   html += '<div style="text-align:center;padding:2px 0 10px;"><button class="btn-ghost-dark" id="resetGameBtn">ابدأ من جديد 🔄</button></div>';
   html += '</div>';
   setApp(html);
   wireTopbar();
-  speak('اختر مرحلة لنبدأ المغامرة');
-
   document.querySelectorAll('.hub-node').forEach(function(node){
     node.onclick = function(){
       if(node.dataset.locked==='1'){ shakeEl(node); sfxGentleRetry(); return; }
@@ -1055,9 +1016,7 @@ function renderMapPiece(stageNum){
   html += '<button class="btn btn-primary btn-lg" id="mapNextBtn">التالي ▶️</button>';
   html += '</div>';
   setApp(html);
-  speak('أحسنت يا بطل! حصلت على قطعة جديدة من خريطة الكنز.');
   confettiBurst();
-
   document.getElementById('mapNextBtn').onclick = function(){
     sfxWhoosh();
     if(state.stagesCompleted.every(Boolean)){
@@ -1077,8 +1036,6 @@ function renderCelebration(){
   html += '<div id="chestInner"></div>';
   html += '</div>';
   setApp(html);
-  speak('وصلت إلى الكنز! افتحه يا بطل.');
-
   document.getElementById('openChestBtn').onclick = function(){
     sfxSuccess();
     document.getElementById('chestEl').textContent = '🎁';
@@ -1086,13 +1043,11 @@ function renderCelebration(){
     const openBtn = document.getElementById('openChestBtn');
     if(openBtn) openBtn.remove();
     const inner = document.getElementById('chestInner');
-    const chestText = 'مفتاح الأعداد السحري! الآن تستطيع المملكة أن تُرتّب أرقامها للأبد. شكرًا لك يا بطل الأعداد!';
     inner.innerHTML =
       '<div class="key-glow">🗝️</div>'+
-      '<p class="splash-line">'+chestText+'</p>'+
+      '<p class="splash-line">مفتاح الأعداد السحري! الآن تستطيع المملكة أن تُرتّب أرقامها للأبد. شكرًا لك يا بطل الأعداد!</p>'+
       '<div class="cast-row">👑🤖🐇🗿🧙</div>'+
       '<button class="btn btn-primary btn-lg" id="toReportBtn2">شاهد إنجازاتي 🏅</button>';
-    speak(chestText);
     document.getElementById('toReportBtn2').onclick = function(){ goTo({screen:'report'}); };
   };
 }
@@ -1145,7 +1100,6 @@ function renderReport(){
   html += '</div>';
   setApp(html);
   wireTopbar();
-  speak('تقرير إنجازات بطل الأعداد');
 
   function showKidTab(){
     const body = document.getElementById('reportBody');
@@ -1242,7 +1196,6 @@ function renderStage1(){
     root.innerHTML = topbarHTML() + body;
     wireTopbar();
     wireSpeak('speak1', dlg);
-    speak(dlg);
 
     const field = document.getElementById('fieldZone');
     field.innerHTML = '';
@@ -1282,21 +1235,17 @@ function renderStage1(){
       const result = adaptive.registerSuccess();
       celebrateSuccess(basket, 1);
       if(result==='consolidate'){
-        const hintText = 'ممتاز! لنجرب مرة أخيرة بنفس العدد للتأكد';
-        showHint('hintArea1', hintText, 5500);
-        speak(hintText);
-        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 5500);
+        showHint('hintArea1', 'ممتاز! لنجرب مرة أخيرة بنفس العدد للتأكد 💪');
+        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 1000);
       } else {
         stageStruggleTotal += adaptive.struggle;
-        const successText = currentTarget+'! بالضبط! أنت سريع كالأرنب';
-        showHint('hintArea1', successText, 5500);
-        speak(successText);
+        showHint('hintArea1', currentTarget+'! بالضبط! أنت سريع كالأرنب 🐇');
         roundIndex++;
         if(roundIndex>=targets.length){
-          setTimeout(function(){ if(stillOnStage(1)) completeStage(1, stageStruggleTotal, null); }, 5500);
+          setTimeout(function(){ if(stillOnStage(1)) completeStage(1, stageStruggleTotal, null); }, 1100);
         } else {
           adaptive = createAdaptive();
-          setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 5500);
+          setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 1100);
         }
       }
     } else {
@@ -1304,14 +1253,10 @@ function renderStage1(){
       shakeEl(basket);
       sfxGentleRetry();
       if(result==='simplify'){
-        const simplifyText = 'لا بأس، لنجرّب بعدد أصغر أولًا';
-        showHint('hintArea1', simplifyText, 5500);
-        speak(simplifyText);
-        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 5500);
+        showHint('hintArea1', 'لا بأس، لنجرّب بعدد أصغر أولًا 🤔');
+        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 1100);
       } else {
-        const retryText = 'دعنا نعدّ معًا... حاول مجددًا';
-        showHint('hintArea1', retryText, 5500);
-        speak(retryText);
+        showHint('hintArea1', 'دعنا نعدّ معًا... 1، 2، 3... حاول مجددًا 🤔');
       }
     }
   }
@@ -1335,15 +1280,6 @@ function renderStage2(){
     return cfg.total;
   }
 
-  function updateCollectorSize(currentCount){
-    const collector = document.getElementById('collectorZone');
-    if(!collector) return;
-    // Base size 120px, expands smoothly as more stars enter
-    const size = Math.min(220, 120 + currentCount * 12);
-    collector.style.width = size + 'px';
-    collector.style.height = size + 'px';
-  }
-
   function paintRound(){
     const cfg = roundsCfg[ri];
     totalStars = currentTotalForRound();
@@ -1356,13 +1292,12 @@ function renderStage2(){
     body += charRowHTML('pixel', dlg, 'speak2');
     body += '<div id="hintArea2"></div>';
     body += '<div class="play-zone drop-zone" id="pileZone"></div>';
-    body += '<div class="goal-zone"><div class="collector-zone drop-zone" id="collectorZone"><span class="collector-label" style="color:var(--white-soft);">اجمع 10</span></div></div>';
+    body += '<div class="goal-zone"><div class="collector-zone drop-zone" id="collectorZone"><span class="collector-label">اجمع 10</span></div></div>';
     body += '<div class="sack-shelf" id="sackShelf" style="margin:4px 14px;"></div>';
     body += '<div class="stage-footer">'+(cfg.guided?'':'<button class="btn btn-primary btn-lg" id="doneBtn2">انتهيت ✅</button>')+'</div>';
     root.innerHTML = topbarHTML() + body;
     wireTopbar();
     wireSpeak('speak2', dlg);
-    speak(dlg);
 
     const pile = document.getElementById('pileZone');
     pile.innerHTML = '';
@@ -1375,15 +1310,12 @@ function renderStage2(){
         if(zone && (zone.id==='collectorZone' || zone.id==='pileZone')){
           settleInZone(el, zone);
           sfxTap();
-          const collectorCount = document.getElementById('collectorZone').querySelectorAll('.drag-item').length;
-          updateCollectorSize(collectorCount);
           onCollectorChanged();
           return true;
         }
         return false;
       });
     }
-    updateCollectorSize(0);
     if(!cfg.guided){
       document.getElementById('doneBtn2').onclick = onDoneClick;
     }
@@ -1392,7 +1324,6 @@ function renderStage2(){
   function onCollectorChanged(){
     const collector = document.getElementById('collectorZone');
     const collectorCount = collector.querySelectorAll('.drag-item').length;
-    updateCollectorSize(collectorCount);
     if(collectorCount>=10){
       const starsToBundle = Array.prototype.slice.call(collector.querySelectorAll('.drag-item'), 0, 10);
       starsToBundle.forEach(function(s){ s.remove(); });
@@ -1405,17 +1336,14 @@ function renderStage2(){
       sackWrap.innerHTML = sackIconHTML(50);
       shelf.appendChild(sackWrap);
       confettiBurst();
-      updateCollectorSize(collector.querySelectorAll('.drag-item').length);
       const cfg = roundsCfg[ri];
       if(cfg.guided){
         const remainder = totalStars - sacksFormed*10;
-        const hintText = 'رائع! 10 نجمات = كيس عشرة واحد! بقيت '+remainder+' نجمات لا تكفي لعشرة أخرى.';
-        showHint('hintArea2', hintText, 5500);
-        speak(hintText);
+        showHint('hintArea2', 'رائع! 10 نجمات = كيس عشرة واحد! 📦 بقيت '+remainder+' نجمات لا تكفي لعشرة أخرى.');
         setTimeout(function(){
           if(!stillOnStage(2)) return;
           ri++; adaptive = createAdaptive(); paintRound();
-        }, 5500);
+        }, 2300);
       }
     }
   }
@@ -1427,27 +1355,21 @@ function renderStage2(){
       const result = adaptive.registerSuccess();
       celebrateSuccess(shelf, 1);
       if(result==='consolidate'){
-        const hintText = 'ممتاز! لنثبّت هذه المهارة بمحاولة أخيرة';
-        showHint('hintArea2', hintText, 5500);
-        speak(hintText);
-        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 5500);
+        showHint('hintArea2', 'ممتاز! لنثبّت هذه المهارة بمحاولة أخيرة 💪');
+        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 1000);
       } else {
         stageStruggleTotal += adaptive.struggle;
-        setTimeout(function(){ if(stillOnStage(2)) completeStage(2, stageStruggleTotal, '📦'); }, 5500);
+        setTimeout(function(){ if(stillOnStage(2)) completeStage(2, stageStruggleTotal, '📦'); }, 1000);
       }
     } else {
       const result = adaptive.registerFail();
       shakeEl(document.getElementById('pileZone'));
       sfxGentleRetry();
       if(result==='simplify'){
-        const simplifyText = 'لا بأس، لنجرّب بعدد أسهل أولًا';
-        showHint('hintArea2', simplifyText, 5500);
-        speak(simplifyText);
-        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 5500);
+        showHint('hintArea2', 'لا بأس، لنجرّب بعدد أسهل أولًا 🤔');
+        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 1100);
       } else {
-        const retryText = 'أواثق أنك انتهيت؟ عدّ النجمات المتبقية مرة أخرى';
-        showHint('hintArea2', retryText, 5500);
-        speak(retryText);
+        showHint('hintArea2', 'أواثق أنك انتهيت؟ عدّ النجمات المتبقية مرة أخرى 🤔');
       }
     }
   }
@@ -1482,7 +1404,6 @@ function renderStage3(){
     root.innerHTML = topbarHTML() + body;
     wireTopbar();
     wireSpeak('speak3', dlg);
-    speak(dlg);
 
     const pool = document.getElementById('poolZone3');
     pool.innerHTML = '';
@@ -1526,9 +1447,7 @@ function renderStage3(){
         const gu = document.getElementById('gateUnits');
         if(gt) gt.classList.add('hint-glow');
         if(gu) gu.classList.add('hint-glow');
-        const hintText = 'تذكّر: الكيس الذهبي = عشرة، والتفاحة = وحدة واحدة';
-        showHint('hintArea3', hintText, 5500);
-        speak(hintText);
+        showHint('hintArea3', 'تذكّر: الكيس الذهبي = عشرة، والتفاحة = وحدة واحدة 🤔');
       }
       return false;
     }
@@ -1540,9 +1459,9 @@ function renderStage3(){
     celebrateSuccess(gateTens, 1);
     ri++;
     if(ri>=roundsCfg.length){
-      setTimeout(function(){ if(stillOnStage(3)) completeStage(3, stageStruggleTotal, '🔑'); }, 5500);
+      setTimeout(function(){ if(stillOnStage(3)) completeStage(3, stageStruggleTotal, '🔑'); }, 1000);
     } else {
-      setTimeout(function(){ if(stillOnStage(3)) paintRound(); }, 5500);
+      setTimeout(function(){ if(stillOnStage(3)) paintRound(); }, 1000);
     }
   }
 
@@ -1574,8 +1493,6 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
     root.innerHTML = topbarHTML() + body;
     wireTopbar();
     wireSpeak('speakDemo', dlg);
-    speak(dlg);
-
     document.getElementById('demoNextBtn').onclick = function(){ sfxWhoosh(); paintRound(); };
   }
 
@@ -1602,7 +1519,6 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
     root.innerHTML = topbarHTML() + body;
     wireTopbar();
     wireSpeak('speakHouse', dlg);
-    speak(dlg);
 
     const tray = document.getElementById('supplyTray');
     tray.innerHTML = '';
@@ -1655,18 +1571,16 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
       const result = adaptive.registerSuccess();
       celebrateSuccess(document.getElementById('houseTens'), 1);
       if(result==='consolidate'){
-        const hintText = 'رائع! لنثبّت هذا العدد بمحاولة أخيرة';
-        showHint('hintAreaHouse', hintText, 5500);
-        speak(hintText);
-        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 5500);
+        showHint('hintAreaHouse', 'رائع! لنثبّت هذا العدد بمحاولة أخيرة 💪');
+        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 1000);
       } else {
         stageStruggleTotal += adaptive.struggle;
         ri++;
         if(ri>=targets.length){
-          setTimeout(function(){ if(stillOnStage(stageNum)) completeStage(stageNum, stageStruggleTotal, badgeEmoji); }, 5500);
+          setTimeout(function(){ if(stillOnStage(stageNum)) completeStage(stageNum, stageStruggleTotal, badgeEmoji); }, 1000);
         } else {
           adaptive = createAdaptive();
-          setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 5500);
+          setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 1000);
         }
       }
     } else {
@@ -1674,14 +1588,10 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
       shakeEl(shakeTarget);
       sfxGentleRetry();
       if(result==='simplify'){
-        const simplifyText = 'لا بأس، لنجرّب عددًا أسهل قليلًا';
-        showHint('hintAreaHouse', simplifyText, 5500);
-        speak(simplifyText);
-        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 5500);
+        showHint('hintAreaHouse', 'لا بأس، لنجرّب عددًا أسهل قليلًا 🤔');
+        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 1100);
       } else {
-        const retryText = 'قريب! تحقق من عدد الأكياس والتفاحات مرة أخرى';
-        showHint('hintAreaHouse', retryText, 5500);
-        speak(retryText);
+        showHint('hintAreaHouse', 'قريب! تحقق من عدد الأكياس والتفاحات مرة أخرى 🤔');
       }
     }
   }
@@ -1732,7 +1642,7 @@ function renderStage6(){
       dlg = 'ساعدني أجمع هذه النجمات في أكياس عشرة!';
       interactive =
         '<div class="play-zone drop-zone" id="s6Field"></div>'+
-        '<div class="goal-zone"><div class="collector-zone drop-zone" id="s6Collector"><span class="collector-label" style="color:var(--white-soft);">اجمع 10</span></div></div>'+
+        '<div class="goal-zone"><div class="collector-zone drop-zone" id="s6Collector"><span class="collector-label">اجمع 10</span></div></div>'+
         '<div class="sack-shelf" id="s6Shelf" style="margin:4px 14px;"></div>'+
         '<div class="stage-footer"><button class="btn btn-primary btn-lg" id="s6ConfirmBtn">انتهيت ✅</button></div>';
     } else {
@@ -1755,7 +1665,6 @@ function renderStage6(){
     root.innerHTML = topbarHTML() + body;
     wireTopbar();
     wireSpeak('speak6', dlg);
-    speak(dlg);
 
     if(st.type==='count') setupCountStation(st);
     else if(st.type==='group') setupGroupStation(st);
@@ -1789,9 +1698,7 @@ function renderStage6(){
       } else {
         shakeEl(basket);
         sfxGentleRetry();
-        const hintText = 'دعنا نعدّ معًا مرة أخرى';
-        showHint('hintArea6', hintText, 5500);
-        speak(hintText);
+        showHint('hintArea6', 'دعنا نعدّ معًا مرة أخرى... 🤔');
       }
     };
   }
@@ -1847,9 +1754,7 @@ function renderStage6(){
       } else {
         shakeEl(field);
         sfxGentleRetry();
-        const hintText = 'أواثق أنك انتهيت؟ تحقق من النجمات المتبقية';
-        showHint('hintArea6', hintText, 5500);
-        speak(hintText);
+        showHint('hintArea6', 'أواثق أنك انتهيت؟ تحقق من النجمات المتبقية 🤔');
       }
     };
   }
@@ -1889,9 +1794,7 @@ function renderStage6(){
       } else {
         shakeEl(houseTens);
         sfxGentleRetry();
-        const hintText = 'قريب! تحقق من عدد الأكياس والتفاحات';
-        showHint('hintArea6', hintText, 5500);
-        speak(hintText);
+        showHint('hintArea6', 'قريب! تحقق من عدد الأكياس والتفاحات 🤔');
       }
     };
   }
@@ -1906,9 +1809,9 @@ function renderStage6(){
     celebrateSuccess(fromEl, 1);
     si++;
     if(si>=stations.length){
-      setTimeout(function(){ if(stillOnStage(6)) completeStage(6, 0, null); }, 5500);
+      setTimeout(function(){ if(stillOnStage(6)) completeStage(6, 0, null); }, 1100);
     } else {
-      setTimeout(function(){ if(stillOnStage(6)) paintStation(); }, 5500);
+      setTimeout(function(){ if(stillOnStage(6)) paintStation(); }, 1100);
     }
   }
 
@@ -1933,5 +1836,3 @@ boot();
 </script>
 </body>
 </html>
-
-
