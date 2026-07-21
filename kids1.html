@@ -726,12 +726,13 @@ function hintBubbleHTML(text){
   return '<div class="hint-bubble">🤖 '+text+'</div>';
 }
 let __hintTimer = null;
-function showHint(containerId, text){
+function showHint(containerId, text, duration){
+  duration = duration || 5500;
   const c = document.getElementById(containerId);
   if(!c) return;
   c.innerHTML = hintBubbleHTML(text);
   clearTimeout(__hintTimer);
-  __hintTimer = setTimeout(function(){ if(c) c.innerHTML=''; }, 3400);
+  __hintTimer = setTimeout(function(){ if(c) c.innerHTML=''; }, duration);
 }
 function stageShellOpen(stageNum, bgClass){
   return '<div class="screen stage-screen '+bgClass+'" id="stageScreenRoot" data-stage="'+stageNum+'">';
@@ -972,7 +973,7 @@ function renderIntro(){
   html += '<div class="char-avatar" style="width:90px;height:90px;font-size:3rem;">'+heroEmoji+'</div>';
   html += '<div class="char-avatar" style="width:90px;height:90px;font-size:3rem;">'+CHAR.pixel.emoji+'</div>';
   html += '</div>';
-  html += '<div class="bubble" style="max-width:340px;"><span class="bubble-text" style="color:var(--ink);">'+text+'</span><button class="bubble-speak" id="introSpeakBtn">🔊</button></div>';
+  html += '<div class="bubble" style="max-width:340px;"><span class="bubble-text" style="color:var(--ink);">'+text+'</span><button class="bubble-speak" id="introSpeakBtn" aria-label="اسمع">🔊</button></div>';
   html += '<button class="btn btn-primary btn-lg" id="introNextBtn">لنبدأ المغامرة ▶️</button>';
   html += '</div>';
   setApp(html);
@@ -1282,20 +1283,20 @@ function renderStage1(){
       celebrateSuccess(basket, 1);
       if(result==='consolidate'){
         const hintText = 'ممتاز! لنجرب مرة أخيرة بنفس العدد للتأكد';
-        showHint('hintArea1', hintText);
+        showHint('hintArea1', hintText, 5500);
         speak(hintText);
-        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 1000);
+        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 5500);
       } else {
         stageStruggleTotal += adaptive.struggle;
         const successText = currentTarget+'! بالضبط! أنت سريع كالأرنب';
-        showHint('hintArea1', successText);
+        showHint('hintArea1', successText, 5500);
         speak(successText);
         roundIndex++;
         if(roundIndex>=targets.length){
-          setTimeout(function(){ if(stillOnStage(1)) completeStage(1, stageStruggleTotal, null); }, 1100);
+          setTimeout(function(){ if(stillOnStage(1)) completeStage(1, stageStruggleTotal, null); }, 5500);
         } else {
           adaptive = createAdaptive();
-          setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 1100);
+          setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 5500);
         }
       }
     } else {
@@ -1304,12 +1305,12 @@ function renderStage1(){
       sfxGentleRetry();
       if(result==='simplify'){
         const simplifyText = 'لا بأس، لنجرّب بعدد أصغر أولًا';
-        showHint('hintArea1', simplifyText);
+        showHint('hintArea1', simplifyText, 5500);
         speak(simplifyText);
-        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 1100);
+        setTimeout(function(){ if(stillOnStage(1)) paintRound(); }, 5500);
       } else {
         const retryText = 'دعنا نعدّ معًا... حاول مجددًا';
-        showHint('hintArea1', retryText);
+        showHint('hintArea1', retryText, 5500);
         speak(retryText);
       }
     }
@@ -1409,12 +1410,12 @@ function renderStage2(){
       if(cfg.guided){
         const remainder = totalStars - sacksFormed*10;
         const hintText = 'رائع! 10 نجمات = كيس عشرة واحد! بقيت '+remainder+' نجمات لا تكفي لعشرة أخرى.';
-        showHint('hintArea2', hintText);
+        showHint('hintArea2', hintText, 5500);
         speak(hintText);
         setTimeout(function(){
           if(!stillOnStage(2)) return;
           ri++; adaptive = createAdaptive(); paintRound();
-        }, 2300);
+        }, 5500);
       }
     }
   }
@@ -1427,12 +1428,12 @@ function renderStage2(){
       celebrateSuccess(shelf, 1);
       if(result==='consolidate'){
         const hintText = 'ممتاز! لنثبّت هذه المهارة بمحاولة أخيرة';
-        showHint('hintArea2', hintText);
+        showHint('hintArea2', hintText, 5500);
         speak(hintText);
-        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 1000);
+        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 5500);
       } else {
         stageStruggleTotal += adaptive.struggle;
-        setTimeout(function(){ if(stillOnStage(2)) completeStage(2, stageStruggleTotal, '📦'); }, 1000);
+        setTimeout(function(){ if(stillOnStage(2)) completeStage(2, stageStruggleTotal, '📦'); }, 5500);
       }
     } else {
       const result = adaptive.registerFail();
@@ -1440,12 +1441,12 @@ function renderStage2(){
       sfxGentleRetry();
       if(result==='simplify'){
         const simplifyText = 'لا بأس، لنجرّب بعدد أسهل أولًا';
-        showHint('hintArea2', simplifyText);
+        showHint('hintArea2', simplifyText, 5500);
         speak(simplifyText);
-        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 1100);
+        setTimeout(function(){ if(stillOnStage(2)) paintRound(); }, 5500);
       } else {
         const retryText = 'أواثق أنك انتهيت؟ عدّ النجمات المتبقية مرة أخرى';
-        showHint('hintArea2', retryText);
+        showHint('hintArea2', retryText, 5500);
         speak(retryText);
       }
     }
@@ -1526,7 +1527,7 @@ function renderStage3(){
         if(gt) gt.classList.add('hint-glow');
         if(gu) gu.classList.add('hint-glow');
         const hintText = 'تذكّر: الكيس الذهبي = عشرة، والتفاحة = وحدة واحدة';
-        showHint('hintArea3', hintText);
+        showHint('hintArea3', hintText, 5500);
         speak(hintText);
       }
       return false;
@@ -1539,9 +1540,9 @@ function renderStage3(){
     celebrateSuccess(gateTens, 1);
     ri++;
     if(ri>=roundsCfg.length){
-      setTimeout(function(){ if(stillOnStage(3)) completeStage(3, stageStruggleTotal, '🔑'); }, 1000);
+      setTimeout(function(){ if(stillOnStage(3)) completeStage(3, stageStruggleTotal, '🔑'); }, 5500);
     } else {
-      setTimeout(function(){ if(stillOnStage(3)) paintRound(); }, 1000);
+      setTimeout(function(){ if(stillOnStage(3)) paintRound(); }, 5500);
     }
   }
 
@@ -1655,17 +1656,17 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
       celebrateSuccess(document.getElementById('houseTens'), 1);
       if(result==='consolidate'){
         const hintText = 'رائع! لنثبّت هذا العدد بمحاولة أخيرة';
-        showHint('hintAreaHouse', hintText);
+        showHint('hintAreaHouse', hintText, 5500);
         speak(hintText);
-        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 1000);
+        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 5500);
       } else {
         stageStruggleTotal += adaptive.struggle;
         ri++;
         if(ri>=targets.length){
-          setTimeout(function(){ if(stillOnStage(stageNum)) completeStage(stageNum, stageStruggleTotal, badgeEmoji); }, 1000);
+          setTimeout(function(){ if(stillOnStage(stageNum)) completeStage(stageNum, stageStruggleTotal, badgeEmoji); }, 5500);
         } else {
           adaptive = createAdaptive();
-          setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 1000);
+          setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 5500);
         }
       }
     } else {
@@ -1674,12 +1675,12 @@ function renderHouseChallenge(stageNum, mode, targets, easierTargets, bgClass, b
       sfxGentleRetry();
       if(result==='simplify'){
         const simplifyText = 'لا بأس، لنجرّب عددًا أسهل قليلًا';
-        showHint('hintAreaHouse', simplifyText);
+        showHint('hintAreaHouse', simplifyText, 5500);
         speak(simplifyText);
-        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 1100);
+        setTimeout(function(){ if(stillOnStage(stageNum)) paintRound(); }, 5500);
       } else {
         const retryText = 'قريب! تحقق من عدد الأكياس والتفاحات مرة أخرى';
-        showHint('hintAreaHouse', retryText);
+        showHint('hintAreaHouse', retryText, 5500);
         speak(retryText);
       }
     }
@@ -1789,7 +1790,7 @@ function renderStage6(){
         shakeEl(basket);
         sfxGentleRetry();
         const hintText = 'دعنا نعدّ معًا مرة أخرى';
-        showHint('hintArea6', hintText);
+        showHint('hintArea6', hintText, 5500);
         speak(hintText);
       }
     };
@@ -1847,7 +1848,7 @@ function renderStage6(){
         shakeEl(field);
         sfxGentleRetry();
         const hintText = 'أواثق أنك انتهيت؟ تحقق من النجمات المتبقية';
-        showHint('hintArea6', hintText);
+        showHint('hintArea6', hintText, 5500);
         speak(hintText);
       }
     };
@@ -1889,7 +1890,7 @@ function renderStage6(){
         shakeEl(houseTens);
         sfxGentleRetry();
         const hintText = 'قريب! تحقق من عدد الأكياس والتفاحات';
-        showHint('hintArea6', hintText);
+        showHint('hintArea6', hintText, 5500);
         speak(hintText);
       }
     };
@@ -1905,9 +1906,9 @@ function renderStage6(){
     celebrateSuccess(fromEl, 1);
     si++;
     if(si>=stations.length){
-      setTimeout(function(){ if(stillOnStage(6)) completeStage(6, 0, null); }, 1100);
+      setTimeout(function(){ if(stillOnStage(6)) completeStage(6, 0, null); }, 5500);
     } else {
-      setTimeout(function(){ if(stillOnStage(6)) paintStation(); }, 1100);
+      setTimeout(function(){ if(stillOnStage(6)) paintStation(); }, 5500);
     }
   }
 
