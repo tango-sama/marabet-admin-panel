@@ -627,70 +627,13 @@ function sfxTen(){ tone(660,.12,'sine',0,.2); tone(880,.16,'sine',.08,.22); tone
 function sfxGentleRetry(){ tone(330,.16,'sine',0,.12); tone(294,.22,'sine',.12,.1); }
 function sfxTap(){ tone(440,.08,'sine',0,.08); }
 function sfxWhoosh(){ tone(200,.25,'sawtooth',0,.05); }
-
-/* ---------- Arabic voice selection for speechSynthesis ----------
-   Browsers/OSes vary a lot in which Arabic voices they ship. Rather than trust a
-   single hard-coded lang tag (which can fail to match and silently fall back to an
-   English voice reading Arabic phonetically), we scan every voice actually available,
-   pick the best-sounding Arabic one, and lock the utterance's voice explicitly. */
-let bestArabicVoice = null;
-let arabicVoiceChecked = false;
-function scoreArabicVoice(v){
-  const lang = (v.lang||'').toLowerCase();
-  const name = (v.name||'').toLowerCase();
-  let score = 0;
-  if(lang.indexOf('ar')!==0) return -1; // not Arabic at all
-  score += 10;
-  // Network/neural voices (Google, Microsoft Natural, Azure) generally sound far
-  // more natural than old robotic system voices.
-  if(name.indexOf('google')!==-1) score += 6;
-  if(name.indexOf('natural')!==-1) score += 6;
-  if(name.indexOf('microsoft')!==-1) score += 3;
-  if(name.indexOf('online')!==-1 || name.indexOf('neural')!==-1) score += 4;
-  // Mild preference for widely-used standard-Arabic dialect codes.
-  if(lang==='ar-sa') score += 3;
-  if(lang==='ar-eg') score += 2;
-  if(lang==='ar-xa') score += 2;
-  if(v.localService===false) score += 1; // remote voices are usually the nicer ones
-  return score;
-}
-function refreshArabicVoice(){
-  if(!('speechSynthesis' in window)) return;
-  let voices = [];
-  try{ voices = window.speechSynthesis.getVoices() || []; }catch(e){ voices = []; }
-  if(!voices.length) return;
-  arabicVoiceChecked = true;
-  let best = null, bestScore = -1;
-  for(let i=0;i<voices.length;i++){
-    const s = scoreArabicVoice(voices[i]);
-    if(s>bestScore){ bestScore = s; best = voices[i]; }
-  }
-  bestArabicVoice = bestScore>=0 ? best : null;
-}
-if(typeof window !== 'undefined' && 'speechSynthesis' in window){
-  refreshArabicVoice();
-  try{
-    window.speechSynthesis.addEventListener('voiceschanged', refreshArabicVoice);
-  }catch(e){ /* older browsers: onvoiceschanged fallback below still covers it */ }
-  window.speechSynthesis.onvoiceschanged = refreshArabicVoice;
-}
-
 function speak(text){
   try{
     if(!state.soundOn) return;
     if(!('speechSynthesis' in window)) return;
-    if(!arabicVoiceChecked) refreshArabicVoice();
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    if(bestArabicVoice){
-      u.voice = bestArabicVoice;
-      u.lang = bestArabicVoice.lang;
-    } else {
-      u.lang = 'ar-SA';
-    }
-    u.rate = 0.92;
-    u.pitch = 1.03;
-    u.volume = 1;
+    u.lang = 'ar-SA'; u.rate = 0.95; u.pitch = 1.05;
     window.speechSynthesis.speak(u);
   }catch(e){ /* speech synthesis unavailable, text is always visible anyway */ }
 }
@@ -1990,3 +1933,4 @@ boot();
 </script>
 </body>
 </html>
+
